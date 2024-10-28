@@ -35,11 +35,15 @@ stroke_tb
 
 In total, there are 12 variables including our binary target variable 'Stroke', which indicates whether the person either had a stroke (1) or not (1).
 
+```{r}
+
+```
+
 ## 2. Data Cleaning & Wrangeling
 
 ### 2.1 Missing Values
 
-### 2.2 Categorical Variable Encoding
+The features in our dataset are fairly clean.
 
 ### 2.3 Outlier Analysis
 
