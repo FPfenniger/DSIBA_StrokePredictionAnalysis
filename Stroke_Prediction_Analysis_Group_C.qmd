@@ -15,11 +15,10 @@ editor: visual
 ### 1.4 Data Source
 
 ### 1.5 Data Import
-
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
-
 ```{r}
 library(tidyverse)
+library(knitr)
+library(naniar)
 ```
 
 You can add options to executable code like this
@@ -30,28 +29,69 @@ stroke_db <- read.csv("data/stroke_dataset.csv")
 
 #saving as a tibble
 stroke_tb <- as_tibble(stroke_db)
-stroke_tb
+head(stroke_tb)
 ```
 
-In total, there are 12 variables including our binary target variable 'Stroke', which indicates whether the person either had a stroke (1) or not (1).
-
-```{r}
-
-```
+In total, there are 12 variables including our binary target variable `stroke`.
 
 ## 2. Data Cleaning & Wrangeling
 
+### 2.1 Data Exploration 
+
+Let's get a feeling for the distribution of our data:
+```{r}
+# Generate summary of your data frame
+summary_table <- summary(stroke_tb)
+
+# Convert the summary to a data frame & display it with kable
+summary_table <- as.data.frame.matrix(summary_table)
+kable(as.data.frame(summary_table), row.names = FALSE)
+
+```
+Our Dataset has a few categorical variables. As a machine learning model needs numerical inputs, we need to convert and encode them later. 
+
+
+
+```{r}
+
+``` 
+
+### 2.2 Missing Values
+Let's look specifically at the missing values in our dataset:
+
+```{r}
+stroke_tb %>%
+  summarize_all(~ sum(is.na(.) | . %in% c("N/A", "Unknown", "-")))
+```
+The dataset is fairly clean. Only the the features `bmi` and `smoking_status` have missing values. Let's change all missing values to  N/A and ensure that `bmi` is recognized as a numerical variable. Additionally, the `id` column will be removed, because it is of no use for the future. 
+```{r}
+cleaned_stroke_tb <- replace_with_na(data = stroke_tb, 
+                                     replace = list(bmi = c("N/A"), smoking_status = c("Unknown"))) %>%
+  mutate(bmi = as.numeric(bmi)) %>%
+  select(-id)
+
+cleaned_stroke_tb
+```
+
+As we would like to keep as many observations as possible in our dataset, we replace the N/As with the median for `bmi` and the modal value for `smoking_status`.
+```{r}
+preprocessed1_stroke_tb <- cleaned_stroke_tb %>%
+  cleaned_stroke_tb$bmi[is.na(stroke_tb$bmi)] <- median(stroke_tb$bmi, na.rm = TRUE) %>%
+  cleaned_stroke_tb$smoking_status [is.na(stroke_tb$smoking_status)] <- 
+
+
+```
+
 ```{r}
 
 ```
 
-### 2.1 Missing Values
-
-The features in our dataset are fairly clean. The only column with missing values is BMI. Let's proceed with counting the NAs.
 
 ### 2.3 Outlier Analysis
 
 ### 2.4 Feature Scaling
+
+### 2.5 Dataset Balancing
 
 ## 3. Exploratory Data Analysis
 
