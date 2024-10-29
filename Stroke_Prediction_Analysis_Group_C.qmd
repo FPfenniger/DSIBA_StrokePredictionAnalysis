@@ -26,7 +26,7 @@ You can add options to executable code like this
 
 ```{r}
 #import of the dataset
-stroke_db <- read.csv('C:/Users/fabio/OneDrive/Semester 1/Data Science in Business Analytics/Project/stroke_dataset.csv')
+stroke_db <- read.csv("data/stroke_dataset.csv")
 
 #saving as a tibble
 stroke_tb <- as_tibble(stroke_db)
