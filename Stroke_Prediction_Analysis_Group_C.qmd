@@ -43,7 +43,7 @@ In total, there are 12 variables including our binary target variable 'Stroke', 
 
 ### 2.1 Missing Values
 
-The features in our dataset are fairly clean. The only column with missing values is BMI.
+The features in our dataset are fairly clean. The only column with missing values is BMI. Let's proceed with counting the NAs.
 
 ### 2.3 Outlier Analysis
 
