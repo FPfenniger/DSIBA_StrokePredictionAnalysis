@@ -80,24 +80,36 @@ cleaned_stroke_tb
 As we would like to keep as many observations as possible in our dataset, we replace the N/As with the median for `bmi` and the modal value for `smoking_status`.
 
 ```{r}
-preprocessed1_stroke_tb <- cleaned_stroke_tb %>%
-  cleaned_stroke_tb$bmi[is.na(stroke_tb$bmi)] <- median(stroke_tb$bmi, na.rm = TRUE) %>%
-  cleaned_stroke_tb$smoking_status [is.na(stroke_tb$smoking_status)] <- 
+# Calculate the median for bmi and the mode for smoking_status
+bmi_median <- median(cleaned_stroke_tb$bmi, na.rm = TRUE)
+smoking_status_mode <- names(which.max(table(cleaned_stroke_tb$smoking_status, useNA = "no")))
 
+# Create preprocessed data by replacing NA values
+preprocessed_stroke_tb <- cleaned_stroke_tb %>%
+  mutate(
+    bmi = ifelse(is.na(bmi), bmi_median, bmi),
+    smoking_status = ifelse(is.na(smoking_status), smoking_status_mode, smoking_status)
+  )
 
+preprocessed_stroke_tb
 ```
 
-```{r}
+### 2.3 Categorical Feature Encoding
 
-```
 
-### 2.3 Outlier Analysis
+### 2.4 Outlier Analysis
 
-### 2.4 Feature Scaling
+### 2.5 Feature Scaling
 
-### 2.5 Dataset Balancing
+### 2.6 Dataset Balancing
 
 ## 3. Exploratory Data Analysis
+
+### 3.1 Descriptive Statistics
+
+### 3.2 Data Visualization
+
+### 3.3 Correlation Analysis
 
 ## 4. Predictive Model
 
