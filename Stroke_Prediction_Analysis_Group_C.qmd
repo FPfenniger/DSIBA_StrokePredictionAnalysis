@@ -51,10 +51,17 @@ kable(as.data.frame(summary_table), row.names = FALSE)
 
 ```
 
-Our Dataset has a few categorical variables. As a machine learning model needs numerical inputs, we need to convert and encode them later.
+Our Dataset has a few categorical variables. As a machine learning model needs numerical inputs, we need to convert and encode them later. Let's create a list of categorical and numerical columns:
 
 ```{r}
 
+categorical_variables <- names(stroke_tb)[sapply(stroke_tb,is.character)]
+numerical_variables <- names(stroke_tb)[sapply(stroke_tb, is.numeric)]
+
+# Use sprintf to format the message, then cat to print it with line breaks
+cat(sprintf("Categorical features: %s\nNumerical features: %s",
+            paste(categorical_variables, collapse = ", "),
+            paste(numerical_variables, collapse = ", ")))
 ```
 
 ### 2.2 Missing Values
@@ -77,6 +84,18 @@ cleaned_stroke_tb <- replace_with_na(data = stroke_tb,
 cleaned_stroke_tb
 ```
 
+We update the lists of categorical and numerical columns, as \`bmi\` is now a double.
+
+```{r}
+categorical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb,is.character)]
+numerical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, is.numeric)]
+
+# Use sprintf to format the message, then cat to print it with line breaks
+cat(sprintf("Categorical features: %s\nNumerical features: %s",
+            paste(categorical_variables, collapse = ", "),
+            paste(numerical_variables, collapse = ", ")))
+```
+
 As we would like to keep as many observations as possible in our dataset, we replace the N/As with the median for `bmi` and the modal value for `smoking_status`.
 
 ```{r}
@@ -96,10 +115,37 @@ preprocessed_stroke_tb
 
 ### 2.3 Categorical Feature Encoding
 
+To make use of our categorical variables in our predictive model, we need to convert them into dummy variables. We use the \`fastDummies\` package for the One Hot Encoding.
 
-### 2.4 Outlier Analysis
+```{r}
+library(fastDummies)
 
-### 2.5 Feature Scaling
+encoded_stroke_tb <- dummy_cols(preprocessed_stroke_tb, select_columns=categorical_variables, remove_selected_columns = TRUE)
+
+encoded_stroke_tb
+```
+
+Multicollinearity between the different features will be a problem for our model. It will be treated in the Correlation Analysis.
+
+### 2.4 Feature Scaling
+
+Classification algorithms are often sensitive to scales. To prevent perturbations we standardize all continuous features in the dataset.
+
+```{r}
+scaled_stroke_tb <- encoded_stroke_tb
+
+# Scale only the double columns
+scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- 
+  lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
+
+scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
+
+scaled_stroke_tb
+```
+
+### 2.5 Outlier Analysis
+
+### 
 
 ### 2.6 Dataset Balancing
 
@@ -110,6 +156,8 @@ preprocessed_stroke_tb
 ### 3.2 Data Visualization
 
 ### 3.3 Correlation Analysis
+
+Multicollinearity
 
 ## 4. Predictive Model
 
