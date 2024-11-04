@@ -148,6 +148,191 @@ scaled_stroke_tb
 ### 2.5 Outlier Analysis
 
 ### 
+### 2.5 Outlier Analysis
+
+Taking the standardized dataset, we first analyze the non-binary quantitative variables. To identify outliers, we use boxplots. The points outside the range delimited by the whiskers are the outliers.
+
+```{r}
+# Boxplot for Age
+boxplot(scaled_stroke_tb$age, main="Boxplot of Age", ylab="Age", col="lightblue")
+
+# Boxplot for Average Glucose Level
+boxplot(scaled_stroke_tb$avg_glucose_level, main="Boxplot of Average Glucose Level", ylab="Average Glucose Level", col="lightgreen")
+
+# Boxplot for BMI
+boxplot(scaled_stroke_tb$bmi, main="Boxplot of BMI", ylab="BMI", col="lightcoral")
+
+#We use the IQR method to identify outliers
+identify_outliers <- function(column) {
+  Q1 <- quantile(column, 0.25)
+  Q3 <- quantile(column, 0.75)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  
+  # Identify Outliers
+  outliers <- column[column < lower_bound | column > upper_bound]
+  return(outliers)
+}
+
+# Apply the function to the variables
+outliers_age <- identify_outliers(scaled_stroke_tb$age)
+outliers_glucose <- identify_outliers(scaled_stroke_tb$avg_glucose_level)
+outliers_bmi <- identify_outliers(scaled_stroke_tb$bmi)
+
+# Display the results
+print(outliers_age)
+print(outliers_glucose)
+print(outliers_bmi)
+
+#We create a function count_outliers that we will use to identify and count outliers in each non-binary quantitative variable 
+  count_outliers <- function(column) {
+  Q1 <- quantile(column, 0.25, na.rm = TRUE)
+  Q3 <- quantile(column, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  
+# Count outliers
+outlier_count <- sum(column < lower_bound | column > upper_bound, na.rm = TRUE)
+  return(outlier_count)
+}
+
+# Create a vector to hold the outlier counts
+outlier_counts <- sapply(scaled_stroke_tb[, c("age", "avg_glucose_level", "bmi")], count_outliers)
+
+# Display the outlier counts
+outlier_counts
+```
+Finding zero outliers for age indicates a relatively normative distribution among stroke patients, suggesting accurate and reliable data.
+With a dataset containing 5,110 rows, the identification of 627 outliers for average glucose levels, representing approximately 12.25% of the total population, and 126 outliers for Body Mass Index (BMI), constituting about 2.47%, highlights disparities in the distribution of these health metrics.
+The notably higher percentage of glucose level outliers suggests a prevalence of extreme values that may indicate issues with glycemic control among individuals in this population.
+The presence of a relatively significant number of outliers, particularly in average glucose levels, can skew the dataset's overall mean and standard deviation, potentially leading to misleading interpretations. These outliers may disproportionately influence statistical models, such as the regression analyses, affecting outcomes and relationships. Hence, it will be essential to assess the impact of these outliers on model performance and prioritize careful handling, whether through removal, transformation, or separate analyses, to ensure robust conclusions and accurate insights.
+The presence of many outliers can sometimes point to measurement errors or inconsistencies in data collection. 
+
+
+To have a better view on the distribution of values, we can also create histograms.
+```{r}
+hist(scaled_stroke_tb$age, breaks=30, main="Histogram of Age", xlab="Age", col="lightblue", border="black")
+
+# Histogram for Average Glucose Level
+hist(scaled_stroke_tb$avg_glucose_level, breaks=30, main="Histogram of Average Glucose Level", xlab="Average Glucose Level", col="lightgreen", border="black")
+
+# Histogram for BMI
+hist(scaled_stroke_tb$bmi, breaks=30, main="Histogram of BMI", xlab="BMI", col="lightcoral", border="black")
+```
+Now that we have conducted the analysis of the non-binary variables, we check the distribution of the binary variables.
+```{r}
+# Distribution of Gender Male
+table(scaled_stroke_tb$gender_Male)
+ggplot(scaled_stroke_tb, aes(x=factor(gender_Male))) + 
+  geom_bar() + 
+  labs(x='1 if gender is Male, 0 if not', y='Count', title='Distribution of Male gender')
+
+# Distribution of Gender Female
+table(scaled_stroke_tb$gender_Female)
+ggplot(scaled_stroke_tb, aes(x=factor(gender_Female))) + 
+  geom_bar() + 
+  labs(x='1 if gender is Female, 0 if not', y='Count', title='Distribution of Female gender')
+
+# Distribution of Gender Other
+table(scaled_stroke_tb$gender_Other)
+ggplot(scaled_stroke_tb, aes(x=factor(gender_Other))) + 
+  geom_bar() + 
+  labs(x='1 if gender is Other, 0 if not', y='Count', title='Distribution of Other gender')
+
+# Distribution of Ever Married 
+table(scaled_stroke_tb$ever_married_Yes)
+ggplot(scaled_stroke_tb, aes(x=factor(ever_married_Yes))) + 
+  geom_bar() + 
+  labs(x='1 if Ever Married, 0 if not', y='Count', title='Distribution of  Ever Married Status')
+
+# Distribution of Never Married 
+table(scaled_stroke_tb$ever_married_No)
+ggplot(scaled_stroke_tb, aes(x=factor(ever_married_No))) + 
+  geom_bar() + 
+  labs(x='1 if Never Married, 0 if not', y='Count', title='Distribution of Never Married Status')
+
+# Distribution of Work Type is Children
+table(scaled_stroke_tb$work_type_children)
+ggplot(scaled_stroke_tb, aes(x=factor(work_type_children))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Children, 0 if not', y='Count', title='Distribution of Work Type is Children')
+
+# Distribution of Work Type is Government job
+table(scaled_stroke_tb$work_type_Govt_job)
+ggplot(scaled_stroke_tb, aes(x=factor(work_type_Govt_job))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Government Job, 0 if not', y='Count', title='Distribution of Work Type is Government Job')
+
+# Distribution of Work Type is Never worked
+table(scaled_stroke_tb$work_type_Never_worked)
+ggplot(scaled_stroke_tb, aes(x=factor(work_type_Never_worked))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Never Worked, 0 if not', y='Count', title='Distribution of Work Type is Never worked')
+
+# Distribution of Work Type is Private
+table(scaled_stroke_tb$work_type_Private)
+ggplot(scaled_stroke_tb, aes(x=factor(work_type_Private))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Private, 0 if not', y='Count', title='Distribution of Work Type is Private')
+
+# Distribution of Work Type is Self-empployed
+table(scaled_stroke_tb$`work_type_Self-employed`)
+ggplot(scaled_stroke_tb, aes(x=factor(`work_type_Self-employed`))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Self-employed, 0 if not', y='Count', title='Distribution of Work Type is Self-employed')
+
+# Distribution of Residence Type is Rural
+table(scaled_stroke_tb$Residence_type_Rural)
+ggplot(scaled_stroke_tb, aes(x=factor(`Residence_type_Rural`))) + 
+  geom_bar() + 
+  labs(x='1 if Residence Type is Rural, 0 if not', y='Count', title='Distribution of Residence Type is Rural')
+
+# Distribution of Residence Type is Urban
+table(scaled_stroke_tb$Residence_type_Urban)
+ggplot(scaled_stroke_tb, aes(x=factor(`Residence_type_Urban`))) + 
+  geom_bar() + 
+  labs(x='1 if Residence Type is Urban, 0 if not', y='Count', title='Distribution of Residence Type is Urban')
+
+# Distribution of Formerly Smoked Status
+table(scaled_stroke_tb$`smoking_status_formerly smoked`)
+ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_formerly smoked`))) + 
+  geom_bar() + 
+  labs(x='1 if Formerly Smoked, 0 if not', y='Count', title='Distribution of Formerly Smoked Status')
+
+# Distribution of Never Smoked Status
+table(scaled_stroke_tb$`smoking_status_never smoked`)
+ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_never smoked`))) + 
+  geom_bar() + 
+  labs(x='1 if Never Smoked, 0 if not', y='Count', title='Distribution of Never Smoked Status')
+
+# Distribution of Smokes Status
+table(scaled_stroke_tb$smoking_status_smokes)
+ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_smokes`))) + 
+  geom_bar() + 
+  labs(x='1 if Smokes, 0 if not', y='Count', title='Distribution of Smokes Status')
+
+
+```
+
+Looking at the barplot, it seems that there is no case where gender is "Other" in the dataset.
+However, by executing the line of code below, we notice that there is one case where gender is "Other".  
+```{r}
+count_other_gender <- sum(scaled_stroke_tb$gender_Other)
+count_other_gender
+```
+To find on which line of the dataset one can find the individual in question, we use : 
+```{r}
+# Find the row indices for individuals where gender is "Other"
+other_gender_indices <- which(scaled_stroke_tb$gender_Other == 1)
+other_gender_indices
+# View the details of the individuals where gender is "Other"
+scaled_stroke_tb[other_gender_indices, ]
+```
+Another plot showing an interesting pattern is the distribution of "Work Type is Never worked". The low representation of this former category may suggest that this group is under-represented, which can often lead to instability in outlier identification and might necessitate further scrutiny of their characteristics. 
+
+The ditribution of residence type between rural and urban appears to be quiet equitable and can provide valuable insights into demographic representation.
 
 ### 2.6 Dataset Balancing
 
