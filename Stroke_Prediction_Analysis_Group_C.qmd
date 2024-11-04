@@ -335,6 +335,8 @@ The distribution of residence type between rural and urban appears to be quiet e
 
 ### 2.6 Dataset Balancing
 
+test
+
 ## 3. Exploratory Data Analysis
 
 ### 3.1 Descriptive Statistics
