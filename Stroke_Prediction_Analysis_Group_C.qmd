@@ -147,9 +147,6 @@ scaled_stroke_tb
 
 ### 2.5 Outlier Analysis
 
-### 
-### 2.5 Outlier Analysis
-
 Taking the standardized dataset, we first analyze the non-binary quantitative variables. To identify outliers, we use boxplots. The points outside the range delimited by the whiskers are the outliers.
 
 ```{r}
@@ -204,14 +201,11 @@ outlier_counts <- sapply(scaled_stroke_tb[, c("age", "avg_glucose_level", "bmi")
 # Display the outlier counts
 outlier_counts
 ```
-Finding zero outliers for age indicates a relatively normative distribution among stroke patients, suggesting accurate and reliable data.
-With a dataset containing 5,110 rows, the identification of 627 outliers for average glucose levels, representing approximately 12.25% of the total population, and 126 outliers for Body Mass Index (BMI), constituting about 2.47%, highlights disparities in the distribution of these health metrics.
-The notably higher percentage of glucose level outliers suggests a prevalence of extreme values that may indicate issues with glycemic control among individuals in this population.
-The presence of a relatively significant number of outliers, particularly in average glucose levels, can skew the dataset's overall mean and standard deviation, potentially leading to misleading interpretations. These outliers may disproportionately influence statistical models, such as the regression analyses, affecting outcomes and relationships. Hence, it will be essential to assess the impact of these outliers on model performance and prioritize careful handling, whether through removal, transformation, or separate analyses, to ensure robust conclusions and accurate insights.
-The presence of many outliers can sometimes point to measurement errors or inconsistencies in data collection. 
 
+Finding zero outliers for age indicates a relatively normative distribution among stroke patients, suggesting accurate and reliable data. With a dataset containing 5,110 rows, the identification of 627 outliers for average glucose levels, representing approximately 12.25% of the total population, and 126 outliers for Body Mass Index (BMI), constituting about 2.47%, highlights disparities in the distribution of these health metrics. The notably higher percentage of glucose level outliers suggests a prevalence of extreme values that may indicate issues with glycemic control among individuals in this population. The presence of a relatively significant number of outliers, particularly in average glucose levels, can skew the dataset's overall mean and standard deviation, potentially leading to misleading interpretations. These outliers may disproportionately influence statistical models, such as the regression analyses, affecting outcomes and relationships. Hence, it will be essential to assess the impact of these outliers on model performance and prioritize careful handling, whether through removal, transformation, or separate analyses, to ensure robust conclusions and accurate insights. The presence of many outliers can sometimes point to measurement errors or inconsistencies in data collection.
 
 To have a better view on the distribution of values, we can also create histograms.
+
 ```{r}
 hist(scaled_stroke_tb$age, breaks=30, main="Histogram of Age", xlab="Age", col="lightblue", border="black")
 
@@ -221,7 +215,9 @@ hist(scaled_stroke_tb$avg_glucose_level, breaks=30, main="Histogram of Average G
 # Histogram for BMI
 hist(scaled_stroke_tb$bmi, breaks=30, main="Histogram of BMI", xlab="BMI", col="lightcoral", border="black")
 ```
+
 Now that we have conducted the analysis of the non-binary variables, we check the distribution of the binary variables.
+
 ```{r}
 # Distribution of Gender Male
 table(scaled_stroke_tb$gender_Male)
@@ -316,13 +312,15 @@ ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_smokes`))) +
 
 ```
 
-Looking at the barplot, it seems that there is no case where gender is "Other" in the dataset.
-However, by executing the line of code below, we notice that there is one case where gender is "Other".  
+Looking at the barplot, it seems that there is no case where gender is "Other" in the dataset. However, by executing the line of code below, we notice that there is one case where gender is "Other".
+
 ```{r}
 count_other_gender <- sum(scaled_stroke_tb$gender_Other)
 count_other_gender
 ```
-To find on which line of the dataset one can find the individual in question, we use : 
+
+To find on which line of the dataset one can find the individual in question, we use :
+
 ```{r}
 # Find the row indices for individuals where gender is "Other"
 other_gender_indices <- which(scaled_stroke_tb$gender_Other == 1)
@@ -330,9 +328,10 @@ other_gender_indices
 # View the details of the individuals where gender is "Other"
 scaled_stroke_tb[other_gender_indices, ]
 ```
-Another plot showing an interesting pattern is the distribution of "Work Type is Never worked". The low representation of this former category may suggest that this group is under-represented, which can often lead to instability in outlier identification and might necessitate further scrutiny of their characteristics. 
 
-The ditribution of residence type between rural and urban appears to be quiet equitable and can provide valuable insights into demographic representation.
+Another plot showing an interesting pattern is the distribution of "Work Type is Never worked". The low representation of this former category may suggest that this group is under-represented, which can often lead to instability in outlier identification and might necessitate further scrutiny of their characteristics.
+
+The distribution of residence type between rural and urban appears to be quiet equitable and can provide valuable insights into demographic representation.
 
 ### 2.6 Dataset Balancing
 
