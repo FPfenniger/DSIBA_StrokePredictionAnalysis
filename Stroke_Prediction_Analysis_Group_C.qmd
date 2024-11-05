@@ -9,7 +9,11 @@ execute:
 ## 1. Introduction and Data Structure
 
 ### 1.1 Overview & Motivation
-
+Bolor (report: Intro)
+Introduction 2
+Project Goals . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+Research Questions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+Adjustments or Refinements .
 ### 1.2 Related Work
 
 ### 1.3 Research Questions
@@ -379,10 +383,30 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 ## 3. Exploratory Data Analysis
 
 ### 3.1 Descriptive Statistics
+#Responsible person: Bolor
+#And put the work into the intermediary report as well.
+#use interactive charts
+#use data viz
+```{r}
+# Histogram for age
+ggplot(encoded_stroke_tb, aes(x = age)) + 
+  geom_histogram(binwidth = 1, fill = "dark grey", color = "white") +
+  labs(title = "Distribution of Age", x = "Age", y = "Frequency")
+```
+
+```{r}
+# Boxplot for hypertension
+ggplot(preprocessed_stroke_tb, aes(y = hypertension, x = factor(stroke))) + 
+  geom_boxplot() +
+  labs(title = "Hypertension by Stroke Outcome", x = "Stroke (0 = No, 1 = Yes)", y = "Hypertension")
+```
+
 
 ### 3.2 Data Visualization
+#Responsible person Muhammed
 
 ### 3.3 Correlation Analysis
+#Responsible person Fabio
 
 Multicollinearity
 
