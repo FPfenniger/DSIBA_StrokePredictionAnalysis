@@ -147,17 +147,17 @@ scaled_stroke_tb
 
 ### 2.5 Outlier Analysis
 
-Taking the standardized dataset, we first analyze the non-binary quantitative variables. To identify outliers, we use boxplots. The points outside the range delimited by the whiskers are the outliers.
+Looking at the encoded stroke dataset for the categorical variables, we notice that there are only 3 non-binary quantitative variables : age, average glucose level and bmi. To visualize outliers in each of these variables, we use boxplots. The points outside the range delimited by the whiskers are the outliers.
 
 ```{r}
 # Boxplot for Age
-boxplot(scaled_stroke_tb$age, main="Boxplot of Age", ylab="Age", col="lightblue")
+boxplot(encoded_stroke_tb$age, main="Boxplot of Age", ylab="Age", col="lightblue")
 
 # Boxplot for Average Glucose Level
-boxplot(scaled_stroke_tb$avg_glucose_level, main="Boxplot of Average Glucose Level", ylab="Average Glucose Level", col="lightgreen")
+boxplot(encoded_stroke_tb$avg_glucose_level, main="Boxplot of Average Glucose Level", ylab="Average Glucose Level", col="lightgreen")
 
 # Boxplot for BMI
-boxplot(scaled_stroke_tb$bmi, main="Boxplot of BMI", ylab="BMI", col="lightcoral")
+boxplot(encoded_stroke_tb$bmi, main="Boxplot of BMI", ylab="BMI", col="lightcoral")
 
 #We use the IQR method to identify outliers
 identify_outliers <- function(column) {
@@ -207,13 +207,13 @@ Finding zero outliers for age indicates a relatively normative distribution amon
 To have a better view on the distribution of values, we can also create histograms.
 
 ```{r}
-hist(scaled_stroke_tb$age, breaks=30, main="Histogram of Age", xlab="Age", col="lightblue", border="black")
+hist(encoded_stroke_tb$age, breaks=30, main="Histogram of Age", xlab="Age", col="lightblue", border="black")
 
 # Histogram for Average Glucose Level
-hist(scaled_stroke_tb$avg_glucose_level, breaks=30, main="Histogram of Average Glucose Level", xlab="Average Glucose Level", col="lightgreen", border="black")
+hist(encoded_stroke_tb$avg_glucose_level, breaks=30, main="Histogram of Average Glucose Level", xlab="Average Glucose Level", col="lightgreen", border="black")
 
 # Histogram for BMI
-hist(scaled_stroke_tb$bmi, breaks=30, main="Histogram of BMI", xlab="BMI", col="lightcoral", border="black")
+hist(encoded_stroke_tb$bmi, breaks=30, main="Histogram of BMI", xlab="BMI", col="lightcoral", border="black")
 ```
 
 Now that we have conducted the analysis of the non-binary variables, we check the distribution of the binary variables.
