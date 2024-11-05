@@ -367,12 +367,29 @@ scaled_stroke_tb$stroke <- as.factor(scaled_stroke_tb$stroke)
 balanced_stroke_tb <- upSample(x = scaled_stroke_tb[, names(scaled_stroke_tb) != "stroke"],
                                y = scaled_stroke_tb$stroke)
 
-# count how many people had a stroke and the prop
-
+# count how many people had a stroke and the prop in the balanced dataset
 balanced_stroke_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2))
+```
+
+```{r}
+stroke_test <- scaled_stroke_tb %>%
+mutate(
+    stroke = as.character(stroke),
+    across(where(is.factor), as.numeric),
+    stroke = factor(stroke)
+)
+
+stroke_oversampled <- oversample(as.data.frame(stroke_test), classAttr = "stroke", ratio = 1, method = "MWMOTE")
+
+head(stroke_oversampled)
+
+stroke_oversampled %>%
+group_by(stroke) %>%
+summarize(n = n()) %>%
+mutate(prop = round(n / sum(n), 2))
 ```
 
 
