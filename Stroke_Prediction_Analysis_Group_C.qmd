@@ -398,7 +398,7 @@ ggplot(encoded_stroke_tb, aes(x = age)) +
 
 ```{r}
 # Boxplot for hypertension
-ggplot(preprocessed_stroke_tb, aes(y = hypertension, x = factor(stroke))) + 
+ggplot(encoded_stroke_tb, aes(y = hypertension, x = factor(stroke))) + 
   geom_boxplot() +
   labs(title = "Hypertension by Stroke Outcome", x = "Stroke (0 = No, 1 = Yes)", y = "Hypertension")
 ```
