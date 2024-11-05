@@ -129,7 +129,14 @@ encoded_stroke_tb
 
 Multicollinearity between the different features will be a problem for our model. It will be treated in the Correlation Analysis.
 
-```{}
+```{r}
+categorical_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb,is.integer)]
+numerical_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb, is.double)]
+
+# Use sprintf to format the message, then cat to print it with line breaks
+cat(sprintf("Categorical features: %s\nNumerical features: %s",
+            paste(categorical_variables, collapse = ", "),
+            paste(numerical_variables, collapse = ", ")))
 ```
 
 ### 2.5 Outlier Analysis
@@ -386,7 +393,21 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 #### 3.3.1 Target Variable Analysis
 
-#### 3.3.2 Bivariate Analysis 
+In the first part of the correlation analysis, we examine how predictor variables are correlated with our target variable `stroke`. Let' start with all the continuous predictors:
+
+```{r}
+target_var_corr_plots <- lapply(numerical_variables, function(var) {
+  ggplot(encoded_stroke_tb, aes_string(x = "factor(target)", y = var)) +
+    geom_violin() +
+    labs(x = "Stroke Occurrence", y = var, title = paste(var, "by Stroke Occurrence")) +
+    theme_minimal()
+})
+
+
+
+```
+
+#### 3.3.2 Bivariate Analysis
 
 Correlation Matrix, Chi-Square test for dependencies between categorical variables
 
