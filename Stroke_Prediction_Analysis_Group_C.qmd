@@ -396,14 +396,57 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 In the first part of the correlation analysis, we examine how predictor variables are correlated with our target variable `stroke`. Let' start with all the continuous predictors:
 
 ```{r}
-target_var_corr_plots <- lapply(numerical_variables, function(var) {
-  ggplot(encoded_stroke_tb, aes_string(x = "factor(target)", y = var)) +
-    geom_violin() +
-    labs(x = "Stroke Occurrence", y = var, title = paste(var, "by Stroke Occurrence")) +
-    theme_minimal()
-})
+ggplot(encoded_stroke_tb, aes(x = factor(stroke), y = age)) +
+  geom_violin() +
+  labs(x = "Stroke Occurrence", y = "Age", title = "Age Distribution by Stroke Occurrence") +
+  theme_minimal()
 
+```
 
+```{r}
+library(shiny)
+library(plotly)
+library(dplyr)
+
+# Example dataset (use your actual dataset)
+# Assuming encoded_stroke_tb is your dataset and "target" is the binary target variable
+encoded_stroke_tb <- data.frame(
+  target = sample(c(0, 1), 100, replace = TRUE),
+  age = rnorm(100, 50, 10),
+  bmi = rnorm(100, 25, 5),
+  avg_glucose_level = rnorm(100, 100, 20)
+)
+
+# Define UI for the app
+ui <- fluidPage(
+  titlePanel("Violin Plot for Stroke Prediction Variables"),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("variable", "Select Variable:", 
+                  choices = c("age", "bmi", "avg_glucose_level"))
+    ),
+    mainPanel(
+      plotlyOutput("violinPlot")
+    )
+  )
+)
+
+# Define server logic for the app
+server <- function(input, output) {
+  output$violinPlot <- renderPlotly({
+    # Generate the violin plot for the selected variable
+    p <- ggplot(encoded_stroke_tb, aes_string(x = "factor(target)", y = input$variable)) +
+      geom_violin(fill = "skyblue", alpha = 0.7) +
+      labs(x = "Stroke Occurrence", y = input$variable, title = paste(input$variable, "by Stroke Occurrence")) +
+      theme_minimal()
+    
+    # Convert the ggplot to a plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
 
 ```
 
