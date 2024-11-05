@@ -133,20 +133,7 @@ encoded_stroke_tb
 
 Multicollinearity between the different features will be a problem for our model. It will be treated in the Correlation Analysis.
 
-### 2.4 Feature Scaling
-
-Classification algorithms are often sensitive to scales. To prevent perturbations we standardize all continuous features in the dataset.
-
-```{r}
-scaled_stroke_tb <- encoded_stroke_tb
-
-# Scale only the double columns
-scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- 
-  lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
-
-scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
-
-scaled_stroke_tb
+```{}
 ```
 
 ### 2.5 Outlier Analysis
@@ -323,7 +310,7 @@ count_other_gender <- sum(scaled_stroke_tb$gender_Other)
 count_other_gender
 ```
 
-As it is only present once in all the dataset (5'110 obeservations), we decide to delete this variable. 
+As it is only present once in all the dataset (5'110 obeservations), we decide to delete this variable.
 
 To find on which line of the dataset one can find the individual in question, we use :
 
@@ -448,12 +435,50 @@ sankeyNetwork(
 ```
 
 ### 3.2 Data Visualization
+# Basic Information: Start by loading the dataset and using functions like .info() and .describe() to get a sense of its size, data types, and statistical distribution. Look for null values, data types, and any inconsistencies (e.g., unexpected characters or formats)
+
+# Target Variable: Assess the distribution of the target variable (stroke occurrence). Since stroke prediction is likely to involve a class imbalance, check for it here by calculating the percentage of stroke vs. non-stroke cases.
+```
+
+### 3.2 Univariate Analysis
+
+```{r}
+#Continuous Variables: Plot histograms or KDE plots for each continuous variable (e.g., age, blood pressure, BMI) to see their distribution and check for skewness or outliers.
+# Categorical Variables: Use bar charts to assess distributions of categorical variables (e.g., gender, smoking status). For each category, look for values with low frequencies or irrelevant categories.
+```
 
 
 ### 3.3 Correlation Analysis
 
 
 Multicollinearity
+#### 3.3.1 Target Variable Analysis
+
+#### 3.3.2 Bivariate Analysis 
+
+Correlation Matrix, Chi-Square test for dependencies between categorical variables
+
+#### 3.3.3 Multivariate Analysis
+
+Mulitcollinearity & Interactions
+
+### 3.4 Feature Scaling
+
+Classification algorithms are often sensitive to scales. To prevent perturbations we standardize all continuous features in the dataset.
+
+--\> finished balanced dataset as input :
+
+```{r}
+scaled_stroke_tb <- encoded_stroke_tb
+
+#Scale only the double columns
+
+scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
+
+scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
+
+scaled_stroke_tb
+```
 
 ## 4. Predictive Model
 
