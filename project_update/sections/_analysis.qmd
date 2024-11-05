@@ -1,0 +1,20 @@
+# Analysis
+
+## Methods
+Outline the preliminary statistical methods or models selected, along with the rationale for their selection.
+
+## Goals for Each Method
+Describe what each method aims to achieve or uncover in the data.
+
+```{r}
+#| label: initial-analysis
+#| eval: false # do not evaluate as this is just an example
+
+# Example code block for model setup
+# Setting up a linear model
+model <- lm(outcome_variable ~ predictor_variable, data = data_clean)
+summary(model)
+```
+
+## Preliminary Results
+Provide any preliminary results or observations from applying these methods.

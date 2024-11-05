@@ -1,0 +1,10 @@
+# Conclusion
+
+## Progress Summary
+Summarize what has been achieved so far, including key insights or takeaways from the analysis and EDA.
+
+## Next Steps
+Outline the next steps planned for completing the project, such as refining analyses, adding new methods, or addressing outstanding data issues.
+
+## Final Thoughts
+Briefly reflect on any challenges or limitations encountered so far and how these might be addressed in the final report.

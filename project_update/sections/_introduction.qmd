@@ -1,0 +1,12 @@
+# Introduction
+
+## Project Goals
+Describe the main goals of the project, including the motivation behind the research and the key questions you aim to answer.
+
+## Research Questions
+- Question 1: ...
+- Question 2: ...
+- (Add as necessary)
+
+## Adjustments or Refinements
+Discuss any changes or refinements to the project scope or questions based on initial findings or data constraints.
