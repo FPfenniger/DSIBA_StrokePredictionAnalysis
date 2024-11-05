@@ -209,13 +209,13 @@ Finding zero outliers for age indicates a relatively normative distribution amon
 To have a better view on the distribution of values, we can also create histograms.
 
 ```{r}
-hist(scaled_stroke_tb$age, breaks=30, main="Histogram of Age", xlab="Age", col="lightblue", border="black")
+hist(encoded_stroke_tb$age, breaks=30, main="Histogram of Age", xlab="Age", col="lightblue", border="black")
 
 # Histogram for Average Glucose Level
-hist(scaled_stroke_tb$avg_glucose_level, breaks=30, main="Histogram of Average Glucose Level", xlab="Average Glucose Level", col="lightgreen", border="black")
+hist(encoded_stroke_tb$avg_glucose_level, breaks=30, main="Histogram of Average Glucose Level", xlab="Average Glucose Level", col="lightgreen", border="black")
 
 # Histogram for BMI
-hist(scaled_stroke_tb$bmi, breaks=30, main="Histogram of BMI", xlab="BMI", col="lightcoral", border="black")
+hist(encoded_stroke_tb$bmi, breaks=30, main="Histogram of BMI", xlab="BMI", col="lightcoral", border="black")
 ```
 
 Now that we have conducted the analysis of the non-binary variables, we check the distribution of the binary variables.
