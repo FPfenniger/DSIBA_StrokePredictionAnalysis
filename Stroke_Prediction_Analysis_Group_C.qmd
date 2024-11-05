@@ -22,8 +22,6 @@ execute:
 library(tidyverse)
 library(knitr)
 library(naniar)
-library(caret)
-library(imbalance)
 ```
 
 You can add options to executable code like this
@@ -354,44 +352,29 @@ scaled_stroke_tb %>%
 
 ```
 
-The majoriy of persons are not subject to strokes in the dataset. This is in line with the general population. However for our analysis, we can try to optimise our dataset for later predictions by balancing the proportions of no_stroke and strokes. By either down-sampling meaning reducing the number of people with no strokes, or up-sampling enhancing the proportion of people with strokes.
+The dataset shows that most individuals do not have strokes, aligning with trends in the general population. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. To address this, we can use dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. This can be done through down-sampling (reducing the number of no-stroke cases) or up-sampling (increasing the number of stroke cases).
 
-Since the dataset is only made up of 5110 individuals, I chose to up-sample the dataset.
+Since the dataset contains only 5,110 individuals, I chose to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
 
 ```{r}
-# Check imbalance ratio by upsampling
-# Upsample the data to balance the 'stroke' column
-# Ensure the stroke column is a factor
+# Load caret library
+library(caret)
+
+# Convert 'stroke' to a factor, if it isn't already
 scaled_stroke_tb$stroke <- as.factor(scaled_stroke_tb$stroke)
 
-# Now apply upSample
+# Use upSample to balance the dataset
 balanced_stroke_tb <- upSample(x = scaled_stroke_tb[, names(scaled_stroke_tb) != "stroke"],
-                               y = scaled_stroke_tb$stroke)
+                               y = scaled_stroke_tb$stroke,
+                               yname = "stroke")
 
-# count how many people had a stroke and the prop in the balanced dataset
-balanced_stroke_tb %>%
-  group_by(stroke) %>%
-  summarize(count = n()) %>%
-  mutate(proportion = round(count / sum(count), 2))
+# Check the distribution to confirm balancing
+table(balanced_stroke_tb$stroke)
 ```
 
-```{r}
-stroke_test <- scaled_stroke_tb %>%
-mutate(
-    stroke = as.character(stroke),
-    across(where(is.factor), as.numeric),
-    stroke = factor(stroke)
-)
+Are the proportions of variables such as age, gender, and hypertension in the up-sampled stroke cases similar to those in the original stroke cases?
 
-stroke_oversampled <- oversample(as.data.frame(stroke_test), classAttr = "stroke", ratio = 1, method = "MWMOTE")
-
-head(stroke_oversampled)
-
-stroke_oversampled %>%
-group_by(stroke) %>%
-summarize(n = n()) %>%
-mutate(prop = round(n / sum(n), 2))
-```
+When we up-sample the minority class (stroke cases), we create artificial (or duplicated) rows to balance the dataset. In most basic up-sampling methods, like simple random sampling with replacement, these additional rows are duplicates of existing stroke cases. As a result, the distribution of other variables/columns (such as age, BMI, etc.) among stroke cases in the balanced dataset will match the original proportions found in the smaller stroke class of the initial dataset.
 
 ## 3. Exploratory Data Analysis
 
