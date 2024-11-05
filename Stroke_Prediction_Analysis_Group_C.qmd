@@ -16,12 +16,13 @@ editor: visual
 
 ### 1.5 Data Import
 
-Make changes hhhh
 
 ```{r}
 library(tidyverse)
 library(knitr)
 library(naniar)
+library(caret)
+library(imbalance)
 ```
 
 You can add options to executable code like this
@@ -335,7 +336,45 @@ The distribution of residence type between rural and urban appears to be quiet e
 
 ### 2.6 Dataset Balancing
 
-test
+
+```{r}
+
+# Distribution of strokes vs no strokes in the sample
+table(scaled_stroke_tb$stroke)
+ggplot(scaled_stroke_tb, aes(x=factor(`stroke`))) + 
+  geom_bar() + 
+  labs(x='0 no strokes, 1 strokes', y='Count', title='Distribution of strokes')
+
+
+# count how many people had a stroke and the prop
+scaled_stroke_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2))
+
+```
+The majoriy of persons are not subject to strokes in the dataset. This is in line with the general population. However for our analysis, we can try to optimise our dataset for later predictions by balancing the proportions of no_stroke and strokes. By either down-sampling meaning reducing the number of people with no strokes, or up-sampling enhancing the proportion of people with strokes.
+
+Since the dataset is only made up of 5110 individuals, I chose to up-sample the dataset.
+
+```{r}
+# Check imbalance ratio by upsampling
+# Upsample the data to balance the 'stroke' column
+# Ensure the stroke column is a factor
+scaled_stroke_tb$stroke <- as.factor(scaled_stroke_tb$stroke)
+
+# Now apply upSample
+balanced_stroke_tb <- upSample(x = scaled_stroke_tb[, names(scaled_stroke_tb) != "stroke"],
+                               y = scaled_stroke_tb$stroke)
+
+# count how many people had a stroke and the prop
+
+balanced_stroke_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2))
+```
+
 
 ## 3. Exploratory Data Analysis
 
