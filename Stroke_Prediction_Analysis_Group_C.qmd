@@ -385,10 +385,7 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 ## 3. Exploratory Data Analysis
 
 ### 3.1 Descriptive Statistics
-#Responsible person: Bolor
-#And put the work into the intermediary report as well.
-#use interactive charts
-#use data viz
+
 ```{r}
 # Histogram for age
 ggplot(encoded_stroke_tb, aes(x = age)) + 
@@ -403,12 +400,58 @@ ggplot(encoded_stroke_tb, aes(y = hypertension, x = factor(stroke))) +
   labs(title = "Hypertension by Stroke Outcome", x = "Stroke (0 = No, 1 = Yes)", y = "Hypertension")
 ```
 
+```{r}
+# Assuming your dataset is named scaled_stroke_tb
+# Create a summarized data frame for the Sankey diagram
+library(networkD3)
+library(dplyr)
+
+# Summarizing the counts based on hypertension and stroke
+flow_data_hypertension <- scaled_stroke_tb %>%
+  group_by(hypertension, stroke) %>%
+  summarise(count = n()) %>%
+  ungroup()
+
+# Summarizing the counts based on heart disease and stroke
+flow_data_heart_disease <- scaled_stroke_tb %>%
+  group_by(heart_disease, stroke) %>%
+  summarise(count = n()) %>%
+  ungroup()
+
+# Combine the two data frames into one for the Sankey diagram
+flow_data <- bind_rows(
+  flow_data_hypertension %>% mutate(from = as.character(hypertension), to = ifelse(stroke == 1, "Stroke", "No Stroke")),
+  flow_data_heart_disease %>% mutate(from = as.character(heart_disease), to = ifelse(stroke == 1, "Stroke", "No Stroke"))
+)
+
+# Prepare a unique list of nodes
+nodes <- data.frame(name = unique(c(flow_data$from, flow_data$to)))
+```
+
+```{r}
+# Create the links for the Sankey diagram
+flow_data$IDsource <- match(flow_data$from, nodes$name) - 1  # R uses 0-indexing for nodes
+flow_data$IDtarget <- match(flow_data$to, nodes$name) - 1
+
+# Generate the Sankey diagram
+sankeyNetwork(
+  Links = flow_data,
+  Nodes = nodes,
+  Source = 'IDsource',
+  Target = 'IDtarget',
+  Value = 'count',
+  NodeID = 'name',
+  units = 'Count',
+  fontSize = 12,
+  nodeWidth = 30
+)
+```
 
 ### 3.2 Data Visualization
-#Responsible person Muhammed
+
 
 ### 3.3 Correlation Analysis
-#Responsible person Fabio
+
 
 Multicollinearity
 
