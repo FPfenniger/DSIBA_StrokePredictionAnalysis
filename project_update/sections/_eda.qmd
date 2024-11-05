@@ -1,0 +1,28 @@
+# Exploratory Data Analysis (EDA)
+
+## Initial Visualizations
+Present initial visualizations to help understand data distributions and relationships between variables.
+
+```{r}
+#| label: initial-visualizations
+#| eval: false # do not evaluate as this is just an example
+
+# Example code block for EDA visualization: Histogram of a numeric variable (once again, we already loaded `ggplot2` in the setup chunk)
+ggplot(data_clean, aes(x = numeric_variable)) +
+  geom_histogram(binwidth = 5) +
+  labs(title = "Distribution of Numeric Variable")
+```
+
+## Summary Statistics
+Provide summary statistics for key variables to give an overview of the data.
+
+```{r}
+#| label: summary-statistics
+#| eval: false # do not evaluate as this is just an example
+
+# Summary statistics example
+summary(data_clean)
+```
+
+## Key Findings or Patterns
+Summarize any preliminary patterns or insights observed in the data so far.

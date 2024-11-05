@@ -1,0 +1,41 @@
+# Data
+
+## Sources
+Describe the sources of your data, such as public datasets, API collections, or scraped data.
+
+## Description
+Summarize the main features of the dataset, including the types of variables, their formats, and any relevant metadata.
+
+## Wrangling/Cleaning
+Document the data preprocessing steps taken so far, including cleaning, transformation, and any merging of datasets.
+
+## Spotting Mistakes and Missing Data
+Discuss any identified mistakes or issues with missing data and describe your approach to handling them.
+
+## Listing Anomalies and Outliers
+Identify any anomalies or outliers discovered so far, along with your approach to assessing their impact.
+
+```{r}
+#| label: data-cleaning
+
+# Example of a code block for data cleaning
+
+# load data
+# Example loading and cleaning steps
+data <- read.csv(here::here("data/raw/data_raw.csv"))
+
+# Example cleaning steps (we already loaded `tidyverse` in the report setup chunk)
+data_clean <- data %>%
+  filter(!is.na(behavior) & !is.na(performance)) %>%  # filter out NAs in both relevant columns
+  mutate(
+    behavior = as.factor(behavior),    # convert behavior to factor
+    TA = as.factor(TA)                 # also convert TA to factor since it's categorical
+  )
+
+knitr::kable(data_clean)
+
+# Write the cleaned data to a new file
+# e.g. 
+# write.csv(data_clean, "data/clean/data_processed.csv", row.names = FALSE)
+
+```
