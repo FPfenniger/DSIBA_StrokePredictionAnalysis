@@ -352,7 +352,7 @@ scaled_stroke_tb %>%
 
 ```
 
-The dataset shows that most individuals do not have strokes, aligning with trends in the general population. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. To address this, we can use dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. This can be done through down-sampling (reducing the number of no-stroke cases) or up-sampling (increasing the number of stroke cases).
+The dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. To address this, we can use dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. This can be done through down-sampling (reducing the number of no-stroke cases) or up-sampling (increasing the number of stroke cases).
 
 Since the dataset contains only 5,110 individuals, I chose to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
 
