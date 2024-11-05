@@ -312,12 +312,14 @@ ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_smokes`))) +
 
 ```
 
-Looking at the barplot, it seems that there is no case where gender is "Other" in the dataset. However, by executing the line of code below, we notice that there is one case where gender is "Other".
+Looking at the barplot for gender is "Other", it seems that there is no case where gender is "Other" in the dataset. However, by executing the line of code below, we notice that there is one case where gender is "Other".
 
 ```{r}
 count_other_gender <- sum(scaled_stroke_tb$gender_Other)
 count_other_gender
 ```
+
+As it is only present once in all the dataset (5'110 obeservations), we decide to delete this variable. 
 
 To find on which line of the dataset one can find the individual in question, we use :
 
