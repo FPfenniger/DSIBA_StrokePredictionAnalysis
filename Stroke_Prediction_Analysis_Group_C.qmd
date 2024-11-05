@@ -2,6 +2,8 @@
 title: "Stroke_Prediction_Analysis_Group_C"
 format: html
 editor: visual
+execute:
+  cache: true
 ---
 
 ## 1. Introduction and Data Structure
@@ -15,7 +17,6 @@ editor: visual
 ### 1.4 Data Source
 
 ### 1.5 Data Import
-
 
 ```{r}
 library(tidyverse)
@@ -336,7 +337,6 @@ The distribution of residence type between rural and urban appears to be quiet e
 
 ### 2.6 Dataset Balancing
 
-
 ```{r}
 
 # Distribution of strokes vs no strokes in the sample
@@ -353,6 +353,7 @@ scaled_stroke_tb %>%
   mutate(proportion = round(count / sum(count), 2))
 
 ```
+
 The majoriy of persons are not subject to strokes in the dataset. This is in line with the general population. However for our analysis, we can try to optimise our dataset for later predictions by balancing the proportions of no_stroke and strokes. By either down-sampling meaning reducing the number of people with no strokes, or up-sampling enhancing the proportion of people with strokes.
 
 Since the dataset is only made up of 5110 individuals, I chose to up-sample the dataset.
@@ -391,7 +392,6 @@ group_by(stroke) %>%
 summarize(n = n()) %>%
 mutate(prop = round(n / sum(n), 2))
 ```
-
 
 ## 3. Exploratory Data Analysis
 
