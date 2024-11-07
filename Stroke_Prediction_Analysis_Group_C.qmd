@@ -87,7 +87,7 @@ cleaned_stroke_tb <- replace_with_na(data = stroke_tb,
 cleaned_stroke_tb
 ```
 
-We update the lists of categorical and numerical columns, as \`bmi\` is now a double.
+We update the lists of categorical and numerical columns, as `bmi` is now a double.
 
 ```{r}
 categorical_variables_1 <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb,is.character)]
@@ -378,43 +378,27 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.2 Univariate Analysis
 
-```{r}
-#Continuous Variables: Plot histograms or KDE plots for each continuous variable (e.g., age, blood pressure, BMI) to see their distribution and check for skewness or outliers.
-# Categorical Variables: Use bar charts to assess distributions of categorical variables (e.g., gender, smoking status). For each category, look for values with low frequencies or irrelevant categories.
-```
-
-### 3.3 Correlation Analysis
-
-#### 3.3.1 Target Variable Analysis
-
-In the first part of the correlation analysis, we examine how predictor variables are correlated with our target variable `stroke`. Let' start with all the continuous predictors:
-
-```{r}
-ggplot(encoded_stroke_tb, aes(x = factor(stroke), y = age)) +
-  geom_violin() +
-  labs(x = "Stroke Occurrence", y = "Age", title = "Age Distribution by Stroke Occurrence") +
-  theme_minimal()
-
-```
+In the first part of the univariate analysis, we examine how predictor variables are correlated with our target variable `stroke`. In order to interpret correlations with `stroke` and distributions of the features simultaneously we use violin plots.
 
 ```{r}
 library(shiny)
 library(plotly)
 library(dplyr)
 
-# Shiny UI for selecting the variable
+# Shiny app with separate display of the correlation coefficient
 shinyApp(
   ui = fluidPage(
     selectInput("selected_variable", "Choose a Variable:", choices = numerical_variables),
-    plotlyOutput("violin_plot")
+    plotlyOutput("violin_plot"),
+    htmlOutput("correlation_text")  # Separate output for the correlation coefficient
   ),
   server = function(input, output) {
     
     output$violin_plot <- renderPlotly({
       selected_variable <- input$selected_variable
       
-      # Generate the violin plot using the selected variable name
-      plot_ly(encoded_stroke_tb, x = ~factor(stroke), y = as.formula(paste0("~", selected_variable)), type = "violin",
+      # Generate the violin plot
+      plot_ly(encoded_stroke_tb, x = ~factor(stroke), y = ~as.numeric(encoded_stroke_tb[[selected_variable]]), type = "violin",
               box = list(visible = TRUE),
               meanline = list(visible = TRUE)) %>%
         layout(
@@ -423,24 +407,57 @@ shinyApp(
           yaxis = list(title = selected_variable)
         )
     })
+    
+    # Render the correlation text below the plot
+    output$correlation_text <- renderUI({
+      selected_variable <- input$selected_variable
+      correlation <- cor(as.numeric(encoded_stroke_tb[[selected_variable]]), as.numeric(encoded_stroke_tb$stroke), method = "pearson")
+      HTML(paste("Correlation Coefficient with Stroke:", round(correlation, 2)))
+    })
   }
 )
+
 ```
 
+`age`:
+Although age appears to be somewhat related to the likelihood of experiencing a stroke, the correlation coefficient of 0.25 suggests only a modest association. The violin plot shows that stroke occurrences are more concentrated among older individuals, particularly in the age range of 60 to 80, with a mean age around 68 for stroke cases. While age may contribute to stroke risk, the relatively low correlation suggests it is one of multiple factors influencing stroke, rather than a strong standalone predictor.
+
+`avg_glucose_level`:
+The average glucose level has a weak correlation of 0.13 with stroke occurrence, indicating that while higher glucose levels are slightly more common among individuals who have experienced a stroke, the relationship is not strong. This aligns with medical knowledge, as elevated glucose levels are a known risk factor for stroke. However, in this dataset, the correlation is low, suggesting that glucose levels alone may not be a reliable predictor of stroke but could contribute when combined with other factors.
+
+`bmi`:
+With a correlation coefficient of only 0.04, BMI shows virtually no relationship with stroke in this dataset. Both groups (stroke and non-stroke) have similar central tendencies and ranges in BMI, indicating that BMI does not appear to be a significant predictor of stroke in this analysis. This weak association suggests that BMI may not play an important role in differentiating between stroke and non-stroke cases.
+
+Let's continue with the categorical variables and their relationship with the target variable `stroke`. Under the graphics we display further information about the association between the variables using the Chi-Square test and Cramér's V for effect size. Because Chi-square performs poorly on few instances, we remove in a first step outliers identified previously.
+
 ```{r}
-# Shiny UI for selecting the variable
+# Removing all the outliers identified previously
+outlier_stroke_tb <- subset(preprocessed_stroke_tb, gender != "Other" & work_type != "children" & !(work_type== "Never_worked"))
+```
+
+
+
+```{r}
+library(shiny)
+library(plotly)
+library(dplyr)
+library(vcd)
+
+# Shiny app with stacked bar chart and association test results
 shinyApp(
   ui = fluidPage(
     selectInput("selected_variable", "Choose a Variable:", choices = categorical_variables_1),
-    plotlyOutput("stacked_bar_chart")
+    plotlyOutput("stacked_bar_chart"),
+    htmlOutput("test_results")  # Output for Chi-Square and Cramér's V results
   ),
+  
   server = function(input, output) {
     
     output$stacked_bar_chart <- renderPlotly({
       selected_variable <- input$selected_variable
       
       # Generate the stacked bar chart data
-      plot_data <- preprocessed_stroke_tb %>%
+      plot_data <- outlier_stroke_tb %>%
         count(stroke = as.factor(stroke), category = as.factor(!!sym(selected_variable))) %>%
         rename(count = n)
       
@@ -453,15 +470,39 @@ shinyApp(
                yaxis = list(title = "Count"),
                legend = list(title = list(text = selected_variable)))
     })
+    
+    output$test_results <- renderUI({
+      selected_variable <- input$selected_variable
+      
+      # Create a contingency table for stroke and the selected categorical variable
+      contingency_table <- table(outlier_stroke_tb$stroke, outlier_stroke_tb[selected_variable]])
+      
+      # Check if the contingency table has enough data for the chi-square test
+      if (all(contingency_table > 0)) {
+        # Run the chi-square test
+        chi_square_result <- chisq.test(contingency_table)
+        
+        # Calculate Cramér's V to assess the strength of association
+        cramers_v <- assocstats(contingency_table)$cramer
+        
+        # Display the test results
+        HTML(paste(
+          "Chi-square P-value:", round(chi_square_result$p.value, 4), "<br>",
+          "Cramér's V:", round(cramers_v, 4)
+        ))
+      } else {
+        HTML("Insufficient data for Chi-Square test")
+      }
+    })
   }
 )
-
-
 ```
+
+
 
 #### 3.3.2 Bivariate Analysis
 
-Correlation Matrix, Chi-Square test for dependencies between categorical variables
+In our bivariate analysis, we examine the relationship between variables (here pairwise). For the numerical features we create a heatmap to display correlations:
 
 ```{r}
 numeric_columns <- encoded_stroke_tb %>% 
@@ -486,12 +527,84 @@ plot_ly(
     xaxis = list(title = "", tickangle = 45),
     yaxis = list(title = "")
   )
+```
+
+The results show that there exists a low to moderate correlation between our predictors. Overall we can conclude that the numerical features are relatively independent and have low predictive power on each other. In that sense, no multicollinearity is present and the predictors will add unique information to our model.
+
+In the next step we analyze the relationship between categorical features using a Chi-square test between different columns using contingency tables. A Chi-square test allows us to detect associations between features.
+
+```{r}
+# Loop through each unique pair of categorical variables
+for (index1 in 1:(length(categorical_variables_1) - 1)) {
+  var1 <- categorical_variables_1[index1]
+  
+  for (index2 in (index1 + 1):length(categorical_variables_1)) {
+    var2 <- categorical_variables_1[index2]
+    
+    # Create a contingency table
+    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
+    
+    # Run the chi-square test
+    chi_square_result <- chisq.test(contingency_table)
+    
+    # Print the result if it's significant
+    if (chi_square_result$p.value < 0.05) {
+      cat("Significant relationship between", var1, "and", var2, "\n")
+      cat("P-value:", chi_square_result$p.value, "\n")
+      print(contingency_table)
+      cat("\n")
+    }
+  }
+}
 
 ```
 
-#### 3.3.3 Multivariate Analysis
+There seems to be an issue with outliers in our previous analysis, as a chi-square performs relatively poor on few instances. First we remove all outliers from the dataset and then use Cramér's V to test the effect size of the association between variables. We set a threshold of V=0.3 for a moderate magnitude effect for the following analysis:
 
-Mulitcollinearity & Interactions
+```{r}
+# Removing all the outliers identified previously
+preprocessed_stroke_tb <- subset(preprocessed_stroke_tb, gender != "Other" & work_type != "children")
+# Remove rows where work_type is "Never_worked" and smoking_status is either "smokes" or "formerly smoked"
+preprocessed_stroke_tb <- preprocessed_stroke_tb[!(preprocessed_stroke_tb$work_type== "Never_worked" & preprocessed_stroke_tb$smoking_status %in% c("smokes", "formerly smoked")), ]
+
+```
+
+```{r}
+# Load necessary library for Cramér's V
+library(vcd)
+
+# Loop through each unique pair of categorical variables
+for (index1 in 1:(length(categorical_variables_1) - 1)) {
+  var1 <- categorical_variables_1[index1]
+  
+  for (index2 in (index1 + 1):length(categorical_variables_1)) {
+    var2 <- categorical_variables_1[index2]
+    
+    # Create a contingency table
+    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
+    
+    # Check if the contingency table has enough data for the chi-square test
+    if (all(contingency_table > 0)) {
+      # Run the chi-square test
+      chi_square_result <- chisq.test(contingency_table)
+      
+      # Calculate Cramér's V to assess the strength of association
+      cramers_v <- assocstats(contingency_table)$cramer
+      
+      # Display the results for each pair
+      cat("Relationship between", var1, "and", var2, "\n")
+      cat("Chi-square P-value:", chi_square_result$p.value, "\n")
+      cat("Cramér's V:", cramers_v, "\n")
+      print(contingency_table)
+      cat("\n")
+    } else {
+      cat("Skipping test for", var1, "and", var2, "due to insufficient data\n")
+    }
+  }
+}
+```
+
+As no effect size appears to be greater than 0.3, we can safely conclude that our categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
 ### 3.4 Feature Scaling
 
