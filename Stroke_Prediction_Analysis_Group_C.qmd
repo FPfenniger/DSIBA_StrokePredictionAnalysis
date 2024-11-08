@@ -434,6 +434,11 @@ sankeyNetwork(
 )
 ```
 
+```{r}
+
+```
+
+
 ### 3.2 Data Visualization
 # Basic Information: Start by loading the dataset and using functions like .info() and .describe() to get a sense of its size, data types, and statistical distribution. Look for null values, data types, and any inconsistencies (e.g., unexpected characters or formats)
 
