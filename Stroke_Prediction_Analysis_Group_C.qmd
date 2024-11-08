@@ -1,9 +1,10 @@
 ---
 title: "Stroke_Prediction_Analysis_Group_C"
 format: html
+runtime: shiny
 editor: visual
 execute:
-  cache: true
+  cache: false
 ---
 
 ## 1. Introduction and Data Structure
@@ -90,15 +91,15 @@ cleaned_stroke_tb <- replace_with_na(data = stroke_tb,
 cleaned_stroke_tb
 ```
 
-We update the lists of categorical and numerical columns, as \`bmi\` is now a double.
+We update the lists of categorical and numerical columns, as `bmi` is now a double.
 
 ```{r}
-categorical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb,is.character)]
+categorical_variables_1 <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb,is.character)]
 numerical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, is.numeric)]
 
 # Use sprintf to format the message, then cat to print it with line breaks
 cat(sprintf("Categorical features: %s\nNumerical features: %s",
-            paste(categorical_variables, collapse = ", "),
+            paste(categorical_variables_1, collapse = ", "),
             paste(numerical_variables, collapse = ", ")))
 ```
 
@@ -121,19 +122,26 @@ preprocessed_stroke_tb
 
 ### 2.3 Categorical Feature Encoding
 
-To make use of our categorical variables in our predictive model, we need to convert them into dummy variables. We use the \`fastDummies\` package for the One Hot Encoding.
+To make use of our categorical variables in our predictive model, we need to convert them into dummy variables. We use the `fastDummies` package for the One Hot Encoding.
 
 ```{r}
 library(fastDummies)
 
-encoded_stroke_tb <- dummy_cols(preprocessed_stroke_tb, select_columns=categorical_variables, remove_selected_columns = TRUE)
+encoded_stroke_tb <- dummy_cols(preprocessed_stroke_tb, select_columns=categorical_variables_1, remove_selected_columns = TRUE)
 
 encoded_stroke_tb
 ```
 
 Multicollinearity between the different features will be a problem for our model. It will be treated in the Correlation Analysis.
 
-```{}
+```{r}
+categorical_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb,is.integer)]
+numerical_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb, is.double)]
+
+# Use sprintf to format the message, then cat to print it with line breaks
+cat(sprintf("Categorical features: %s\nNumerical features: %s",
+            paste(categorical_variables, collapse = ", "),
+            paste(numerical_variables, collapse = ", ")))
 ```
 
 ### 2.5 Outlier Analysis
@@ -164,14 +172,9 @@ identify_outliers <- function(column) {
 }
 
 # Apply the function to the variables
-outliers_age <- identify_outliers(scaled_stroke_tb$age)
-outliers_glucose <- identify_outliers(scaled_stroke_tb$avg_glucose_level)
-outliers_bmi <- identify_outliers(scaled_stroke_tb$bmi)
-
-# Display the results
-print(outliers_age)
-print(outliers_glucose)
-print(outliers_bmi)
+outliers_age <- identify_outliers(encoded_stroke_tb$age)
+outliers_glucose <- identify_outliers(encoded_stroke_tb$avg_glucose_level)
+outliers_bmi <- identify_outliers(encoded_stroke_tb$bmi)
 
 #We create a function count_outliers that we will use to identify and count outliers in each non-binary quantitative variable 
   count_outliers <- function(column) {
@@ -187,10 +190,8 @@ outlier_count <- sum(column < lower_bound | column > upper_bound, na.rm = TRUE)
 }
 
 # Create a vector to hold the outlier counts
-outlier_counts <- sapply(scaled_stroke_tb[, c("age", "avg_glucose_level", "bmi")], count_outliers)
+outlier_counts <- sapply(encoded_stroke_tb[, c("age", "avg_glucose_level", "bmi")], count_outliers)
 
-# Display the outlier counts
-outlier_counts
 ```
 
 Finding zero outliers for age indicates a relatively normative distribution among stroke patients, suggesting accurate and reliable data. With a dataset containing 5,110 rows, the identification of 627 outliers for average glucose levels, representing approximately 12.25% of the total population, and 126 outliers for Body Mass Index (BMI), constituting about 2.47%, highlights disparities in the distribution of these health metrics. The notably higher percentage of glucose level outliers suggests a prevalence of extreme values that may indicate issues with glycemic control among individuals in this population. The presence of a relatively significant number of outliers, particularly in average glucose levels, can skew the dataset's overall mean and standard deviation, potentially leading to misleading interpretations. These outliers may disproportionately influence statistical models, such as the regression analyses, affecting outcomes and relationships. Hence, it will be essential to assess the impact of these outliers on model performance and prioritize careful handling, whether through removal, transformation, or separate analyses, to ensure robust conclusions and accurate insights. The presence of many outliers can sometimes point to measurement errors or inconsistencies in data collection.
@@ -211,92 +212,92 @@ Now that we have conducted the analysis of the non-binary variables, we check th
 
 ```{r}
 # Distribution of Gender Male
-table(scaled_stroke_tb$gender_Male)
-ggplot(scaled_stroke_tb, aes(x=factor(gender_Male))) + 
+table(encoded_stroke_tb$gender_Male)
+ggplot(encoded_stroke_tb, aes(x=factor(gender_Male))) + 
   geom_bar() + 
   labs(x='1 if gender is Male, 0 if not', y='Count', title='Distribution of Male gender')
 
 # Distribution of Gender Female
-table(scaled_stroke_tb$gender_Female)
-ggplot(scaled_stroke_tb, aes(x=factor(gender_Female))) + 
+table(encoded_stroke_tb$gender_Female)
+ggplot(encoded_stroke_tb, aes(x=factor(gender_Female))) + 
   geom_bar() + 
   labs(x='1 if gender is Female, 0 if not', y='Count', title='Distribution of Female gender')
 
 # Distribution of Gender Other
-table(scaled_stroke_tb$gender_Other)
-ggplot(scaled_stroke_tb, aes(x=factor(gender_Other))) + 
+table(encoded_stroke_tb$gender_Other)
+ggplot(encoded_stroke_tb, aes(x=factor(gender_Other))) + 
   geom_bar() + 
   labs(x='1 if gender is Other, 0 if not', y='Count', title='Distribution of Other gender')
 
 # Distribution of Ever Married 
-table(scaled_stroke_tb$ever_married_Yes)
-ggplot(scaled_stroke_tb, aes(x=factor(ever_married_Yes))) + 
+table(encoded_stroke_tb$ever_married_Yes)
+ggplot(encoded_stroke_tb, aes(x=factor(ever_married_Yes))) + 
   geom_bar() + 
   labs(x='1 if Ever Married, 0 if not', y='Count', title='Distribution of  Ever Married Status')
 
 # Distribution of Never Married 
-table(scaled_stroke_tb$ever_married_No)
-ggplot(scaled_stroke_tb, aes(x=factor(ever_married_No))) + 
+table(encoded_stroke_tb$ever_married_No)
+ggplot(encoded_stroke_tb, aes(x=factor(ever_married_No))) + 
   geom_bar() + 
   labs(x='1 if Never Married, 0 if not', y='Count', title='Distribution of Never Married Status')
 
 # Distribution of Work Type is Children
-table(scaled_stroke_tb$work_type_children)
-ggplot(scaled_stroke_tb, aes(x=factor(work_type_children))) + 
+table(encoded_stroke_tb$work_type_children)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_children))) + 
   geom_bar() + 
   labs(x='1 if Work Type is Children, 0 if not', y='Count', title='Distribution of Work Type is Children')
 
 # Distribution of Work Type is Government job
-table(scaled_stroke_tb$work_type_Govt_job)
-ggplot(scaled_stroke_tb, aes(x=factor(work_type_Govt_job))) + 
+table(encoded_stroke_tb$work_type_Govt_job)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_Govt_job))) + 
   geom_bar() + 
   labs(x='1 if Work Type is Government Job, 0 if not', y='Count', title='Distribution of Work Type is Government Job')
 
 # Distribution of Work Type is Never worked
-table(scaled_stroke_tb$work_type_Never_worked)
-ggplot(scaled_stroke_tb, aes(x=factor(work_type_Never_worked))) + 
+table(encoded_stroke_tb$work_type_Never_worked)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) + 
   geom_bar() + 
   labs(x='1 if Work Type is Never Worked, 0 if not', y='Count', title='Distribution of Work Type is Never worked')
 
 # Distribution of Work Type is Private
-table(scaled_stroke_tb$work_type_Private)
-ggplot(scaled_stroke_tb, aes(x=factor(work_type_Private))) + 
+table(encoded_stroke_tb$work_type_Private)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_Private))) + 
   geom_bar() + 
   labs(x='1 if Work Type is Private, 0 if not', y='Count', title='Distribution of Work Type is Private')
 
 # Distribution of Work Type is Self-empployed
-table(scaled_stroke_tb$`work_type_Self-employed`)
-ggplot(scaled_stroke_tb, aes(x=factor(`work_type_Self-employed`))) + 
+table(encoded_stroke_tb$`work_type_Self-employed`)
+ggplot(encoded_stroke_tb, aes(x=factor(`work_type_Self-employed`))) + 
   geom_bar() + 
   labs(x='1 if Work Type is Self-employed, 0 if not', y='Count', title='Distribution of Work Type is Self-employed')
 
 # Distribution of Residence Type is Rural
-table(scaled_stroke_tb$Residence_type_Rural)
-ggplot(scaled_stroke_tb, aes(x=factor(`Residence_type_Rural`))) + 
+table(encoded_stroke_tb$Residence_type_Rural)
+ggplot(encoded_stroke_tb, aes(x=factor(`Residence_type_Rural`))) + 
   geom_bar() + 
   labs(x='1 if Residence Type is Rural, 0 if not', y='Count', title='Distribution of Residence Type is Rural')
 
 # Distribution of Residence Type is Urban
-table(scaled_stroke_tb$Residence_type_Urban)
-ggplot(scaled_stroke_tb, aes(x=factor(`Residence_type_Urban`))) + 
+table(encoded_stroke_tb$Residence_type_Urban)
+ggplot(encoded_stroke_tb, aes(x=factor(`Residence_type_Urban`))) + 
   geom_bar() + 
   labs(x='1 if Residence Type is Urban, 0 if not', y='Count', title='Distribution of Residence Type is Urban')
 
 # Distribution of Formerly Smoked Status
-table(scaled_stroke_tb$`smoking_status_formerly smoked`)
-ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_formerly smoked`))) + 
+table(encoded_stroke_tb$`smoking_status_formerly smoked`)
+ggplot(encoded_stroke_tb, aes(x=factor(`smoking_status_formerly smoked`))) + 
   geom_bar() + 
   labs(x='1 if Formerly Smoked, 0 if not', y='Count', title='Distribution of Formerly Smoked Status')
 
 # Distribution of Never Smoked Status
-table(scaled_stroke_tb$`smoking_status_never smoked`)
-ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_never smoked`))) + 
+table(encoded_stroke_tb$`smoking_status_never smoked`)
+ggplot(encoded_stroke_tb, aes(x=factor(`smoking_status_never smoked`))) + 
   geom_bar() + 
   labs(x='1 if Never Smoked, 0 if not', y='Count', title='Distribution of Never Smoked Status')
 
 # Distribution of Smokes Status
-table(scaled_stroke_tb$smoking_status_smokes)
-ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_smokes`))) + 
+table(encoded_stroke_tb$smoking_status_smokes)
+ggplot(encoded_stroke_tb, aes(x=factor(`smoking_status_smokes`))) + 
   geom_bar() + 
   labs(x='1 if Smokes, 0 if not', y='Count', title='Distribution of Smokes Status')
 
@@ -306,7 +307,7 @@ ggplot(scaled_stroke_tb, aes(x=factor(`smoking_status_smokes`))) +
 Looking at the barplot for gender is "Other", it seems that there is no case where gender is "Other" in the dataset. However, by executing the line of code below, we notice that there is one case where gender is "Other".
 
 ```{r}
-count_other_gender <- sum(scaled_stroke_tb$gender_Other)
+count_other_gender <- sum(encoded_stroke_tb$gender_Other)
 count_other_gender
 ```
 
@@ -316,10 +317,10 @@ To find on which line of the dataset one can find the individual in question, we
 
 ```{r}
 # Find the row indices for individuals where gender is "Other"
-other_gender_indices <- which(scaled_stroke_tb$gender_Other == 1)
+other_gender_indices <- which(encoded_stroke_tb$gender_Other == 1)
 other_gender_indices
 # View the details of the individuals where gender is "Other"
-scaled_stroke_tb[other_gender_indices, ]
+encoded_stroke_tb[other_gender_indices, ]
 ```
 
 Another plot showing an interesting pattern is the distribution of "Work Type is Never worked". The low representation of this former category may suggest that this group is under-represented, which can often lead to instability in outlier identification and might necessitate further scrutiny of their characteristics.
@@ -331,14 +332,14 @@ The distribution of residence type between rural and urban appears to be quiet e
 ```{r}
 
 # Distribution of strokes vs no strokes in the sample
-table(scaled_stroke_tb$stroke)
-ggplot(scaled_stroke_tb, aes(x=factor(`stroke`))) + 
+table(encoded_stroke_tb$stroke)
+ggplot(encoded_stroke_tb, aes(x=factor(`stroke`))) + 
   geom_bar() + 
   labs(x='0 no strokes, 1 strokes', y='Count', title='Distribution of strokes')
 
 
 # count how many people had a stroke and the prop
-scaled_stroke_tb %>%
+encoded_stroke_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2))
@@ -354,11 +355,11 @@ Since the dataset contains only 5,110 individuals, I chose to up-sample the mino
 library(caret)
 
 # Convert 'stroke' to a factor, if it isn't already
-scaled_stroke_tb$stroke <- as.factor(scaled_stroke_tb$stroke)
+encoded_stroke_tb$stroke <- as.factor(encoded_stroke_tb$stroke)
 
 # Use upSample to balance the dataset
-balanced_stroke_tb <- upSample(x = scaled_stroke_tb[, names(scaled_stroke_tb) != "stroke"],
-                               y = scaled_stroke_tb$stroke,
+balanced_stroke_tb <- upSample(x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"],
+                               y = encoded_stroke_tb$stroke,
                                yname = "stroke")
 
 # Check the distribution to confirm balancing
@@ -447,25 +448,242 @@ sankeyNetwork(
 
 ### 3.2 Univariate Analysis
 
+In the first part of the univariate analysis, we examine how predictor variables are correlated with our target variable `stroke`. In order to interpret correlations with `stroke` and distributions of the features simultaneously we use violin plots.
+
 ```{r}
-#Continuous Variables: Plot histograms or KDE plots for each continuous variable (e.g., age, blood pressure, BMI) to see their distribution and check for skewness or outliers.
-# Categorical Variables: Use bar charts to assess distributions of categorical variables (e.g., gender, smoking status). For each category, look for values with low frequencies or irrelevant categories.
+library(shiny)
+library(plotly)
+library(dplyr)
+
+# Shiny app with separate display of the correlation coefficient
+shinyApp(
+  ui = fluidPage(
+    selectInput("selected_variable", "Choose a Variable:", choices = numerical_variables),
+    plotlyOutput("violin_plot"),
+    htmlOutput("correlation_text")  # Separate output for the correlation coefficient
+  ),
+  server = function(input, output) {
+    
+    output$violin_plot <- renderPlotly({
+      selected_variable <- input$selected_variable
+      
+      # Generate the violin plot
+      plot_ly(encoded_stroke_tb, x = ~factor(stroke), y = ~as.numeric(encoded_stroke_tb[[selected_variable]]), type = "violin",
+              box = list(visible = TRUE),
+              meanline = list(visible = TRUE)) %>%
+        layout(
+          title = paste("Violin Plot of", selected_variable, "by Stroke"),
+          xaxis = list(title = "Stroke"),
+          yaxis = list(title = selected_variable)
+        )
+    })
+    
+    # Render the correlation text below the plot
+    output$correlation_text <- renderUI({
+      selected_variable <- input$selected_variable
+      correlation <- cor(as.numeric(encoded_stroke_tb[[selected_variable]]), as.numeric(encoded_stroke_tb$stroke), method = "pearson")
+      HTML(paste("Correlation Coefficient with Stroke:", round(correlation, 2)))
+    })
+  }
+)
+
 ```
 
+<<<<<<< HEAD
 
 ### 3.3 Correlation Analysis
 
 
 Multicollinearity
 #### 3.3.1 Target Variable Analysis
+=======
+`age`:
+Although age appears to be somewhat related to the likelihood of experiencing a stroke, the correlation coefficient of 0.25 suggests only a modest association. The violin plot shows that stroke occurrences are more concentrated among older individuals, particularly in the age range of 60 to 80, with a mean age around 68 for stroke cases. While age may contribute to stroke risk, the relatively low correlation suggests it is one of multiple factors influencing stroke, rather than a strong standalone predictor.
 
-#### 3.3.2 Bivariate Analysis 
+`avg_glucose_level`:
+The average glucose level has a weak correlation of 0.13 with stroke occurrence, indicating that while higher glucose levels are slightly more common among individuals who have experienced a stroke, the relationship is not strong. This aligns with medical knowledge, as elevated glucose levels are a known risk factor for stroke. However, in this dataset, the correlation is low, suggesting that glucose levels alone may not be a reliable predictor of stroke but could contribute when combined with other factors.
+>>>>>>> acc6f62e967d51f959cb250661fe3ff878839467
 
-Correlation Matrix, Chi-Square test for dependencies between categorical variables
+`bmi`:
+With a correlation coefficient of only 0.04, BMI shows virtually no relationship with stroke in this dataset. Both groups (stroke and non-stroke) have similar central tendencies and ranges in BMI, indicating that BMI does not appear to be a significant predictor of stroke in this analysis. This weak association suggests that BMI may not play an important role in differentiating between stroke and non-stroke cases.
 
-#### 3.3.3 Multivariate Analysis
+Let's continue with the categorical variables and their relationship with the target variable `stroke`. Under the graphics we display further information about the association between the variables using the Chi-Square test and Cramér's V for effect size. Because Chi-square performs poorly on few instances, we remove in a first step outliers identified previously.
 
-Mulitcollinearity & Interactions
+```{r}
+# Removing all the outliers identified previously
+outlier_stroke_tb <- subset(preprocessed_stroke_tb, gender != "Other" & work_type != "children" & !(work_type== "Never_worked"))
+```
+
+
+
+```{r}
+library(shiny)
+library(plotly)
+library(dplyr)
+library(vcd)
+
+# Shiny app with stacked bar chart and association test results
+shinyApp(
+  ui = fluidPage(
+    selectInput("selected_variable", "Choose a Variable:", choices = categorical_variables_1),
+    plotlyOutput("stacked_bar_chart"),
+    htmlOutput("test_results")  # Output for Chi-Square and Cramér's V results
+  ),
+  
+  server = function(input, output) {
+    
+    output$stacked_bar_chart <- renderPlotly({
+      selected_variable <- input$selected_variable
+      
+      # Generate the stacked bar chart data
+      plot_data <- outlier_stroke_tb %>%
+        count(stroke = as.factor(stroke), category = as.factor(!!sym(selected_variable))) %>%
+        rename(count = n)
+      
+      # Create the stacked bar chart
+      plot_ly(plot_data, x = ~stroke, y = ~count, color = ~category,
+              type = "bar") %>%
+        layout(barmode = "stack",
+               title = paste("Stacked Bar Chart of", selected_variable, "by Stroke"),
+               xaxis = list(title = "Stroke"),
+               yaxis = list(title = "Count"),
+               legend = list(title = list(text = selected_variable)))
+    })
+    
+    output$test_results <- renderUI({
+      selected_variable <- input$selected_variable
+      
+      # Create a contingency table for stroke and the selected categorical variable
+      contingency_table <- table(outlier_stroke_tb$stroke, outlier_stroke_tb[selected_variable]])
+      
+      # Check if the contingency table has enough data for the chi-square test
+      if (all(contingency_table > 0)) {
+        # Run the chi-square test
+        chi_square_result <- chisq.test(contingency_table)
+        
+        # Calculate Cramér's V to assess the strength of association
+        cramers_v <- assocstats(contingency_table)$cramer
+        
+        # Display the test results
+        HTML(paste(
+          "Chi-square P-value:", round(chi_square_result$p.value, 4), "<br>",
+          "Cramér's V:", round(cramers_v, 4)
+        ))
+      } else {
+        HTML("Insufficient data for Chi-Square test")
+      }
+    })
+  }
+)
+```
+
+
+
+#### 3.3.2 Bivariate Analysis
+
+In our bivariate analysis, we examine the relationship between variables (here pairwise). For the numerical features we create a heatmap to display correlations:
+
+```{r}
+numeric_columns <- encoded_stroke_tb %>% 
+  select(where(is.double))
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(numeric_columns, use = "complete.obs")
+
+# Convert the correlation matrix to a format that plotly can use
+heatmap_data <- as.data.frame(as.table(correlation_matrix))
+
+# Plot the correlation matrix as a heatmap
+plot_ly(
+  x = colnames(correlation_matrix),
+  y = rownames(correlation_matrix),
+  z = correlation_matrix,
+  type = "heatmap",
+  colorscale = "Viridis"  # Corrected typo
+) %>%
+  layout(
+    title = "Correlation Matrix Heatmap",
+    xaxis = list(title = "", tickangle = 45),
+    yaxis = list(title = "")
+  )
+```
+
+The results show that there exists a low to moderate correlation between our predictors. Overall we can conclude that the numerical features are relatively independent and have low predictive power on each other. In that sense, no multicollinearity is present and the predictors will add unique information to our model.
+
+In the next step we analyze the relationship between categorical features using a Chi-square test between different columns using contingency tables. A Chi-square test allows us to detect associations between features.
+
+```{r}
+# Loop through each unique pair of categorical variables
+for (index1 in 1:(length(categorical_variables_1) - 1)) {
+  var1 <- categorical_variables_1[index1]
+  
+  for (index2 in (index1 + 1):length(categorical_variables_1)) {
+    var2 <- categorical_variables_1[index2]
+    
+    # Create a contingency table
+    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
+    
+    # Run the chi-square test
+    chi_square_result <- chisq.test(contingency_table)
+    
+    # Print the result if it's significant
+    if (chi_square_result$p.value < 0.05) {
+      cat("Significant relationship between", var1, "and", var2, "\n")
+      cat("P-value:", chi_square_result$p.value, "\n")
+      print(contingency_table)
+      cat("\n")
+    }
+  }
+}
+
+```
+
+There seems to be an issue with outliers in our previous analysis, as a chi-square performs relatively poor on few instances. First we remove all outliers from the dataset and then use Cramér's V to test the effect size of the association between variables. We set a threshold of V=0.3 for a moderate magnitude effect for the following analysis:
+
+```{r}
+# Removing all the outliers identified previously
+preprocessed_stroke_tb <- subset(preprocessed_stroke_tb, gender != "Other" & work_type != "children")
+# Remove rows where work_type is "Never_worked" and smoking_status is either "smokes" or "formerly smoked"
+preprocessed_stroke_tb <- preprocessed_stroke_tb[!(preprocessed_stroke_tb$work_type== "Never_worked" & preprocessed_stroke_tb$smoking_status %in% c("smokes", "formerly smoked")), ]
+
+```
+
+```{r}
+# Load necessary library for Cramér's V
+library(vcd)
+
+# Loop through each unique pair of categorical variables
+for (index1 in 1:(length(categorical_variables_1) - 1)) {
+  var1 <- categorical_variables_1[index1]
+  
+  for (index2 in (index1 + 1):length(categorical_variables_1)) {
+    var2 <- categorical_variables_1[index2]
+    
+    # Create a contingency table
+    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
+    
+    # Check if the contingency table has enough data for the chi-square test
+    if (all(contingency_table > 0)) {
+      # Run the chi-square test
+      chi_square_result <- chisq.test(contingency_table)
+      
+      # Calculate Cramér's V to assess the strength of association
+      cramers_v <- assocstats(contingency_table)$cramer
+      
+      # Display the results for each pair
+      cat("Relationship between", var1, "and", var2, "\n")
+      cat("Chi-square P-value:", chi_square_result$p.value, "\n")
+      cat("Cramér's V:", cramers_v, "\n")
+      print(contingency_table)
+      cat("\n")
+    } else {
+      cat("Skipping test for", var1, "and", var2, "due to insufficient data\n")
+    }
+  }
+}
+```
+
+As no effect size appears to be greater than 0.3, we can safely conclude that our categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
 ### 3.4 Feature Scaling
 
