@@ -8,10 +8,10 @@ For general procedure, we plan to split our prepared dataset into training, vali
 
 ## Goals for Each Method
 
-Logistic Regression: \
+Logistic Regression:\
 The primary goal of logistic regression in this analysis is to model the probability of stroke occurrence based on various predictor variables, such as age, blood pressure, and lifestyle factors. By fitting this model, we aim to identify which factors are associated with an increased likelihood of stroke and quantify their impact. This will allow us to interpret how each predictor affects stroke risk and prioritize significant risk factors that could be targeted for preventive interventions. Additionally, logistic regression provides us with a probabilistic outcome (rather than a strict classification), offering a nuanced understanding of each patient's risk level.
 
-Model Evaluation Metrics (Accuracy, Precision, Recall, and F1-Score): \
+Model Evaluation Metrics (Accuracy, Precision, Recall, and F1-Score):\
 Each metric serves a specific purpose in evaluating the model's effectiveness:
 
 -   Accuracy: Measures the proportion of correct predictions out of all predictions, giving us a general sense of the model’s performance across both stroke and non-stroke cases. - Precision: Focuses on the proportion of true positive stroke predictions out of all positive predictions, allowing us to assess how reliable our positive stroke predictions are (i.e., minimizing false positives).
@@ -20,7 +20,7 @@ Each metric serves a specific purpose in evaluating the model's effectiveness:
 
 -   F1-Score: Provides a balanced view by combining precision and recall, particularly useful when there is a trade-off between these metrics. This score will help us evaluate the model's overall robustness, especially if the classes are imbalanced.
 
-Potential Additional Methods: \
+Potential Additional Methods:\
 If time permits, we may explore decision trees as an alternative method. The goal of including decision trees would be to compare the interpretability and performance of a tree-based approach with logistic regression. Decision trees could help uncover complex interactions between variables that might not be captured by logistic regression, potentially enhancing the model’s predictive power and offering an alternative, interpretable path for understanding stroke risk factors.
 
 ```{r}
