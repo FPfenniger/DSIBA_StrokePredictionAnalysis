@@ -3,14 +3,12 @@
 ## Initial Visualizations
 Present initial visualizations to help understand data distributions and relationships between variables.
 
-```{r}
-#| label: initial-visualizations
-#| eval: false # do not evaluate as this is just an example
+```{=html}
+<iframe src="data/feature_distrib_target_var_analysis.html" width="100%" height="600px"></iframe>
+```
 
-# Example code block for EDA visualization: Histogram of a numeric variable (once again, we already loaded `ggplot2` in the setup chunk)
-ggplot(data_clean, aes(x = numeric_variable)) +
-  geom_histogram(binwidth = 5) +
-  labs(title = "Distribution of Numeric Variable")
+```{=html}
+<iframe src="data/stacked_bar_chart_and_target.html" width="100%" height="600px"></iframe>
 ```
 
 ## Summary Statistics
