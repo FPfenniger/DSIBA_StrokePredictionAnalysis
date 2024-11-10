@@ -326,8 +326,11 @@ other_gender_indices
 encoded_stroke_tb[other_gender_indices, ]
 ```
 
-Another plot showing an interesting pattern is the distribution of "Work Type is Never worked". The low representation of this former category may suggest that this group is under-represented, which can often lead to instability in outlier identification and might necessitate further scrutiny of their characteristics.
-
+Another plot showing an interesting pattern is the distribution of "Work Type is Never worked". The low representation (22 observations) of this former category may suggest that this group is under-represented, which can often lead to instability in outlier identification and might necessitate further scrutiny of their characteristics. We also decide to remove this variable from our analysis.
+```{r}
+count_work_type_Never_worked <- sum(encoded_stroke_tb$work_type_Never_worked)
+count_work_type_Never_worked
+```
 The distribution of residence type between rural and urban appears to be quiet equitable and can provide valuable insights into demographic representation.
 
 ### 2.6 Dataset Balancing
