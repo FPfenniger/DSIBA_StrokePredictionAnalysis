@@ -14,7 +14,10 @@ Bolor (report: Intro)
 Introduction 2
 Project Goals . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
 Research Questions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
+-
 Adjustments or Refinements .
+
+WHO report: No 3 cause of premature death worldwide 2021
 ### 1.2 Related Work
 
 ### 1.3 Research Questions
@@ -348,7 +351,7 @@ encoded_stroke_tb %>%
 
 The dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. To address this, we can use dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. This can be done through down-sampling (reducing the number of no-stroke cases) or up-sampling (increasing the number of stroke cases).
 
-Since the dataset contains only 5,110 individuals, I chose to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
+Since the dataset contains only 5,110 individuals, we choose to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
 
 ```{r}
 # Load caret library
@@ -370,14 +373,22 @@ Are the proportions of variables such as age, gender, and hypertension in the up
 
 When we up-sample the minority class (stroke cases), we create artificial (or duplicated) rows to balance the dataset. In most basic up-sampling methods, like simple random sampling with replacement, these additional rows are duplicates of existing stroke cases. As a result, the distribution of other variables/columns (such as age, BMI, etc.) among stroke cases in the balanced dataset will match the original proportions found in the smaller stroke class of the initial dataset.
 
+# Short comparison of the original and balanced dataset
+
 ## 3. Exploratory Data Analysis
 
 ### 3.1 Descriptive Statistics
 
+5,111 patient records
+11 numerical and categorical variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence. 
+Among the patients, 249 had experienced a stroke, while 4,861 had not. 
+Ages range from newborn to 84 years, with an average age of 43.23, and age distribution appears close to normal. 
+The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other.
+
 ```{r}
 # Histogram for age
 ggplot(encoded_stroke_tb, aes(x = age)) + 
-  geom_histogram(binwidth = 1, fill = "dark grey", color = "white") +
+  geom_histogram(binwidth = 5, fill = "dark grey", color = "white") +
   labs(title = "Distribution of Age", x = "Age", y = "Frequency")
 ```
 
