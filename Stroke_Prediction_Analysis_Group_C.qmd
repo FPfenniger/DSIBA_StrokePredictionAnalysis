@@ -493,6 +493,29 @@ ggplot(encoded_stroke_tb , aes(x = age, fill = as.factor(stroke))) +
 
 In contrast, there are multiple instances of strokes in females younger than 40, inclduing cases at ages 30, 15, and even below one year old.
 
+```{r}
+ggplot(encoded_stroke_tb, aes(x = hypertension, fill = as.factor(stroke))) +
+  geom_bar(position="fill") +
+  labs(fill = "STROKE")
+```
+
+Hypertension seems to be a risk factor for strokes, as the proportion of stroke cases is higher among individuals with hypertension. This aligns with medical knowledge that hypertension is a significant risk factor for strokes. The distribution of stroke cases is higher among individuals with hypertension, suggesting that hypertension may be a key predictor of stroke occurrence in this dataset.
+
+```{r}
+# Create a bar chart for hypertension and stroke, faceted where each panel represents a gender group.
+ggplot(encoded_stroke_tb , aes(x = hypertension, fill = as.factor(stroke))) +
+  geom_bar(position="fill") +
+  labs(fill = "STROKE")+
+  facet_wrap(~gender_Female, labeller = as_labeller(c("0" = "Non-Female", "1" = "Female")))
+```
+
+Use pie charts instead of bar charts.
+```{r}
+ggplot(encoded_stroke_tb, aes(x = heart_disease, fill = as.factor(stroke))) +
+  geom_point(position = "fill") +
+  labs(fill = "STROKE")
+```
+
 
 -age as a risk factor for a stroke – 24.9% of the strokes contained in the dataset belong to individual in the 75-79 year old age group, while only 4.01% were for patients under 45 years old
 Hypertension, a common risk factor for strokes per stroke.org, was greatly more prevalent in older patients, with 82.7% of cases occurring in those over the age of 50.
