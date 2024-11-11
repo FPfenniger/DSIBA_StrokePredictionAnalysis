@@ -9,8 +9,6 @@ execute:
 
 ## 1. Introduction and Data Structure
 
-WHO report: No 3 cause of premature death worldwide 2021
-
 ### 1.1 Project Goals
 Describe the main goals of the project, including the motivation behind the research and the key questions you aim to answer.
 
