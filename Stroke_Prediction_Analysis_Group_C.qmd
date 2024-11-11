@@ -9,8 +9,6 @@ execute:
 
 ## 1. Introduction and Data Structure
 
-WHO report: No 3 cause of premature death worldwide 2021
-
 ### 1.1 Project Goals
 Describe the main goals of the project, including the motivation behind the research and the key questions you aim to answer.
 
@@ -403,8 +401,6 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.1 Descriptive Statistics
 
-<<<<<<< Updated upstream
-Let's get a feeling for the distribution of our data:
 
 ```{r}
 # Generate summary of your data frame
@@ -416,8 +412,6 @@ kable(as.data.frame(summary_table), row.names = FALSE)
 
 ```
 
-=======
->>>>>>> Stashed changes
 5,111 patient records 11 numerical and categorical variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence. Among the patients, 249 had experienced a stroke, while 4,861 had not. Ages range from newborn to 84 years, with an average age of 43.23, and age distribution appears close to normal. The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other. Average age is 43.23 years, with a standard deviation of 22.61 years, and a range of 0 to 82 years. Distribution of age is right-skewed, with a peak around 70 years old. Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL. ... Tell a story with charts.
 
 ```{r}
@@ -560,6 +554,8 @@ ggplot(data = your_data, aes(x = factor(stroke), y = age)) +
 In the first part of the univariate analysis, we examine how predictor variables are correlated with our target variable `stroke`. In order to interpret correlations with `stroke` and distributions of the features simultaneously we use violin plots.
 
 ```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 
 library(shiny)
 library(plotly)
@@ -623,7 +619,7 @@ shinyApp(
 
 Let's continue with the categorical variables and their relationship with the target variable `stroke`. Under the graphics we display further information about the association between the variables using the Chi-Square test and Cramér's V for effect size. Because Chi-square performs poorly on few instances, we remove in a first step outliers identified previously.
 
---\> including all categorical variables
+--> including all categorical variables
 
 ```{r}
 # Removing all the outliers identified previously
