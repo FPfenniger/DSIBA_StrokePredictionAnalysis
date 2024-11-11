@@ -10,15 +10,10 @@ execute:
 ## 1. Introduction and Data Structure
 
 ### 1.1 Overview & Motivation
-Bolor (report: Intro)
-Introduction 2
-Project Goals . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
-Research Questions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2
--
-Adjustments or Refinements.
 
-WHO report: No 3 cause of premature death worldwide 2021
-### 1.2 Related Work
+Bolor (report: Intro) Introduction 2 Project Goals . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2 Research Questions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2 - Adjustments or Refinements.
+
+WHO report: No 3 cause of premature death worldwide 2021 \### 1.2 Related Work
 
 ### 1.3 Research Questions
 
@@ -327,10 +322,12 @@ encoded_stroke_tb[other_gender_indices, ]
 ```
 
 Another plot showing an interesting pattern is the distribution of "Work Type is Never worked". The low representation (22 observations) of this former category may suggest that this group is under-represented, which can often lead to instability in outlier identification and might necessitate further scrutiny of their characteristics. We also decide to remove this variable from our analysis.
+
 ```{r}
 count_work_type_Never_worked <- sum(encoded_stroke_tb$work_type_Never_worked)
 count_work_type_Never_worked
 ```
+
 The distribution of residence type between rural and urban appears to be quiet equitable and can provide valuable insights into demographic representation.
 
 ### 2.6 Dataset Balancing
@@ -382,17 +379,20 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.1 Descriptive Statistics
 
-5,111 patient records
-11 numerical and categorical variables describing the patients. 
-Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence. 
-Among the patients, 249 had experienced a stroke, while 4,861 had not. 
-Ages range from newborn to 84 years, with an average age of 43.23, and age distribution appears close to normal. 
-The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other.
-Average age is 43.23 years, with a standard deviation of 22.61 years, and a range of 0 to 82 years.
-Distribution of age is right-skewed, with a peak around 70 years old.
-Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL.
-...
-Tell a story with charts.
+Let's get a feeling for the distribution of our data:
+
+```{r}
+# Generate summary of your data frame
+summary_table <- summary(stroke_tb)
+
+# Convert the summary to a data frame & display it with kable
+summary_table <- as.data.frame.matrix(summary_table)
+kable(as.data.frame(summary_table), row.names = FALSE)
+
+```
+
+5,111 patient records 11 numerical and categorical variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence. Among the patients, 249 had experienced a stroke, while 4,861 had not. Ages range from newborn to 84 years, with an average age of 43.23, and age distribution appears close to normal. The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other. Average age is 43.23 years, with a standard deviation of 22.61 years, and a range of 0 to 82 years. Distribution of age is right-skewed, with a peak around 70 years old. Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL. ... Tell a story with charts.
+
 ```{r}
 # Histogram for age
 ggplot(encoded_stroke_tb, aes(x = age)) + 
@@ -407,11 +407,8 @@ ggplot(encoded_stroke_tb, aes(y = hypertension, x = factor(stroke))) +
   labs(title = "Hypertension by Stroke Outcome", x = "Stroke (0 = No, 1 = Yes)", y = "Hypertension")
 ```
 
-Idea: A sankey chart that shows the relationship between stroke, and its potential risk factors
--Age
--hypertension
--heart disease
--smoking status
+Idea: A sankey chart that shows the relationship between stroke, and its potential risk factors -Age -hypertension -heart disease -smoking status
+
 ```{r}
 # Create a summarized data frame for the Sankey diagram
 library(networkD3)
@@ -473,7 +470,7 @@ ggplot(encoded_stroke_tb, aes(x = age, fill = as.factor(stroke))) +
   labs(fill = "STROKE")
 ```
 
-Strokes occur more frequently among older individuals in the population. The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke. The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset.
+Strokes occur more frequently among older individuals in the population. The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke. The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset. percentage not count
 
 ```{r}
 ggplot(encoded_stroke_tb , aes(x = age, fill = as.factor(stroke))) +
@@ -501,6 +498,8 @@ ggplot(encoded_stroke_tb, aes(x = hypertension, fill = as.factor(stroke))) +
 
 Hypertension seems to be a risk factor for strokes, as the proportion of stroke cases is higher among individuals with hypertension. This aligns with medical knowledge that hypertension is a significant risk factor for strokes. The distribution of stroke cases is higher among individuals with hypertension, suggesting that hypertension may be a key predictor of stroke occurrence in this dataset.
 
+x axis is wrong
+
 ```{r}
 # Create a bar chart for hypertension and stroke, faceted where each panel represents a gender group.
 ggplot(encoded_stroke_tb , aes(x = hypertension, fill = as.factor(stroke))) +
@@ -510,16 +509,14 @@ ggplot(encoded_stroke_tb , aes(x = hypertension, fill = as.factor(stroke))) +
 ```
 
 Use pie charts instead of bar charts.
+
 ```{r}
 ggplot(encoded_stroke_tb, aes(x = heart_disease, fill = as.factor(stroke))) +
-  geom_point(position = "fill") +
+  geom_bar(position = "fill") +
   labs(fill = "STROKE")
 ```
 
-
--age as a risk factor for a stroke – 24.9% of the strokes contained in the dataset belong to individual in the 75-79 year old age group, while only 4.01% were for patients under 45 years old
-Hypertension, a common risk factor for strokes per stroke.org, was greatly more prevalent in older patients, with 82.7% of cases occurring in those over the age of 50.
-based on EDA, Age, Hypertension, Heart Disease, and average glucose level are the most indicative risk factors for predicting a stroke based on this data
+-age as a risk factor for a stroke – 24.9% of the strokes contained in the dataset belong to individual in the 75-79 year old age group, while only 4.01% were for patients under 45 years old Hypertension, a common risk factor for strokes per stroke.org, was greatly more prevalent in older patients, with 82.7% of cases occurring in those over the age of 50. based on EDA, Age, Hypertension, Heart Disease, and average glucose level are the most indicative risk factors for predicting a stroke based on this data
 
 ### 3.2 Univariate Analysis
 
@@ -582,15 +579,11 @@ shinyApp(
 
 ```
 
-`age`:
-Although age appears to be somewhat related to the likelihood of experiencing a stroke, the correlation coefficient of 0.25 suggests only a modest association. The violin plot shows that stroke occurrences are more concentrated among older individuals, particularly in the age range of 60 to 80, with a mean age around 68 for stroke cases. While age may contribute to stroke risk, the relatively low correlation suggests it is one of multiple factors influencing stroke, rather than a strong standalone predictor.
+`age`: Although age appears to be somewhat related to the likelihood of experiencing a stroke, the correlation coefficient of 0.25 suggests only a modest association. The violin plot shows that stroke occurrences are more concentrated among older individuals, particularly in the age range of 60 to 80, with a mean age around 68 for stroke cases. While age may contribute to stroke risk, the relatively low correlation suggests it is one of multiple factors influencing stroke, rather than a strong standalone predictor.
 
-`avg_glucose_level`:
-The average glucose level has a weak correlation of 0.13 with stroke occurrence, indicating that while higher glucose levels are slightly more common among individuals who have experienced a stroke, the relationship is not strong. This aligns with medical knowledge, as elevated glucose levels are a known risk factor for stroke. However, in this dataset, the correlation is low, suggesting that glucose levels alone may not be a reliable predictor of stroke but could contribute when combined with other factors.
+`avg_glucose_level`: The average glucose level has a weak correlation of 0.13 with stroke occurrence, indicating that while higher glucose levels are slightly more common among individuals who have experienced a stroke, the relationship is not strong. This aligns with medical knowledge, as elevated glucose levels are a known risk factor for stroke. However, in this dataset, the correlation is low, suggesting that glucose levels alone may not be a reliable predictor of stroke but could contribute when combined with other factors.
 
-
-`bmi`:
-With a correlation coefficient of only 0.04, BMI shows virtually no relationship with stroke in this dataset. Both groups (stroke and non-stroke) have similar central tendencies and ranges in BMI, indicating that BMI does not appear to be a significant predictor of stroke in this analysis. This weak association suggests that BMI may not play an important role in differentiating between stroke and non-stroke cases.
+`bmi`: With a correlation coefficient of only 0.04, BMI shows virtually no relationship with stroke in this dataset. Both groups (stroke and non-stroke) have similar central tendencies and ranges in BMI, indicating that BMI does not appear to be a significant predictor of stroke in this analysis. This weak association suggests that BMI may not play an important role in differentiating between stroke and non-stroke cases.
 
 Let's continue with the categorical variables and their relationship with the target variable `stroke`. Under the graphics we display further information about the association between the variables using the Chi-Square test and Cramér's V for effect size. Because Chi-square performs poorly on few instances, we remove in a first step outliers identified previously.
 
@@ -678,7 +671,7 @@ shinyApp(
 
 ```
 
-Description of findings in stacked_bar_plot above 
+Description of findings in stacked_bar_plot above
 
 ### 3.3 Bivariate Analysis
 
@@ -790,7 +783,7 @@ As no effect size appears to be greater than 0.3, we can safely conclude that ou
 
 Classification algorithms are often sensitive to scales. To prevent perturbations we standardize all continuous features in the dataset.
 
---> finished balanced dataset as input :
+--\> finished balanced dataset as input :
 
 ```{r}
 scaled_stroke_tb <- encoded_stroke_tb
