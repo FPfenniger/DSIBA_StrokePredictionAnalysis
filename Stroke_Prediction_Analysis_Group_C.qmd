@@ -90,6 +90,9 @@ cleaned_stroke_tb <- replace_with_na(data = stroke_tb,
   select(-id)
 
 cleaned_stroke_tb
+
+write.csv(cleaned_stroke_tb, "data/cleaned_stroke_tb.csv", row.names = FALSE)
+
 ```
 
 We update the lists of categorical and numerical columns, as `bmi` is now a double. !!!

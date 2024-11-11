@@ -1,41 +1,85 @@
 # Data
 
+initial_dataset <- read.csv("data/stroke_dataset.csv")
+initial_dataset
+
 ## Sources
-Describe the sources of your data, such as public datasets, API collections, or scraped data.
+
+The data utilized for this project comes from the Stroke Prediction Dataset available on Kaggle, which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting the likelihood of a stroke based on features like age, gender, and medical history. 
+Sadly, we do not have more information on how the data was collected. The source is confidential and the use of it is only for educational purposes.
 
 ## Description
-Summarize the main features of the dataset, including the types of variables, their formats, and any relevant metadata.
+
+The data contains 5110 observations with 12 attributes. Here's summary of the main features of the dataset:  
+1.	id:
+o	Type: Categorical
+o	Description: A unique identifier for each patient in the dataset.
+2.	gender:
+o	Type: Categorical
+o	Values: "Male", "Female", or "Other"
+o	Description: Gender of the patient 
+3.	age:
+o	Type: Numerical (Continuous)
+o	Description: Age of the patient 
+4.	hypertension:
+o	Type: Categorical (Binary)
+o	Values: 0 (No), 1 (Yes)
+o	Description: Indicates whether the patient has hypertension.
+5.	heart_disease:
+o	Type: Categorical (Binary)
+o	Values: 0 (No), 1 (Yes)
+o	Description: Indicates whether the patient has heart disease.
+6.	ever_married:
+o	Type: Categorical
+o	Values: "No" or "Yes"
+o	Description: Indicates whether the patient has ever been married
+7.	work_type:
+o	Type: Categorical
+o	Values: "children", "Govt_job", "Never_worked", "Private", "Self-employed"
+o	Description: Type of work the patient is engaged in
+8.	Residence_type:
+o	Type: Categorical
+o	Values: "Rural" or "Urban"
+o	Description: Indicates the living area of the patient
+9.	avg_glucose_level:
+o	Type: Numerical (Continuous)
+o	Description: Average glucose level in the blood
+10.	bmi:
+o	Type: Numerical (Continuous)
+o	Description: Body Mass Index, a measure of body fat based on height and weight.
+11.	smoking_status:
+o	Type: Categorical
+o	Values: "formerly smoked", "never smoked", "smokes", "Unknown"
+o	Description: Indicates the smoking habits of the patient, where "Unknown" signifies that the smoking status information is not available.
+12.	stroke:
+o	Type: Categorical (Binary)
+o	Values: 0 (No), 1 (Yes)
+o	Description: The target variable indicating whether the patient has had a stroke.
+
+Relevant metadata: 
+	Name of the owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his Kaggle profile)
+	Last updated 4 years go (seen on Kaggle)
 
 ## Wrangling/Cleaning
-Document the data preprocessing steps taken so far, including cleaning, transformation, and any merging of datasets.
+
+The dataset is fairly clean. 
+Our dataset contains several categorical variables. 
+Since a machine learning model requires numerical inputs, we first converted and encoded these variables. 
+Secondly, we addressed missing values in the features “bmi” and “smoking_status” by replacing them with N/A. Additionally, we ensured that “bmi” is recognized as a numerical variable and updated the lists of categorical and numerical columns, as “bmi” is now a double. The id column has also been removed, as it is not relevant for our analysis moving forward.
+Then, to maximize the number of observations in our dataset, we replaced the N/A values in “bmi” with the median and in “smoking_status” with the modal value.
+Finally, for the categorical feature encoding, we have converted our categorical variables into dummy variables to utilize them in our predictive model.
+Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardized all continuous features in the dataset.
 
 ## Spotting Mistakes and Missing Data
-Discuss any identified mistakes or issues with missing data and describe your approach to handling them.
+
+Only the features “bmi” and “smoking_status” have missing values. As written upper, we replaced these missing values by N/A and we later replaced them in “bmi” with the median and in “smoking_status” with the modal value.
+The variable “bmi” was imported as a character. We had to change it to a double. 
 
 ## Listing Anomalies and Outliers
-Identify any anomalies or outliers discovered so far, along with your approach to assessing their impact.
 
-```{r}
-#| label: data-cleaning
-
-# Example of a code block for data cleaning
-
-# load data
-# Example loading and cleaning steps
-data <- read.csv(here::here("data/raw/data_raw.csv"))
-
-# Example cleaning steps (we already loaded `tidyverse` in the report setup chunk)
-data_clean <- data %>%
-  filter(!is.na(behavior) & !is.na(performance)) %>%  # filter out NAs in both relevant columns
-  mutate(
-    behavior = as.factor(behavior),    # convert behavior to factor
-    TA = as.factor(TA)                 # also convert TA to factor since it's categorical
-  )
-
-knitr::kable(data_clean)
-
-# Write the cleaned data to a new file
-# e.g. 
-# write.csv(data_clean, "data/clean/data_processed.csv", row.names = FALSE)
-
-```
+Upon examining the encoded stroke dataset for the categorical variables, we noted that there is only three non-binary quantitative variables: age, average glucose level, and bmi. To visualize outliers in each of these variables, we used boxplots. The points outside the range defined by the whiskers were identified as outliers.
+Finding zero outliers for age indicated a relatively normative distribution among stroke patients, suggesting accurate and reliable data. With a dataset containing 5,110 rows, the identification of 627 outliers for average glucose levels, representing approximately 12.25% of the total population, and 126 outliers for Body Mass Index (bmi), constituting about 2.47%, highlighted disparities in the distribution of these health metrics. 
+The notably higher percentage of glucose level outliers suggested a prevalence of extreme values that may have indicated issues with glycemic control among individuals in this population. The presence of a relatively significant number of outliers, particularly in average glucose levels, could skew the dataset's overall mean and standard deviation, potentially leading to misleading interpretations. These outliers might disproportionately influence statistical models, such as regression analyses, affecting outcomes and relationships. Hence, it will be essential to assess the impact of these outliers on model performance and prioritize careful handling, whether through removal, transformation, or separate analyses, to ensure robust conclusions and accurate insights. The presence of many outliers sometimes pointed to measurement errors or inconsistencies in data collection.
+To gain a better view of the distribution of values, we also created histograms for these 3 variables. 
+After conducting the analysis of the non-binary variables, we examined the distribution of the binary variables. Two distribution graphs captured our attention: the one for the gender category "Other" and the one for the work type "Never worked." The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these variables from our analysis. 
+Finally, the dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Since the dataset contains only 5,110 individuals, we have chosen to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
