@@ -62,18 +62,20 @@ shinyApp(
 #| code-fold: true
 #| code-summary: "Click to show code"
 
+read.csv("../../data/outlier_stroke_tb.csv")
+
 library(shiny)
 library(plotly)
 library(dplyr)
 library(vcd)
 library(htmltools)
 
-categorical_variables = c("hypertension", "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status")
+cat_variables = c("hypertension", "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
 
 # Shiny app with stacked bar chart and association test results
 shinyApp(
   ui = fluidPage(
-    selectInput("selected_variable", "Choose a Variable:", choices = categorical_variables),
+    selectInput("selected_variable", "Choose a Variable:", choices = cat_variables),
     plotlyOutput("stacked_bar_chart"),
     htmlOutput("test_results")  # Output for Chi-Square and Cramér's V results
   ),
@@ -139,7 +141,6 @@ shinyApp(
     })
   }
 )
-
 ```
 
 ```
