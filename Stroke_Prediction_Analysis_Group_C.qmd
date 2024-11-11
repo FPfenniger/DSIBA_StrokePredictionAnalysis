@@ -623,7 +623,7 @@ Let's continue with the categorical variables and their relationship with the ta
 
 ```{r}
 # Removing all the outliers identified previously
-outlier_stroke_tb <- subset(preprocessed_stroke_tb, gender != "Other" & work_type != "children" & !(work_type== "Never_worked"))¨
+outlier_stroke_tb <- subset(preprocessed_stroke_tb, gender != "Other" & work_type != "children" & !(work_type== "Never_worked"))
 
 
 
