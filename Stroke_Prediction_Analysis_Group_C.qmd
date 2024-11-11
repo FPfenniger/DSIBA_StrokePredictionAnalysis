@@ -637,7 +637,7 @@ library(dplyr)
 library(vcd)
 library(htmltools)
 
-cat_variables = c("hypertension", "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status")
+cat_variables = c("hypertension", "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
 
 # Shiny app with stacked bar chart and association test results
 shinyApp(
@@ -708,8 +708,6 @@ shinyApp(
     })
   }
 )
-
-
 
 ```
 

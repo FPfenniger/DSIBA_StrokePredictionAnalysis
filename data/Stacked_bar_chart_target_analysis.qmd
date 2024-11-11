@@ -1,5 +1,5 @@
 ---
-title: "Interactive Shiny App"
+title: "Categorical Variables - Target Variable Association"
 output: html_document
 runtime: shiny
 ---
@@ -13,7 +13,7 @@ library(vcd)
 library(htmltools)
 
 # Load the data
-outlier_stroke_tb <- read.csv("../data/outlier_stroke_tb.csv")
+outlier_stroke_tb <- read.csv("outlier_stroke_tb.csv")
 
 # Define categorical variables
 cat_variables <- c("hypertension", "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
