@@ -10,14 +10,17 @@ execute:
 ## 1. Introduction and Data Structure
 
 ### 1.1 Project Goals
+
 Describe the main goals of the project, including the motivation behind the research and the key questions you aim to answer.
 
 ### 1.2 Research Questions
-- Question 1: ...
-- Question 2: ...
-- (Add as necessary)
+
+-   Question 1: ...
+-   Question 2: ...
+-   (Add as necessary)
 
 ### 1.3 Adjustments or Refinements
+
 Discuss any changes or refinements to the project scope or questions based on initial findings or data constraints.
 
 ### 1.4 Data Source
@@ -395,16 +398,13 @@ Are the proportions of variables such as age, gender, and hypertension in the up
 
 When we up-sample the minority class (stroke cases), we create artificial (or duplicated) rows to balance the dataset. In most basic up-sampling methods, like simple random sampling with replacement, these additional rows are duplicates of existing stroke cases. As a result, the distribution of other variables/columns (such as age, BMI, etc.) among stroke cases in the balanced dataset will match the original proportions found in the smaller stroke class of the initial dataset.
 
-# Short comparison of the original and balanced dataset
-
 ## 3. Exploratory Data Analysis
 
 ### 3.1 Descriptive Statistics
 
-
 ```{r}
 # Generate summary of your data frame
-summary_table <- summary(stroke_tb)
+summary_table <- summary(preprocessed_stroke_tb)
 
 # Convert the summary to a data frame & display it with kable
 summary_table <- as.data.frame.matrix(summary_table)
@@ -412,84 +412,149 @@ kable(as.data.frame(summary_table), row.names = FALSE)
 
 ```
 
-5,111 patient records 11 numerical and categorical variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence. Among the patients, 249 had experienced a stroke, while 4,861 had not. Ages range from newborn to 84 years, with an average age of 43.23, and age distribution appears close to normal. The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other. Average age is 43.23 years, with a standard deviation of 22.61 years, and a range of 0 to 82 years. Distribution of age is right-skewed, with a peak around 70 years old. Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL. ... Tell a story with charts.
+The dataset contains 5,111 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
 
 ```{r}
-# Histogram for age
-ggplot(encoded_stroke_tb, aes(x = age)) + 
-  geom_histogram(binwidth = 5, fill = "dark grey", color = "white") +
-  labs(title = "Distribution of Age", x = "Age", y = "Frequency")
-```
+# Load necessary libraries
+library(shiny)
+library(ggplot2)
+library(plotly)
 
-```{r}
-# Boxplot for hypertension
-ggplot(encoded_stroke_tb, aes(y = hypertension, x = factor(stroke))) + 
-  geom_boxplot() +
-  labs(title = "Hypertension by Stroke Outcome", x = "Stroke (0 = No, 1 = Yes)", y = "Hypertension")
-```
-
-Idea: A sankey chart that shows the relationship between stroke, and its potential risk factors -Age -hypertension -heart disease -smoking status
-
-```{r}
-# Create a summarized data frame for the Sankey diagram
-library(networkD3)
-library(dplyr)
-
-# Summarizing the counts based on hypertension and stroke
-flow_data_hypertension <- encoded_stroke_tb %>%
-  group_by(hypertension, stroke) %>%
-  summarise(count = n()) %>%
-  ungroup()
-
-# Summarizing the counts based on heart disease and stroke
-flow_data_heart_disease <- encoded_stroke_tb %>%
-  group_by(heart_disease, stroke) %>%
-  summarise(count = n()) %>%
-  ungroup()
-
-# Combine the two data frames into one for the Sankey diagram
-flow_data <- bind_rows(
-  flow_data_hypertension %>% mutate(from = as.character(hypertension), to = ifelse(stroke == 1, "Stroke", "No Stroke")),
-  flow_data_heart_disease %>% mutate(from = as.character(heart_disease), to = ifelse(stroke == 1, "Stroke", "No Stroke"))
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Age, Average Glucose Level, and BMI Distribution"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting variable
+      selectInput("variable", "Select Variable:", 
+                  choices = c("Age" = "age", "Average Glucose Level" = "avg_glucose_level" ,"BMI" = "bmi")),
+      
+      # Conditional panel to show the bin width slider only if "Show Standardized Data" is unchecked
+      conditionalPanel(
+        condition = "input.standardize == false",
+        sliderInput("binwidth", "Bin Width:", min = 1, max = 10, value = 5)
+      ),
+      
+      # Checkbox for standardized data
+      checkboxInput("standardize", "Show Standardized Data", value = FALSE)
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
 )
 
-# Prepare a unique list of nodes
-nodes <- data.frame(name = unique(c(flow_data$from, flow_data$to)))
+# Define the server logic
+server <- function(input, output, session) {
+  
+  observe({
+    # Change bin width to 1 if standardized data is checked
+    if (input$standardize) {
+      updateSliderInput(session, "binwidth", value = 1)
+    } else {
+      updateSliderInput(session, "binwidth", value = 5)
+    }
+  })
+  
+  output$histogramPlot <- renderPlotly({
+    # Original data
+    original_data <- encoded_stroke_tb[[input$variable]]
+    
+    # Calculate mean and standard deviation for original data
+    mean_val <- mean(original_data)
+    sd_val <- sd(original_data)
+    
+    # Standardize the data if checkbox is selected
+    if (input$standardize) {
+      data <- scale(original_data)
+      x_label <- paste("Standardized", input$variable)
+      # Mean and SD lines at 0 and ±1 for standardized data
+      mean_line <- 0
+      sd_lines <- c(-1, 1)
+    } else {
+      data <- original_data
+      x_label <- input$variable
+      # Use calculated mean and SD for original data
+      mean_line <- mean_val
+      sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
+    }
+    
+    # Generate the ggplot histogram with mean and SD lines
+    p <- ggplot(data.frame(data), aes(x = data)) +
+      geom_histogram(binwidth = input$binwidth, fill = "dark grey", color = "white") +
+      labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency") +
+      geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", size = 1) +
+      geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", size = 0.8) +
+      geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", size = 0.8)
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
 ```
 
-```{r}
-# Create the links for the Sankey diagram
-flow_data$IDsource <- match(flow_data$from, nodes$name) - 1  # R uses 0-indexing for nodes
-flow_data$IDtarget <- match(flow_data$to, nodes$name) - 1
+`age`: The dataset includes patients with ages ranging from 0 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years. The distribution of age is right-skewed, with a peak around 70 years old. `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
-# Generate the Sankey diagram
-sankeyNetwork(
-  Links = flow_data,
-  Nodes = nodes,
-  Source = 'IDsource',
-  Target = 'IDtarget',
-  Value = 'count',
-  NodeID = 'name',
-  units = 'Count',
-  fontSize = 12,
-  nodeWidth = 30
+```{r}
+# Load necessary libraries
+library(shiny)
+library(ggplot2)
+library(plotly)
+
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Interactive Stroke Data Distribution"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting the variable for the X-axis
+      selectInput("x_variable", "Select Variable for X-Axis:",
+                  choices = c("Age" = "age", 
+                              "Gender" = "gender", 
+                              "Ever Married" = "ever_married",
+                              "Work Type" = "work_type", 
+                              "Residence Type" = "Residence_type", 
+                              "Smoking Status" = "smoking_status",
+                              "Hypertension" = "hypertension", 
+                              "Heart Disease" = "heart_disease"))
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
 )
+
+# Define the server logic
+server <- function(input, output) {
+  
+  output$histogramPlot <- renderPlotly({
+    
+    # If the selected variable is continuous (e.g., age), use geom_histogram
+    if (input$x_variable %in% c("age", "hypertension", "heart_disease")) {
+      p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_histogram(position = "fill", binwidth = 1) +
+        labs(fill = "STROKE")
+    } else {
+      # If the selected variable is categorical (e.g., gender, work_type), use geom_bar
+      p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE")
+    }
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
 ```
 
-```{r}
-# distribution of bmi
-ggplot(encoded_stroke_tb, aes(x = bmi)) +
-geom_histogram() +
-labs(title = "Distribution of BMI")
-```
-
-Right-skewed distribution
-
-```{r}
-ggplot(encoded_stroke_tb, aes(x = age, fill = as.factor(stroke))) +
-  geom_histogram(position = "fill") +
-  labs(fill = "STROKE")
-```
+`hypertension`: 1,182 patients had hypertension, while 3,929 did not. The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other. Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL. `stroke`: Among the 5,111 patients, 249 had experienced a stroke, while 4,861 had not. `gender` `ever_married` `work_type` `Residence_type` `smoking_status` `heart_disease`
 
 Strokes occur more frequently among older individuals in the population. The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke. The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset. percentage not count
 
@@ -541,11 +606,39 @@ ggplot(encoded_stroke_tb, aes(x = heart_disease, fill = as.factor(stroke))) +
 
 ```{r}
 library(ggbeeswarm)
-ggplot(data = your_data, aes(x = factor(stroke), y = age)) +
+ggplot(data = preprocessed_stroke_tb, aes(x = factor(stroke), y = age)) +
   geom_beeswarm() +
   labs(x = "Stroke (0 = No, 1 = Yes)", y = "Age")
 ```
 
+```{r}
+# Sankey chart
+# Load necessary libraries
+library(dplyr)
+library(networkD3)
+
+# Filter the data to include only "Stroke" cases
+sankey_data <- preprocessed_stroke_tb %>%
+  filter(stroke == 1) %>%  # Only include stroke cases
+  count(stroke, hypertension)
+
+# Define nodes, now only for Stroke and hypertension categories
+nodes <- data.frame(name = c("Stroke", "No Hypertension", "Hypertension"))
+
+# Define links based on the filtered data
+links <- sankey_data %>%
+  mutate(source = 0,                        # Map stroke == 1 -> "Stroke"
+         target = ifelse(hypertension == 0, 1, 2),  # Map hypertension: 0 -> "No Hypertension", 1 -> "Hypertension"
+         value = n) %>%
+  select(source, target, value)
+
+# Create the Sankey plot with only Stroke paths
+sankeyNetwork(Links = links, Nodes = nodes,
+              Source = "source", Target = "target",
+              Value = "value", NodeID = "name",
+              units = "Patients",
+              fontSize = 12, nodeWidth = 30)
+```
 
 ### 3.2 Univariate Analysis
 
@@ -619,7 +712,7 @@ shinyApp(
 
 Let's continue with the categorical variables and their relationship with the target variable `stroke`. Under the graphics we display further information about the association between the variables using the Chi-Square test and Cramér's V for effect size. Because Chi-square performs poorly on few instances, we remove in a first step outliers identified previously.
 
---> including all categorical variables
+--\> including all categorical variables
 
 ```{r}
 # Removing all the outliers identified previously
