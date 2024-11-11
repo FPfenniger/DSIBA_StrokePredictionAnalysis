@@ -1,7 +1,7 @@
 # Data
 
-initial_dataset <- read.csv("data/stroke_dataset.csv")
-initial_dataset
+stroke_tb <- read.csv("data/stroke_dataset.csv")
+stroke_tb
 
 ## Sources
 
@@ -56,18 +56,59 @@ o	Type: Categorical (Binary)
 o	Values: 0 (No), 1 (Yes)
 o	Description: The target variable indicating whether the patient has had a stroke.
 
+```{r, warning=FALSE}
+#|code-fold: true 
+#|code-summary: "Click to show initial dataset"
+stroke_tb
+```
+
 Relevant metadata: 
-	Name of the owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his Kaggle profile)
-	Last updated 4 years go (seen on Kaggle)
+Name of the owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his Kaggle profile)
+Last updated 4 years go (seen on Kaggle)
 
 ## Wrangling/Cleaning
 
 The dataset is fairly clean. 
 Our dataset contains several categorical variables. 
-Since a machine learning model requires numerical inputs, we first converted and encoded these variables. 
+Since a machine learning model requires numerical inputs, we first converted and encoded these variables.  
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+categorical_variables <- names(stroke_tb)[sapply(stroke_tb,is.character)]
+numerical_variables <- names(stroke_tb)[sapply(stroke_tb, is.numeric)]
+
+# Use sprintf to format the message, then cat to print it with line breaks
+cat(sprintf("Categorical features: %s\nNumerical features: %s",
+            paste(categorical_variables, collapse = ", "),
+            paste(numerical_variables, collapse = ", ")))
+```
 Secondly, we addressed missing values in the features “bmi” and “smoking_status” by replacing them with N/A. Additionally, we ensured that “bmi” is recognized as a numerical variable and updated the lists of categorical and numerical columns, as “bmi” is now a double. The id column has also been removed, as it is not relevant for our analysis moving forward.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+#|
+cleaned_stroke_tb <- replace_with_na(data = stroke_tb, 
+                                     replace = list(bmi = c("N/A"), smoking_status = c("Unknown"))) %>%
+  mutate(bmi = as.numeric(bmi)) %>%
+  select(-id)
+
+cleaned_stroke_tb
+
+# Selecting categorical variables (character or factor types)
+categorical_variables_1 <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, function(x) is.character(x) | is.factor(x))]
+
+# Selecting numerical variables (double type)
+numerical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, is.double)]
+
+
+# Use sprintf to format the message, then cat to print it with line breaks
+cat(sprintf("Categorical features: %s\nNumerical features: %s",
+            paste(categorical_variables_1, collapse = ", "),
+            paste(numerical_variables, collapse = ", ")))
+```
+
 Then, to maximize the number of observations in our dataset, we replaced the N/A values in “bmi” with the median and in “smoking_status” with the modal value.
-Finally, for the categorical feature encoding, we have converted our categorical variables into dummy variables to utilize them in our predictive model.
+For the categorical feature encoding, we have converted our categorical variables into dummy variables to utilize them in our predictive model.
 Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardized all continuous features in the dataset.
 
 ## Spotting Mistakes and Missing Data
