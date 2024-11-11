@@ -409,7 +409,6 @@ summary_table <- summary(preprocessed_stroke_tb)
 # Convert the summary to a data frame & display it with kable
 summary_table <- as.data.frame.matrix(summary_table)
 kable(as.data.frame(summary_table), row.names = FALSE)
-
 ```
 
 The dataset contains 5,111 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
@@ -422,7 +421,7 @@ library(plotly)
 
 # Define the UI
 ui <- fluidPage(
-  titlePanel("Age, Average Glucose Level, and BMI Distribution"),
+  titlePanel("Numerical variables"),
   sidebarLayout(
     sidebarPanel(
       # Dropdown for selecting variable
@@ -497,7 +496,12 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 ```
 
-`age`: The dataset includes patients with ages ranging from 0 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years. The distribution of age is right-skewed, with a peak around 70 years old. `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
+`age`: The dataset includes patients with ages ranging from 0 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years. The distribution of age is right-skewed, with a peak around 70 years old.
+The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke. The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset.
+
+`avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
+
+`bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
 ```{r}
 # Load necessary libraries
@@ -507,7 +511,7 @@ library(plotly)
 
 # Define the UI
 ui <- fluidPage(
-  titlePanel("Interactive Stroke Data Distribution"),
+  titlePanel("Categorical variables"),
   sidebarLayout(
     sidebarPanel(
       # Dropdown for selecting the variable for the X-axis
@@ -537,12 +541,12 @@ server <- function(input, output) {
     if (input$x_variable %in% c("age", "hypertension", "heart_disease")) {
       p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
         geom_histogram(position = "fill", binwidth = 1) +
-        labs(fill = "STROKE")
+        labs(fill = "STROKE", y = "Ratio")
     } else {
       # If the selected variable is categorical (e.g., gender, work_type), use geom_bar
       p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
         geom_bar(position = "fill") +
-        labs(fill = "STROKE")
+        labs(fill = "STROKE", y = "Ratio")
     }
     
     # Convert ggplot to an interactive plotly object
@@ -554,62 +558,28 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-`hypertension`: 1,182 patients had hypertension, while 3,929 did not. The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other. Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL. `stroke`: Among the 5,111 patients, 249 had experienced a stroke, while 4,861 had not. `gender` `ever_married` `work_type` `Residence_type` `smoking_status` `heart_disease`
+`hypertension`: 1,182 patients had hypertension, while 3,929 did not. Hypertension is more prevalent among older individuals in the population. Hypertension seems to be a risk factor for strokes, as the proportion of stroke cases is higher among individuals with hypertension. This aligns with medical knowledge that hypertension is a significant risk factor for strokes. The distribution of stroke cases is higher among individuals with hypertension, suggesting that hypertension may be a key predictor of stroke occurrence in this dataset.
 
-Strokes occur more frequently among older individuals in the population. The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke. The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset. percentage not count
+`stroke`: Among the 5,111 patients, 249 had experienced a stroke, while 4,861 had not. 
+`gender`: 2,994 female patients, 2,115 male patients, and 1 patient identified as other.
+`ever_married`: 3,529 patients were married, while 1,582 were not.
+`work_type`: The majority of patients were employed in private jobs (2,441), followed by self-employed (1,024), government jobs (657), and children (687). Only 22 patients had never worked.
+`Residence_type`: 2,290 patients lived in urban areas, while 2,821 lived in rural areas.
+`smoking_status`: 1,383 patients never smoked, 789 were former smokers, and 747 were current smokers.
+`heart_disease`: 306 patients had a history of heart disease, while 4,805 did not.
 
+ersetze encoded_stroke_tb durch preprocessed_stroke_tb oder sogar eigene ohne other. so stimmts nicht mit 0, 1 , male, female.
 ```{r}
-ggplot(encoded_stroke_tb , aes(x = age, fill = as.factor(stroke))) +
+ggplot(encoded_stroke_tb, aes(x = age, fill = as.factor(stroke))) +
   geom_histogram(position = "fill") +
-  labs(fill = "STROKE")+
-  facet_wrap(~gender_Male)
+  labs(fill = "STROKE", y = "Ratio") +
+  facet_wrap(~gender_Female, labeller = as_labeller(c(`0` = "Male", `1` = "Female")))
 ```
 
 We can observe that there are no recorded cases of strokes in males under the age of 40.
-
-```{r}
-ggplot(encoded_stroke_tb , aes(x = age, fill = as.factor(stroke))) +
-  geom_histogram(position = "fill") +
-  labs(fill = "STROKE")+
-  facet_wrap(~gender_Female)
-```
-
 In contrast, there are multiple instances of strokes in females younger than 40, inclduing cases at ages 30, 15, and even below one year old.
 
-```{r}
-ggplot(encoded_stroke_tb, aes(x = hypertension, fill = as.factor(stroke))) +
-  geom_bar(position="fill") +
-  labs(fill = "STROKE")
-```
-
-Hypertension seems to be a risk factor for strokes, as the proportion of stroke cases is higher among individuals with hypertension. This aligns with medical knowledge that hypertension is a significant risk factor for strokes. The distribution of stroke cases is higher among individuals with hypertension, suggesting that hypertension may be a key predictor of stroke occurrence in this dataset.
-
-x axis is wrong
-
-```{r}
-# Create a bar chart for hypertension and stroke, faceted where each panel represents a gender group.
-ggplot(encoded_stroke_tb , aes(x = hypertension, fill = as.factor(stroke))) +
-  geom_bar(position="fill") +
-  labs(fill = "STROKE")+
-  facet_wrap(~gender_Female, labeller = as_labeller(c("0" = "Non-Female", "1" = "Female")))
-```
-
-Use pie charts instead of bar charts.
-
-```{r}
-ggplot(encoded_stroke_tb, aes(x = heart_disease, fill = as.factor(stroke))) +
-  geom_bar(position = "fill") +
-  labs(fill = "STROKE")
-```
-
--age as a risk factor for a stroke – 24.9% of the strokes contained in the dataset belong to individual in the 75-79 year old age group, while only 4.01% were for patients under 45 years old Hypertension, a common risk factor for strokes per stroke.org, was greatly more prevalent in older patients, with 82.7% of cases occurring in those over the age of 50. based on EDA, Age, Hypertension, Heart Disease, and average glucose level are the most indicative risk factors for predicting a stroke based on this data
-
-```{r}
-library(ggbeeswarm)
-ggplot(data = preprocessed_stroke_tb, aes(x = factor(stroke), y = age)) +
-  geom_beeswarm() +
-  labs(x = "Stroke (0 = No, 1 = Yes)", y = "Age")
-```
+Based on descriptive statistics, age, hypertension, heart Disease, and average glucose level could be potential candidates for further exploration and modeling.
 
 ```{r}
 # Sankey chart
