@@ -89,11 +89,15 @@ cleaned_stroke_tb <- replace_with_na(data = stroke_tb,
 cleaned_stroke_tb
 ```
 
-We update the lists of categorical and numerical columns, as `bmi` is now a double.
+We update the lists of categorical and numerical columns, as `bmi` is now a double. !!!
 
 ```{r}
-categorical_variables_1 <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb,is.character)]
-numerical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, is.numeric)]
+# Selecting categorical variables (character or factor types)
+categorical_variables_1 <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, function(x) is.character(x) | is.factor(x))]
+
+# Selecting numerical variables (double type)
+numerical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, is.double)]
+
 
 # Use sprintf to format the message, then cat to print it with line breaks
 cat(sprintf("Categorical features: %s\nNumerical features: %s",
@@ -116,6 +120,10 @@ preprocessed_stroke_tb <- cleaned_stroke_tb %>%
   )
 
 preprocessed_stroke_tb
+
+# Save the modified dataset as a CSV file in the 'data' folder
+write.csv(preprocessed_stroke_tb, "data/preprocessed_stroke_tb.csv", row.names = FALSE)
+
 ```
 
 ### 2.3 Categorical Feature Encoding
@@ -128,6 +136,10 @@ library(fastDummies)
 encoded_stroke_tb <- dummy_cols(preprocessed_stroke_tb, select_columns=categorical_variables_1, remove_selected_columns = TRUE)
 
 encoded_stroke_tb
+
+# Save the modified dataset as a CSV file in the 'data' folder
+write.csv(encoded_stroke_tb, "data/encoded_stroke_tb.csv", row.names = FALSE)
+
 ```
 
 Multicollinearity between the different features will be a problem for our model. It will be treated in the Correlation Analysis.
@@ -142,7 +154,7 @@ cat(sprintf("Categorical features: %s\nNumerical features: %s",
             paste(numerical_variables, collapse = ", ")))
 ```
 
-### 2.5 Outlier Analysis
+### 2.4 Outlier Analysis
 
 Looking at the encoded stroke dataset for the categorical variables, we notice that there are only 3 non-binary quantitative variables : age, average glucose level and bmi. To visualize outliers in each of these variables, we use boxplots. The points outside the range delimited by the whiskers are the outliers.
 
@@ -330,7 +342,7 @@ count_work_type_Never_worked
 
 The distribution of residence type between rural and urban appears to be quiet equitable and can provide valuable insights into demographic representation.
 
-### 2.6 Dataset Balancing
+### 2.5 Dataset Balancing
 
 ```{r}
 
@@ -367,6 +379,10 @@ balanced_stroke_tb <- upSample(x = encoded_stroke_tb[, names(encoded_stroke_tb) 
 
 # Check the distribution to confirm balancing
 table(balanced_stroke_tb$stroke)
+
+# Save the modified dataset as a CSV file in the 'data' folder
+write.csv(balanced_stroke_tb, "data/balanced_stroke_tb.csv", row.names = FALSE)
+
 ```
 
 Are the proportions of variables such as age, gender, and hypertension in the up-sampled stroke cases similar to those in the original stroke cases?
@@ -379,6 +395,7 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.1 Descriptive Statistics
 
+<<<<<<< Updated upstream
 Let's get a feeling for the distribution of our data:
 
 ```{r}
@@ -391,6 +408,8 @@ kable(as.data.frame(summary_table), row.names = FALSE)
 
 ```
 
+=======
+>>>>>>> Stashed changes
 5,111 patient records 11 numerical and categorical variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence. Among the patients, 249 had experienced a stroke, while 4,861 had not. Ages range from newborn to 84 years, with an average age of 43.23, and age distribution appears close to normal. The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other. Average age is 43.23 years, with a standard deviation of 22.61 years, and a range of 0 to 82 years. Distribution of age is right-skewed, with a peak around 70 years old. Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL. ... Tell a story with charts.
 
 ```{r}
@@ -524,7 +543,8 @@ ggplot(encoded_stroke_tb, aes(x = heart_disease, fill = as.factor(stroke))) +
 
 In the first part of the univariate analysis, we examine how predictor variables are correlated with our target variable `stroke`. In order to interpret correlations with `stroke` and distributions of the features simultaneously we use violin plots.
 
-```{r}
+```{r, message = FALSE}
+
 library(shiny)
 library(plotly)
 library(dplyr)
@@ -586,6 +606,8 @@ shinyApp(
 `bmi`: With a correlation coefficient of only 0.04, BMI shows virtually no relationship with stroke in this dataset. Both groups (stroke and non-stroke) have similar central tendencies and ranges in BMI, indicating that BMI does not appear to be a significant predictor of stroke in this analysis. This weak association suggests that BMI may not play an important role in differentiating between stroke and non-stroke cases.
 
 Let's continue with the categorical variables and their relationship with the target variable `stroke`. Under the graphics we display further information about the association between the variables using the Chi-Square test and Cramér's V for effect size. Because Chi-square performs poorly on few instances, we remove in a first step outliers identified previously.
+
+--\> including all categorical variables
 
 ```{r}
 # Removing all the outliers identified previously
