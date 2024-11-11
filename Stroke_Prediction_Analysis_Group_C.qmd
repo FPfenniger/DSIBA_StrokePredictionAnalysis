@@ -9,13 +9,18 @@ execute:
 
 ## 1. Introduction and Data Structure
 
-### 1.1 Overview & Motivation
+WHO report: No 3 cause of premature death worldwide 2021
 
-Bolor (report: Intro) Introduction 2 Project Goals . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2 Research Questions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 2 - Adjustments or Refinements.
+### 1.1 Project Goals
+Describe the main goals of the project, including the motivation behind the research and the key questions you aim to answer.
 
-WHO report: No 3 cause of premature death worldwide 2021 \### 1.2 Related Work
+### 1.2 Research Questions
+- Question 1: ...
+- Question 2: ...
+- (Add as necessary)
 
-### 1.3 Research Questions
+### 1.3 Adjustments or Refinements
+Discuss any changes or refinements to the project scope or questions based on initial findings or data constraints.
 
 ### 1.4 Data Source
 
@@ -517,6 +522,14 @@ ggplot(encoded_stroke_tb, aes(x = heart_disease, fill = as.factor(stroke))) +
 ```
 
 -age as a risk factor for a stroke – 24.9% of the strokes contained in the dataset belong to individual in the 75-79 year old age group, while only 4.01% were for patients under 45 years old Hypertension, a common risk factor for strokes per stroke.org, was greatly more prevalent in older patients, with 82.7% of cases occurring in those over the age of 50. based on EDA, Age, Hypertension, Heart Disease, and average glucose level are the most indicative risk factors for predicting a stroke based on this data
+
+```{r}
+library(ggbeeswarm)
+ggplot(data = your_data, aes(x = factor(stroke), y = age)) +
+  geom_beeswarm() +
+  labs(x = "Stroke (0 = No, 1 = Yes)", y = "Age")
+```
+
 
 ### 3.2 Univariate Analysis
 
