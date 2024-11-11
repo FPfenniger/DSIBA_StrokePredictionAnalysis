@@ -10,12 +10,16 @@ The first draft of our EDA Visualization examines the distribution of the numeri
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-read.csv("data/encoded_stroke_tb.csv") -> encoded_stroke_tb
-
+# Load necessary libraries
 library(shiny)
 library(plotly)
 library(dplyr)
-library(htmltools)
+
+# Load the data
+preprocessed_stroke_tb <- read.csv("../../data/preprocessed_stroke_tb.csv")
+
+# Define numerical variables (adjust if there are more)
+numerical_variables <- c("age", "avg_glucose_level", "bmi")
 
 # Shiny app with separate display of the correlation coefficient
 shinyApp(
@@ -30,7 +34,7 @@ shinyApp(
       selected_variable <- input$selected_variable
       
       # Generate the violin plot
-      plot <- plot_ly(encoded_stroke_tb, x = ~factor(stroke), y = ~as.numeric(encoded_stroke_tb[[selected_variable]]), type = "violin",
+      plot <- plot_ly(preprocessed_stroke_tb, x = ~factor(stroke), y = ~as.numeric(preprocessed_stroke_tb[[selected_variable]]), type = "violin",
                       box = list(visible = TRUE),
                       meanline = list(visible = TRUE)) %>%
         layout(
@@ -39,37 +43,110 @@ shinyApp(
           yaxis = list(title = selected_variable)
         )
       
-      # Berechne die Korrelation
-      correlation <- cor(as.numeric(encoded_stroke_tb[[selected_variable]]), as.numeric(encoded_stroke_tb$stroke), method = "pearson")
-      
-      # Erstelle HTML-Content mit Plot und Korrelationskoeffizient
-      html_content <- tagList(
-        tags$h3("Violin Plot of", selected_variable, "by Stroke"),
-        plot,
-        tags$p(paste("Correlation Coefficient with Stroke:", round(correlation, 2)))
-      )
-      
-      # Speichere das HTML als Datei
-      save_html(html_content, "data/violin_plot_and_target.html")
-      
-      plot  # Gebe den Plot aus
+      plot  # Display the plot
     })
     
     # Render the correlation text below the plot
     output$correlation_text <- renderUI({
       selected_variable <- input$selected_variable
-      correlation <- cor(as.numeric(encoded_stroke_tb[[selected_variable]]), as.numeric(encoded_stroke_tb$stroke), method = "pearson")
+      correlation <- cor(as.numeric(preprocessed_stroke_tb[[selected_variable]]), as.numeric(preprocessed_stroke_tb$stroke), method = "pearson")
       HTML(paste("Correlation Coefficient with Stroke:", round(correlation, 2)))
     })
   }
 )
+
+```
+
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+library(shiny)
+library(plotly)
+library(dplyr)
+library(vcd)
+library(htmltools)
+
+categorical_variables = c("hypertension", "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status")
+
+# Shiny app with stacked bar chart and association test results
+shinyApp(
+  ui = fluidPage(
+    selectInput("selected_variable", "Choose a Variable:", choices = categorical_variables),
+    plotlyOutput("stacked_bar_chart"),
+    htmlOutput("test_results")  # Output for Chi-Square and Cramér's V results
+  ),
+  
+  server = function(input, output) {
+    
+    output$stacked_bar_chart <- renderPlotly({
+      selected_variable <- input$selected_variable
+      
+      # Generate the stacked bar chart data
+      plot_data <- outlier_stroke_tb %>%
+        count(stroke = as.factor(stroke), category = as.factor(!!sym(selected_variable))) %>%
+        rename(count = n)
+      
+      # Create the stacked bar chart
+      plot <- plot_ly(plot_data, x = ~stroke, y = ~count, color = ~category,
+                      type = "bar") %>%
+        layout(barmode = "stack",
+               title = paste("Stacked Bar Chart of", selected_variable, "by Stroke"),
+               xaxis = list(title = "Stroke"),
+               yaxis = list(title = "Count"),
+               legend = list(title = list(text = selected_variable)))
+      
+      # Speichere das Plot-Objekt, das in der App angezeigt wird
+      plot
+    })
+    
+    output$test_results <- renderUI({
+      selected_variable <- input$selected_variable
+      
+      # Create a contingency table for stroke and the selected categorical variable
+      contingency_table <- table(outlier_stroke_tb$stroke, outlier_stroke_tb[[selected_variable]])
+      
+      # Check if the contingency table has enough data for the chi-square test
+      if (all(contingency_table > 0)) {
+        # Run the chi-square test
+        chi_square_result <- chisq.test(contingency_table)
+        
+        # Calculate Cramér's V to assess the strength of association
+        cramers_v <- assocstats(contingency_table)$cramer
+        
+        # Display the test results
+        test_results <- paste(
+          "Chi-square P-value:", round(chi_square_result$p.value, 4), "<br>",
+          "Cramér's V:", round(cramers_v, 4)
+        )
+      } else {
+        test_results <- "Insufficient data for Chi-Square test"
+      }
+      
+      # Speichere die Testresultate und den Plot gemeinsam als HTML
+      html_content <- tagList(
+        tags$h3(paste("Stacked Bar Chart of", selected_variable, "by Stroke")),
+        plotlyOutput("stacked_bar_chart"),
+        tags$p(HTML(test_results))
+      )
+      
+      # Speichern als HTML-Datei
+      save_html(html_content, "data/stacked_bar_chart_target.html")
+      
+      # Gebe die Testresultate in der App aus
+      HTML(test_results)
+    })
+  }
+)
+
+```
+
 ```
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart. Additionally, we conducted a chi-squared test and computed it's effect size to determine the statistical significance of the correlation between the categorical variables and `stroke`:
 
-```{=html}
-<iframe src="data/stacked_bar_chart_and_target.html" width="100%" height="600px"></iframe>
-```
+
 
 ## Summary Statistics
 Provide summary statistics for key variables to give an overview of the data.
