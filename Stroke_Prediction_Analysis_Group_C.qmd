@@ -401,8 +401,6 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.1 Descriptive Statistics
 
-<<<<<<< Updated upstream
-Let's get a feeling for the distribution of our data:
 
 ```{r}
 # Generate summary of your data frame
@@ -414,8 +412,6 @@ kable(as.data.frame(summary_table), row.names = FALSE)
 
 ```
 
-=======
->>>>>>> Stashed changes
 5,111 patient records 11 numerical and categorical variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence. Among the patients, 249 had experienced a stroke, while 4,861 had not. Ages range from newborn to 84 years, with an average age of 43.23, and age distribution appears close to normal. The dataset comprises 2,994 female patients, 2,115 male patients, and 1 patient identified as other. Average age is 43.23 years, with a standard deviation of 22.61 years, and a range of 0 to 82 years. Distribution of age is right-skewed, with a peak around 70 years old. Average glucose level is 106.15 mg/dL, with a standard deviation of 45.28 mg/dL, and a range of 55.12 to 271.74 mg/dL. ... Tell a story with charts.
 
 ```{r}
