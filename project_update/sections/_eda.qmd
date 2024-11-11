@@ -1,11 +1,16 @@
 # Exploratory Data Analysis (EDA)
 
-## Initial Visualizations
-Present initial visualizations to help understand data distributions and relationships between variables.
+## Structure & Initial Visualizations 
+We decided to split our EDA into three distinct parts. Part I treats descriptive statistics and the general structure of our dataset. Part II focuses on a univariate analysis of the features(distributions) and their correlations with the target variable`stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. 
+For the visualizations, we opted for interactivity and chose to use `plotly`. This makes our report more engaging and allows for a more in-depth analysis of the data. 
+
+The first draft of our EDA Visualization examines the distribution of the numerical features and their relationship with the target variable in a violin plot:
 
 ```{=html}
 <iframe src="data/feature_distrib_target_var_analysis.html" width="100%" height="600px"></iframe>
 ```
+
+The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart. Additionally, we conducted a chi-squared test and computed it's effect size to determine the statistical significance of the correlation between the categorical variables and `stroke`:
 
 ```{=html}
 <iframe src="data/stacked_bar_chart_and_target.html" width="100%" height="600px"></iframe>
@@ -23,4 +28,5 @@ summary(data_clean)
 ```
 
 ## Key Findings or Patterns
-Summarize any preliminary patterns or insights observed in the data so far.
+The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size. But at the current stage, we can not make any definitive conclusions as the scope of interpretations we can make upon our initial analysis is limited. Furthermore, regarding the categorical variables test results, we have to be cautious as we tested variables with multiple components against `stroke`, so that we cannot attribute the correlation to a specific subcategory. 
+
