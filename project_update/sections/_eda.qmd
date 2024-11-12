@@ -5,6 +5,33 @@
 We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable stroke. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use plotly. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
 
 ### 1. Descriptive Statistics
+The dataset contains 5,110 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, history of heart disease, marital status, occupation sector, recidence type, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
+
+The dataset comprises 5,110 patient records. 4861 individuals have experienced no stroke, while 249 individuals have had a stroke.
+
+```{r}
+# Summary of the target variable 'stroke'
+table(preprocessed_stroke_tb$stroke)
+```
+
+The dataset contains 11 variables that can be categorized into two types: numerical and categorical. 
+
+`Numerical variables` include 
+- age
+- average glucose level
+- and body mass index (bmi),
+
+while `categorical variables` include
+- gender
+- history of hypertension
+- history of heart disease
+- marital status
+- occupation sector
+- residence type
+- smoking status
+- and stroke occurrence.
+
+This distinction is important because numerical and categorical variables require different types of plots and charts to effectively present their descriptive statistics.
 
 ### 2. Univariate Analysis
 First, we visualized all numerical variables in a histogram to get an overview of the distribution of the data. 
@@ -172,7 +199,9 @@ The second draft of our EDA Visualization examines the distribution of the categ
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
+
 # Barchart of categorical variables grouped by stroke variable
+
 
 # Define the UI
 ui <- fluidPage(
@@ -231,3 +260,6 @@ shinyApp(ui = ui, server = server)
 ## Key Findings or Patterns
 
 The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size. But at the current stage, we can not make any definitive conclusions as the scope of interpretations we can make upon our initial analysis is limited. Furthermore, regarding the categorical variables test results, we have to be cautious as we tested variables with multiple components against `stroke`, so that we cannot attribute the correlation to a specific subcategory.
+
+
+
