@@ -399,7 +399,6 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.1 Descriptive Statistics
 
-
 The dataset contains 5,110 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, history of heart disease, marital status, occupation sector, recidence type, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
 
 #### 3.1.1 Numerical variables
@@ -516,7 +515,7 @@ shinyApp(ui = ui, server = server)
 
 #### 3.1.2 Categorical variables
 
-lets check the modal values and counts for the categorical variables. 
+lets check the modal values and counts for the categorical variables.
 
 ```{r}
 # Load necessary libraries
@@ -532,7 +531,6 @@ gender_summary <- stroke_tb %>%
 # Display the table with kable
 kable(gender_summary)
 ```
-
 
 ```{r}
 # Load necessary libraries
@@ -840,6 +838,8 @@ plot_ly(
 The results show that there exists a low to moderate correlation between our predictors. Overall we can conclude that the numerical features are relatively independent and have low predictive power on each other. In that sense, no multicollinearity is present and the predictors will add unique information to our model.
 
 In the next step we analyze the relationship between categorical features using a Chi-square test between different columns using contingency tables. A Chi-square test allows us to detect associations between features.
+
+--\> we don't do it like that, we use the VIF to control for multicollinearity
 
 ```{r}
 # Loop through each unique pair of categorical variables

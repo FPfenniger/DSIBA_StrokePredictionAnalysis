@@ -2,17 +2,18 @@
 
 ## Methods
 
-We selected logistic regression as the primary statistical method. Since the outcome variable (stroke occurrence) is binary (0 for no stroke, 1 for stroke), logistic regression allows us to model the probability of a patient experiencing a stroke based on various predictor variables. This method is preferred over linear regression for binary outcomes, as it provides predicted probabilities constrained between 0 and 1, making it interpretable as a likelihood. Up until now, we focus only on logistic regression, but if time allows we may consider looking into other machine learning methods such as Decision Trees.
+We selected logistic regression as the primary statistical method. Since the outcome variable (stroke occurrence) is binary (0 for no stroke, 1 for stroke), logistic regression allows us to model the probability of a patient experiencing a stroke based on various predictor variables. This method provides predicted probabilities constrained between 0 and 1, making it interpretable as a likelihood. Up until now, we focus only on logistic regression, but if time allows we may consider looking into other machine learning methods such as Decision Trees.
 
-For general procedure, we plan to split our prepared dataset into training, validation and testing sets. We will fit the logistic regression model on the training set and evaluate its performance on the validation set. This will allow us to do potential fine-tuning before the final evaluation on the test set. As evaluation metrics we plan to use Accuracy, Precision, Recall, and F1-Scores: These metrics provide insight into the model’s performance in distinguishing between patients with and without stroke.
+For general procedure, we plan to do a train-test on our preprocessed dataset. We will fit the logistic regression model on the training set and evaluate its performance on the validation set. This will allow us to do potential fine-tuning before the final evaluation on the test set. As evaluation metrics we plan to use Accuracy, Precision, Recall, and F1-Scores.
 
-## Goals for Each Method
+In the current EDA, we have seen that age seems to be one of the most significant predictors. Therefore, we are considering to do a stratified analysis on age, specifically the age range 60-80 and the rest of the population. These demographic models could be more suited to the unique risk factors patterns of each group. But first, we would have to conduct an additional EDA for the demographic stratified model.
+
+## Goals for the Method Method
 
 Logistic Regression:\
 The primary goal of logistic regression in this analysis is to model the probability of stroke occurrence based on various predictor variables, such as age, blood pressure, and lifestyle factors. By fitting this model, we aim to identify which factors are associated with an increased likelihood of stroke and quantify their impact. This will allow us to interpret how each predictor affects stroke risk and prioritize significant risk factors that could be targeted for preventive interventions. Additionally, logistic regression provides us with a probabilistic outcome (rather than a strict classification), offering a nuanced understanding of each patient's risk level.
 
-Model Evaluation Metrics (Accuracy, Precision, Recall, and F1-Score):\
-Each metric serves a specific purpose in evaluating the model's effectiveness:
+Model Evaluation Metrics:
 
 -   Accuracy: Measures the proportion of correct predictions out of all predictions, giving us a general sense of the model’s performance across both stroke and non-stroke cases. - Precision: Focuses on the proportion of true positive stroke predictions out of all positive predictions, allowing us to assess how reliable our positive stroke predictions are (i.e., minimizing false positives).
 
@@ -22,17 +23,3 @@ Each metric serves a specific purpose in evaluating the model's effectiveness:
 
 Potential Additional Methods:\
 If time permits, we may explore decision trees as an alternative method. The goal of including decision trees would be to compare the interpretability and performance of a tree-based approach with logistic regression. Decision trees could help uncover complex interactions between variables that might not be captured by logistic regression, potentially enhancing the model’s predictive power and offering an alternative, interpretable path for understanding stroke risk factors.
-
-```{r}
-#| label: initial-analysis
-#| eval: false # do not evaluate as this is just an example
-
-# Example code block for model setup
-# Setting up a linear model
-model <- lm(outcome_variable ~ predictor_variable, data = data_clean)
-summary(model)
-```
-
-## Preliminary Results
-
-Provide any preliminary results or observations from applying these methods.
