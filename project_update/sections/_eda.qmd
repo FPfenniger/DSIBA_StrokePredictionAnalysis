@@ -250,11 +250,92 @@ server <- function(input, output) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
+![Gender Bar Plot](../../data/png_for_update/gender.png)
+![Hypertension Bar Plot](../../data/png_for_update/hypertension.png)
+![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
 
-
+![ever_married Bar Plot](../../data/png_for_update/ever_married.png)
+![work_type Bar Plot](../../data/png_for_update/work_type.png)
+![residence_type Bar Plot](../../data/png_for_update/residence_type.png)
+![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png)
+The graphic above displays the distribution of the categorical variables in relation to the target variable `stroke`. The variables `gender`, `hypertension`, and `heart_disease` are binary, while the variables `ever_married`, `work_type`, `residence_type`, and `smoking_status` have multiple categories. The bar chart shows the proportion of patients with and without a stroke for each category of the selected variable.
 
 ### 3. Bivariate Analysis 
+In the bivariate analysis we examine correlations between our features. We use a correlation matrix to visualize the relationships between the numerical variables and the target variable `stroke`.
 
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+numeric_columns <- encoded_stroke_tb %>% 
+  select(where(is.double))
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(numeric_columns, use = "complete.obs")
+
+# Convert the correlation matrix to a format that plotly can use
+heatmap_data <- as.data.frame(as.table(correlation_matrix))
+
+# Plot the correlation matrix as a heatmap
+plot_ly(
+  x = colnames(correlation_matrix),
+  y = rownames(correlation_matrix),
+  z = correlation_matrix,
+  type = "heatmap",
+  colorscale = "Viridis"  # Corrected typo
+) %>%
+  layout(
+    title = "Correlation Matrix Heatmap",
+    xaxis = list(title = "", tickangle = 45),
+    yaxis = list(title = "")
+  )
+
+```
+
+To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine it's importance we additionally computed the Cramer's V for effect size (general threshold here 0.3). 
+
+```{r, message = FALSE}  
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+library(vcd)
+
+outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
+
+cat_variables = c("hypertension", 
+                  "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
+
+# Loop through each unique pair of categorical variables
+for (index1 in 1:(length(cat_variables) - 1)) {
+  var1 <- cat_variables[index1]
+  
+  for (index2 in (index1 + 1):length(cat_variables)) {
+    var2 <- cat_variables[index2]
+    
+    # Create a contingency table
+    contingency_table <- table(outlier_stroke_tb[[var1]], outlier_stroke_tb[[var2]])
+    
+    # Check if the contingency table has enough data for the chi-square test
+    if (all(contingency_table > 0)) {
+      # Run the chi-square test
+      chi_square_result <- chisq.test(contingency_table)
+      
+      # Calculate Cramér's V to assess the strength of association
+      cramers_v <- assocstats(contingency_table)$cramer
+      
+      # Display the results only if Cramér's V > 0.3 and p-value < 0.05
+      if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
+        cat("Relationship between", var1, "and", var2, "\n")
+        cat("Chi-square P-value:", chi_square_result$p.value, "\n")
+        cat("Cramér's V:", cramers_v, "\n")
+        print(contingency_table)
+        cat("\n")
+      }
+    } else {
+      cat("Skipping test for", var1, "and", var2, "due to insufficient data\n")
+    }
+  }
+}
+```
 
 
 ## Key Findings or Patterns
