@@ -59,7 +59,6 @@ summary_table <- summary(stroke_tb)
 # Convert the summary to a data frame & display it with kable
 summary_table <- as.data.frame.matrix(summary_table)
 kable(as.data.frame(summary_table), row.names = FALSE)
-
 ```
 
 Our Dataset has a few categorical variables. As a machine learning model needs numerical inputs, we need to convert and encode them later. Let's create a list of categorical and numerical columns:
@@ -400,16 +399,33 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.1 Descriptive Statistics
 
-```{r}
-# Generate summary of your data frame
-summary_table <- summary(preprocessed_stroke_tb)
 
-# Convert the summary to a data frame & display it with kable
-summary_table <- as.data.frame.matrix(summary_table)
-kable(as.data.frame(summary_table), row.names = FALSE)
+The dataset contains 5,110 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, history of heart disease, marital status, occupation sector, recidence type, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
+
+#### 3.1.1 Numerical variables
+
+```{r}
+# Load the necessary library
+library(knitr)
+
+# Subset the data frame to include only the desired variables
+selected_data <- preprocessed_stroke_tb[, c("age", "avg_glucose_level", "bmi")]
+
+# Generate summary for the selected variables
+summary_table <- summary(selected_data)
+
+# Convert the summary to a data frame
+summary_df <- as.data.frame.matrix(summary_table)
+
+# Display the table with kable
+kable(summary_df, row.names = TRUE, col.names = c( "Age", "Avg Glucose Level", "BMI" ))
 ```
 
-The dataset contains 5,111 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, heart disease status, marital status, occupation type, type of residential area, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
+`age`: The dataset includes patients with ages ranging from 0.8 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years, and with a peak around 70 years old.
+
+`avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
+
+`bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
 ```{r}
 # Load necessary libraries
@@ -419,12 +435,12 @@ library(plotly)
 
 # Define the UI
 ui <- fluidPage(
-  titlePanel("Numerical variables"),
+  titlePanel("Numerical variables grouped by stroke variable"),
   sidebarLayout(
     sidebarPanel(
       # Dropdown for selecting variable
       selectInput("variable", "Select Variable:", 
-                  choices = c("Age" = "age", "Average Glucose Level" = "avg_glucose_level" ,"BMI" = "bmi")),
+                  choices = c("Age" = "age", "Average Glucose Level" = "avg_glucose_level", "BMI" = "bmi")),
       
       # Conditional panel to show the bin width slider only if "Show Standardized Data" is unchecked
       conditionalPanel(
@@ -455,8 +471,9 @@ server <- function(input, output, session) {
   })
   
   output$histogramPlot <- renderPlotly({
-    # Original data
+    # Retrieve the selected variable and stroke data
     original_data <- encoded_stroke_tb[[input$variable]]
+    stroke_data <- encoded_stroke_tb$stroke
     
     # Calculate mean and standard deviation for original data
     mean_val <- mean(original_data)
@@ -477,10 +494,13 @@ server <- function(input, output, session) {
       sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
     }
     
-    # Generate the ggplot histogram with mean and SD lines
-    p <- ggplot(data.frame(data), aes(x = data)) +
-      geom_histogram(binwidth = input$binwidth, fill = "dark grey", color = "white") +
-      labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency") +
+    # Combine data and stroke status into a data frame
+    plot_data <- data.frame(data = data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+    
+    # Generate the ggplot stacked histogram with mean and SD lines
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = input$binwidth, color = "white", position = "stack") +
+      labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency", fill = "Stroke Status") +
       geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", size = 1) +
       geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", size = 0.8) +
       geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", size = 0.8)
@@ -494,15 +514,25 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 ```
 
-#### 3.1.1 Averages and standard deviations
+#### 3.1.2 Categorical variables
 
-`age`: The dataset includes patients with ages ranging from 0 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years, and with a peak around 70 years old.
+lets check the modal values and counts for the categorical variables. 
 
-`avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
+```{r}
+# Load necessary libraries
+library(dplyr)
+library(knitr)
 
-`bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
+# Count occurrences of each level in the 'gender' variable
+gender_summary <- stroke_tb %>%
+  group_by(gender) %>%
+  summarize(count = n()) %>%
+  rename(Gender = gender, Count = count)
 
-The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke.The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset.
+# Display the table with kable
+kable(gender_summary)
+```
+
 
 ```{r}
 # Load necessary libraries
@@ -512,7 +542,7 @@ library(plotly)
 
 # Define the UI
 ui <- fluidPage(
-  titlePanel("Categorical variables"),
+  titlePanel("Categorical variables grouped by stroke variable"),
   sidebarLayout(
     sidebarPanel(
       # Dropdown for selecting the variable for the X-axis
@@ -556,6 +586,17 @@ server <- function(input, output) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+```
+
+```{r}
+#table of patients with hypertension and without hypertension
+library(dplyr)
+
+# Summarize counts with and without hypertension
+hypertension_summary <- preprocessed_stroke_tb %>%
+  group_by(hypertension) %>%
+  summarize(count = n())
+print(hypertension_summary)
 ```
 
 `hypertension`: 1,182 patients had hypertension, while 3,929 did not. Hypertension is more prevalent among older individuals in the population. Hypertension seems to be a risk factor for strokes, as the proportion of stroke cases is higher among individuals with hypertension. This aligns with medical knowledge that hypertension is a significant risk factor for strokes. The distribution of stroke cases is higher among individuals with hypertension, suggesting that hypertension may be a key predictor of stroke occurrence in this dataset.
