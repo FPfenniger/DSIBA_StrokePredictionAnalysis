@@ -2,10 +2,105 @@
 
 ## Structure & Initial Visualizations
 
-We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable `stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use `plotly`. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
+We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable stroke. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use plotly. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
 
-The first draft of our EDA Visualization examines the distribution of the numerical features and their relationship with the target variable in a violin plot:
+### 1. Descriptive Statistics
 
+### 2. Univariate Analysis
+First, we visualized all numerical variables in a histogram to get an overview of the distribution of the data. The histograms show that the variables `age`, `avg_glucose_level`, and `bmi` are right-skewed. The variable `bmi` has a peak around 30, which is the threshold for obesity. The variable `avg_glucose_level` has a peak around 100, which is the threshold for prediabetes. The variable `age` has a peak around 50, which is the median age of the dataset.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Histogram of numerical variables grouped by stroke variable
+# Load necessary libraries
+library(shiny)
+library(ggplot2)
+library(plotly)
+
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Numerical variables grouped by stroke variable"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting variable
+      selectInput("variable", "Select Variable:", 
+                  choices = c("Age" = "age", "Average Glucose Level" = "avg_glucose_level", "BMI" = "bmi")),
+      
+      # Conditional panel to show the bin width slider only if "Show Standardized Data" is unchecked
+      conditionalPanel(
+        condition = "input.standardize == false",
+        sliderInput("binwidth", "Bin Width:", min = 1, max = 10, value = 5)
+      ),
+      
+      # Checkbox for standardized data
+      checkboxInput("standardize", "Show Standardized Data", value = FALSE)
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
+)
+
+# Define the server logic
+server <- function(input, output, session) {
+  
+  observe({
+    # Change bin width to 1 if standardized data is checked
+    if (input$standardize) {
+      updateSliderInput(session, "binwidth", value = 1)
+    } else {
+      updateSliderInput(session, "binwidth", value = 5)
+    }
+  })
+  
+  output$histogramPlot <- renderPlotly({
+    # Retrieve the selected variable and stroke data
+    original_data <- encoded_stroke_tb[[input$variable]]
+    stroke_data <- encoded_stroke_tb$stroke
+    
+    # Calculate mean and standard deviation for original data
+    mean_val <- mean(original_data)
+    sd_val <- sd(original_data)
+    
+    # Standardize the data if checkbox is selected
+    if (input$standardize) {
+      data <- scale(original_data)
+      x_label <- paste("Standardized", input$variable)
+      # Mean and SD lines at 0 and ±1 for standardized data
+      mean_line <- 0
+      sd_lines <- c(-1, 1)
+    } else {
+      data <- original_data
+      x_label <- input$variable
+      # Use calculated mean and SD for original data
+      mean_line <- mean_val
+      sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
+    }
+    
+    # Combine data and stroke status into a data frame
+    plot_data <- data.frame(data = data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+    
+    # Generate the ggplot stacked histogram with mean and SD lines
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = input$binwidth, color = "white", position = "stack") +
+      labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency", fill = "Stroke Status") +
+      geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", size = 1) +
+      geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", size = 0.8) +
+      geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", size = 0.8)
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+For completion we also included a Violin Plot: 
+### 3. Bivariate Analysis 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -62,99 +157,60 @@ shinyApp(
 
 ![bmi vs. Stroke](../../data/png_for_update/bmi.png)
 
-
-
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
 
---> Bolor's Chart here 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# Load necessary libraries
-library(shiny)
-library(plotly)
-library(dplyr)
-library(vcd)
-library(htmltools)
+ibrary(plotly)
 
-# Load the data
-outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
-
-# Define categorical variables
-cat_variables <- c("hypertension", "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
-
-# Shiny app with stacked bar chart and association test results
-shinyApp(
-  ui = fluidPage(
-    selectInput("selected_variable", "Choose a Variable:", choices = cat_variables),
-    plotlyOutput("stacked_bar_chart"),
-    htmlOutput("test_results")  # Output for Chi-Square and Cramér's V results
-  ),
-  
-  server = function(input, output) {
-    
-    output$stacked_bar_chart <- renderPlotly({
-      selected_variable <- input$selected_variable
-      
-      # Generate the stacked bar chart data
-      plot_data <- outlier_stroke_tb %>%
-        count(stroke = as.factor(stroke), category = as.factor(!!sym(selected_variable))) %>%
-        rename(count = n)
-      
-      # Create the stacked bar chart
-      plot <- plot_ly(plot_data, x = ~stroke, y = ~count, color = ~category,
-                      type = "bar") %>%
-        layout(barmode = "stack",
-               title = paste("Stacked Bar Chart of", selected_variable, "by Stroke"),
-               xaxis = list(title = "Stroke"),
-               yaxis = list(title = "Count"),
-               legend = list(title = list(text = selected_variable)))
-      
-      plot  # Display the plot
-    })
-    
-    output$test_results <- renderUI({
-      selected_variable <- input$selected_variable
-      
-      # Create a contingency table for stroke and the selected categorical variable
-      contingency_table <- table(outlier_stroke_tb$stroke, outlier_stroke_tb[[selected_variable]])
-      
-      # Check if the contingency table has enough data for the chi-square test
-      if (all(contingency_table > 0)) {
-        # Run the chi-square test
-        chi_square_result <- chisq.test(contingency_table)
-        
-        # Calculate Cramér's V to assess the strength of association
-        cramers_v <- assocstats(contingency_table)$cramer
-        
-        # Display the test results
-        test_results <- paste(
-          "Chi-square P-value:", round(chi_square_result$p.value, 4), "<br>",
-          "Cramér's V:", round(cramers_v, 4)
-        )
-      } else {
-        test_results <- "Insufficient data for Chi-Square test"
-      }
-      
-      # Display the test results in the app
-      HTML(test_results)
-    })
-  }
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Categorical variables grouped by stroke variable"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting the variable for the X-axis
+      selectInput("x_variable", "Select Variable for X-Axis:",
+                  choices = c("Gender" = "gender", 
+                              "Ever Married" = "ever_married",
+                              "Work Type" = "work_type", 
+                              "Residence Type" = "Residence_type", 
+                              "Smoking Status" = "smoking_status",
+                              "Hypertension" = "hypertension", 
+                              "Heart Disease" = "heart_disease"))
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
 )
-```
 
+# Define the server logic
+server <- function(input, output) {
+  
+  output$histogramPlot <- renderPlotly({
+    
+    # If the selected variable is continuous (e.g., age), use geom_histogram
+    if (input$x_variable %in% c("age", "hypertension", "heart_disease")) {
+      p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_histogram(position = "fill", binwidth = 1) +
+        labs(fill = "STROKE", y = "Ratio")
+    } else {
+      # If the selected variable is categorical (e.g., gender, work_type), use geom_bar
+      p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio")
+    }
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
 
-## Summary Statistics
-
-Provide summary statistics for key variables to give an overview of the data.
-
-```{r}
-#| label: summary-statistics
-#| eval: false # do not evaluate as this is just an example
-
-# Summary statistics example
-summary(data_clean)
+# Run the application
+shinyApp(ui = ui, server = server)
 ```
 
 ## Key Findings or Patterns
