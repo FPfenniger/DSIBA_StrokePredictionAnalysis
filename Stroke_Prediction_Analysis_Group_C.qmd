@@ -723,8 +723,6 @@ Let's continue with the categorical variables and their relationship with the ta
 # Removing all the outliers identified previously
 outlier_stroke_tb <- subset(preprocessed_stroke_tb, gender != "Other" & work_type != "children" & !(work_type== "Never_worked"))
 
-
-
 write.csv(outlier_stroke_tb, "data/outlier_stroke_tb.csv", row.names = FALSE)
 ```
 
@@ -806,7 +804,6 @@ shinyApp(
     })
   }
 )
-
 ```
 
 Description of findings in stacked_bar_plot above
