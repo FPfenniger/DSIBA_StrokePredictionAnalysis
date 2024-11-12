@@ -1,14 +1,15 @@
 # Exploratory Data Analysis (EDA)
 
-## Structure & Initial Visualizations 
-We decided to split our EDA into three distinct parts. Part I treats descriptive statistics and the general structure of our dataset. Part II focuses on a univariate analysis of the features(distributions) and their correlations with the target variable `stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. 
-For the visualizations, we opted for interactivity and chose to use `plotly`. This makes our report more engaging and allows for a more in-depth analysis of the data. 
+## Structure & Initial Visualizations
+
+We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable `stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use `plotly`. This makes our report more engaging and allows for a more in-depth analysis of the data.
 
 The first draft of our EDA Visualization examines the distribution of the numerical features and their relationship with the target variable in a violin plot:
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
+
 # Load necessary libraries
 library(shiny)
 library(plotly)
@@ -53,9 +54,13 @@ shinyApp(
     })
   }
 )
-
-
 ```
+
+![Age vs. Stroke](../../data/png%20for%20update/age.png)
+
+![avg_glucose_level vs. Stroke](../../data/png%20for%20update/avg_glucose_level.png)
+
+![bmi vs. Stroke](../../data/png%20for%20update/bmi.png)
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart. Additionally, we conducted a chi-squared test and computed it's effect size to determine the statistical significance of the correlation between the categorical variables and `stroke`:
 
@@ -134,11 +139,10 @@ shinyApp(
     })
   }
 )
-
 ```
 
-
 ## Summary Statistics
+
 Provide summary statistics for key variables to give an overview of the data.
 
 ```{r}
@@ -150,5 +154,5 @@ summary(data_clean)
 ```
 
 ## Key Findings or Patterns
-The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size. But at the current stage, we can not make any definitive conclusions as the scope of interpretations we can make upon our initial analysis is limited. Furthermore, regarding the categorical variables test results, we have to be cautious as we tested variables with multiple components against `stroke`, so that we cannot attribute the correlation to a specific subcategory. 
 
+The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size. But at the current stage, we can not make any definitive conclusions as the scope of interpretations we can make upon our initial analysis is limited. Furthermore, regarding the categorical variables test results, we have to be cautious as we tested variables with multiple components against `stroke`, so that we cannot attribute the correlation to a specific subcategory.
