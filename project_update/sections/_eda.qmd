@@ -9,6 +9,7 @@ The first draft of our EDA Visualization examines the distribution of the numeri
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
+
 # Load necessary libraries
 library(shiny)
 library(plotly)
@@ -53,8 +54,6 @@ shinyApp(
     })
   }
 )
-
-
 ```
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart. Additionally, we conducted a chi-squared test and computed it's effect size to determine the statistical significance of the correlation between the categorical variables and `stroke`:
@@ -134,8 +133,9 @@ shinyApp(
     })
   }
 )
-
 ```
+![BMI vs. Stroke](data/png for update/bmi.png)
+
 
 
 ## Summary Statistics

@@ -496,8 +496,7 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 ```
 
-`age`: The dataset includes patients with ages ranging from 0 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years. The distribution of age is right-skewed, with a peak around 70 years old.
-The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke. The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset.
+`age`: The dataset includes patients with ages ranging from 0 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years. The distribution of age is right-skewed, with a peak around 70 years old. The distribution of stroke cases is higher in the 60-80 age range, with a peak around 70 years old. This aligns with the general understanding that strokes are more common among older individuals, as age is a significant risk factor for stroke. The distribution of non-stroke cases is more evenly spread across age groups, with a higher proportion of younger individuals. This suggests that age may be a key factor in predicting stroke occurrence in this dataset.
 
 `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
 
@@ -560,15 +559,10 @@ shinyApp(ui = ui, server = server)
 
 `hypertension`: 1,182 patients had hypertension, while 3,929 did not. Hypertension is more prevalent among older individuals in the population. Hypertension seems to be a risk factor for strokes, as the proportion of stroke cases is higher among individuals with hypertension. This aligns with medical knowledge that hypertension is a significant risk factor for strokes. The distribution of stroke cases is higher among individuals with hypertension, suggesting that hypertension may be a key predictor of stroke occurrence in this dataset.
 
-`stroke`: Among the 5,111 patients, 249 had experienced a stroke, while 4,861 had not. 
-`gender`: 2,994 female patients, 2,115 male patients, and 1 patient identified as other.
-`ever_married`: 3,529 patients were married, while 1,582 were not.
-`work_type`: The majority of patients were employed in private jobs (2,441), followed by self-employed (1,024), government jobs (657), and children (687). Only 22 patients had never worked.
-`Residence_type`: 2,290 patients lived in urban areas, while 2,821 lived in rural areas.
-`smoking_status`: 1,383 patients never smoked, 789 were former smokers, and 747 were current smokers.
-`heart_disease`: 306 patients had a history of heart disease, while 4,805 did not.
+`stroke`: Among the 5,111 patients, 249 had experienced a stroke, while 4,861 had not. `gender`: 2,994 female patients, 2,115 male patients, and 1 patient identified as other. `ever_married`: 3,529 patients were married, while 1,582 were not. `work_type`: The majority of patients were employed in private jobs (2,441), followed by self-employed (1,024), government jobs (657), and children (687). Only 22 patients had never worked. `Residence_type`: 2,290 patients lived in urban areas, while 2,821 lived in rural areas. `smoking_status`: 1,383 patients never smoked, 789 were former smokers, and 747 were current smokers. `heart_disease`: 306 patients had a history of heart disease, while 4,805 did not.
 
 ersetze encoded_stroke_tb durch preprocessed_stroke_tb oder sogar eigene ohne other. so stimmts nicht mit 0, 1 , male, female.
+
 ```{r}
 ggplot(encoded_stroke_tb, aes(x = age, fill = as.factor(stroke))) +
   geom_histogram(position = "fill") +
@@ -576,8 +570,7 @@ ggplot(encoded_stroke_tb, aes(x = age, fill = as.factor(stroke))) +
   facet_wrap(~gender_Female, labeller = as_labeller(c(`0` = "Male", `1` = "Female")))
 ```
 
-We can observe that there are no recorded cases of strokes in males under the age of 40.
-In contrast, there are multiple instances of strokes in females younger than 40, inclduing cases at ages 30, 15, and even below one year old.
+We can observe that there are no recorded cases of strokes in males under the age of 40. In contrast, there are multiple instances of strokes in females younger than 40, inclduing cases at ages 30, 15, and even below one year old.
 
 Based on descriptive statistics, age, hypertension, heart Disease, and average glucose level could be potential candidates for further exploration and modeling.
 
