@@ -399,12 +399,21 @@ When we up-sample the minority class (stroke cases), we create artificial (or du
 
 ### 3.1 Descriptive Statistics
 
+`stroke`
+```{r}
+# Summary of the target variable 'stroke'
+table(preprocessed_stroke_tb$stroke)
+```
 
-The dataset contains 5,110 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, history of heart disease, marital status, occupation sector, recidence type, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
+
+The dataset comprises 5,110 patient records, each characterized by 11 variables. These variables can be categorized into two types: numerical and categorical. Numerical variables include age, average glucose level, and BMI, while categorical variables include gender, history of hypertension, history of heart disease, marital status, occupation sector, residence type, smoking status, and stroke occurrence.
+This distinction is important because numerical and categorical variables require different types of plots and charts to effectively present their descriptive statistics.
 
 #### 3.1.1 Numerical variables
 
+
 ```{r}
+# Summary of numerical variables
 # Load the necessary library
 library(knitr)
 
@@ -428,6 +437,7 @@ kable(summary_df, row.names = TRUE, col.names = c( "Age", "Avg Glucose Level", "
 `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
 ```{r}
+# Histogram of numerical variables grouped by stroke variable
 # Load necessary libraries
 library(shiny)
 library(ggplot2)
@@ -513,28 +523,38 @@ server <- function(input, output, session) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
+Based on the histogram, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges, suggesting they may be important predictors of stroke risk. In contrast, `bmi` shows no significant differences in stroke proportions, indicating it may not be strong predictors of stroke risk in this dataset.
 
 #### 3.1.2 Categorical variables
 
-lets check the modal values and counts for the categorical variables. 
-
 ```{r}
-# Load necessary libraries
-library(dplyr)
-library(knitr)
+# Summary of categorical variables
+# List of variables to summarize
+variables_to_summarize <- c("gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
 
-# Count occurrences of each level in the 'gender' variable
-gender_summary <- stroke_tb %>%
-  group_by(gender) %>%
-  summarize(count = n()) %>%
-  rename(Gender = gender, Count = count)
+# Create a function to summarize counts for each selected variable
+summarize_selected_vars <- function(data, var) {
+  data %>%
+    group_by(.data[[var]]) %>%
+    summarize(Count = n()) %>%
+    rename(Type = .data[[var]]) %>%
+    mutate(Variable = var)  # Add the variable name to the summary
+}
 
-# Display the table with kable
-kable(gender_summary)
+# Loop over the selected variables and store the results in a list of tibbles
+summary_list <- lapply(variables_to_summarize, function(var) {
+  summarize_selected_vars(preprocessed_stroke_tb, var)
+})
+
+# View the result
+summary_list
 ```
 
+Todo:
+exclude other from the barchart
 
 ```{r}
+# Barchart of categorical variables grouped by stroke variable
 # Load necessary libraries
 library(shiny)
 library(ggplot2)
@@ -588,62 +608,21 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-```{r}
-#table of patients with hypertension and without hypertension
-library(dplyr)
+Relevant differences in the proportions of stroke cases can be observed across various categorical variables. For instance,
+`heart_disease`
+`smoking_status`
+`hypertension`
+`ever_married`
+`work_type`
+Not relevant appear to be the following variables as there are no differences in the proportions of stroke cases across the levels:
 
-# Summarize counts with and without hypertension
-hypertension_summary <- preprocessed_stroke_tb %>%
-  group_by(hypertension) %>%
-  summarize(count = n())
-print(hypertension_summary)
-```
+: Among the 5,111 patients, 249 had experienced a stroke, while 4,861 had not. 
+`gender`: 2,994 female patients, 2,115 male patients, and 1 patient identified as other. 
+`Residence_type`: 2,290 patients lived in urban areas, while 2,821 lived in rural areas. 
 
-`hypertension`: 1,182 patients had hypertension, while 3,929 did not. Hypertension is more prevalent among older individuals in the population. Hypertension seems to be a risk factor for strokes, as the proportion of stroke cases is higher among individuals with hypertension. This aligns with medical knowledge that hypertension is a significant risk factor for strokes. The distribution of stroke cases is higher among individuals with hypertension, suggesting that hypertension may be a key predictor of stroke occurrence in this dataset.
+Q: Do deep dive if gender, residence type really not relevant variables?
 
-`stroke`: Among the 5,111 patients, 249 had experienced a stroke, while 4,861 had not. `gender`: 2,994 female patients, 2,115 male patients, and 1 patient identified as other. `ever_married`: 3,529 patients were married, while 1,582 were not. `work_type`: The majority of patients were employed in private jobs (2,441), followed by self-employed (1,024), government jobs (657), and children (687). Only 22 patients had never worked. `Residence_type`: 2,290 patients lived in urban areas, while 2,821 lived in rural areas. `smoking_status`: 1,383 patients never smoked, 789 were former smokers, and 747 were current smokers. `heart_disease`: 306 patients had a history of heart disease, while 4,805 did not.
-
-ersetze encoded_stroke_tb durch preprocessed_stroke_tb oder sogar eigene ohne other. so stimmts nicht mit 0, 1 , male, female.
-
-```{r}
-ggplot(encoded_stroke_tb, aes(x = age, fill = as.factor(stroke))) +
-  geom_histogram(position = "fill") +
-  labs(fill = "STROKE", y = "Ratio") +
-  facet_wrap(~gender_Female, labeller = as_labeller(c(`0` = "Male", `1` = "Female")))
-```
-
-We can observe that there are no recorded cases of strokes in males under the age of 40. In contrast, there are multiple instances of strokes in females younger than 40, inclduing cases at ages 30, 15, and even below one year old.
-
-Based on descriptive statistics, age, hypertension, heart Disease, and average glucose level could be potential candidates for further exploration and modeling.
-
-```{r}
-# Sankey chart
-# Load necessary libraries
-library(dplyr)
-library(networkD3)
-
-# Filter the data to include only "Stroke" cases
-sankey_data <- preprocessed_stroke_tb %>%
-  filter(stroke == 1) %>%  # Only include stroke cases
-  count(stroke, hypertension)
-
-# Define nodes, now only for Stroke and hypertension categories
-nodes <- data.frame(name = c("Stroke", "No Hypertension", "Hypertension"))
-
-# Define links based on the filtered data
-links <- sankey_data %>%
-  mutate(source = 0,                        # Map stroke == 1 -> "Stroke"
-         target = ifelse(hypertension == 0, 1, 2),  # Map hypertension: 0 -> "No Hypertension", 1 -> "Hypertension"
-         value = n) %>%
-  select(source, target, value)
-
-# Create the Sankey plot with only Stroke paths
-sankeyNetwork(Links = links, Nodes = nodes,
-              Source = "source", Target = "target",
-              Value = "value", NodeID = "name",
-              units = "Patients",
-              fontSize = 12, nodeWidth = 30)
-```
+Based on descriptive statistics, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. In contrast, `gender` and `Residence_type` show no significant differences in stroke proportions, indicating they may not be strong predictors of stroke risk in this dataset.
 
 ### 3.2 Univariate Analysis
 
