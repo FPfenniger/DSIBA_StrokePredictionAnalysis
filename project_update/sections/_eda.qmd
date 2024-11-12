@@ -258,6 +258,7 @@ shinyApp(ui = ui, server = server)
 ![work_type Bar Plot](../../data/png_for_update/work_type.png)
 ![residence_type Bar Plot](../../data/png_for_update/residence_type.png)
 ![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png)
+
 The graphic above displays the distribution of the categorical variables in relation to the target variable `stroke`. The variables `gender`, `hypertension`, and `heart_disease` are binary, while the variables `ever_married`, `work_type`, `residence_type`, and `smoking_status` have multiple categories. The bar chart shows the proportion of patients with and without a stroke for each category of the selected variable.
 
 ### 3. Bivariate Analysis 
@@ -341,6 +342,5 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 ## Key Findings or Patterns
 
 The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size. But at the current stage, we can not make any definitive conclusions as the scope of interpretations we can make upon our initial analysis is limited. Furthermore, regarding the categorical variables test results, we have to be cautious as we tested variables with multiple components against `stroke`, so that we cannot attribute the correlation to a specific subcategory.
-
 
 

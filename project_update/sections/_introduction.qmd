@@ -1,12 +1,19 @@
 # Introduction
 
 ## Project Goals
-Describe the main goals of the project, including the motivation behind the research and the key questions you aim to answer.
+
+Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities. The impact is particularly significant given that stroke can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
+
+This project aims to explore associations between key risk factors and stroke incidence using data analysis and predictive modeling.
 
 ## Research Questions
-- Question 1: ...
-- Question 2: ...
-- (Add as necessary)
+
+What are the most significant risk factors associated with stroke?
+Can we predict the likelihood of a stroke in a given patient based on their characteristics?
+How does the relative importance of each risk factor influence the predictive model?
+
+These questions are linked to data variables such as age, gender, hypertension, diabetes, and lifestyle factors like smoking status, which collectively offer insights into stroke risk patterns.
 
 ## Adjustments or Refinements
-Discuss any changes or refinements to the project scope or questions based on initial findings or data constraints.
+
+Our initial correlation analysis shows relatively modest associations between stroke and most risk factors. To improve the predictive model, we will explore additional feature engineering techniques and we will try to balance the dataset in the prediction model.
