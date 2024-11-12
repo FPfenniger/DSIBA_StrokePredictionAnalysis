@@ -56,11 +56,13 @@ shinyApp(
 )
 ```
 
-![Age vs. Stroke](../../data/png_for_update/age.png)
+![Age vs. Stroke](../../data/png_for_update/age.png) 
 
 ![avg_glucose_level vs. Stroke](../../data/png_for_update/avg_glucose_level.png)
 
+
 ![bmi vs. Stroke](../../data/png_for_update/bmi.png)
+
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart. Additionally, we conducted a chi-squared test and computed it's effect size to determine the statistical significance of the correlation between the categorical variables and `stroke`:
 
@@ -141,17 +143,19 @@ shinyApp(
 )
 ```
 
-![hypertension vs. Stroke](../../data/png for update/hypertension.png)
+![hypertension vs. Stroke](../../data/png_for_update/hypertension.png)
 
 ![heart_disease vs. Stroke](../../data/png_for_update/heartdisease.png)
 
-![hypertension vs. Stroke](../../data/png_for_update/bmi.png)
-![ever_married vs. Stroke](../../data/png_for_update/ever_married.png)
+![hypertension vs. Stroke](../../data/png_for_update/bmi.png) 
+
+![ever_married vs. Stroke](../../data/png_for_update/ever_married.png) 
+
 ![work_type vs. Stroke](../../data/png_for_update/work_type.png)
 
 ![Residence_type vs. Stroke](../../data/png_for_update/Residence_type.png)
 
-![smoking_status vs. Stroke](../../data/png_for_update/smoking)
+![smoking_status vs. Stroke](../../data/png_for_update/smoking_status.png)
 
 ![gender vs. Stroke](../../data/gender_for_update/bmi.png)
 
