@@ -2,6 +2,7 @@
 
 stroke_tb <- read.csv("data/stroke_dataset.csv")
 stroke_tb
+library(tidyverse)
 
 ## Sources
 
@@ -86,7 +87,7 @@ Secondly, we addressed missing values in the features “bmi” and “smoking_s
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-#|
+
 cleaned_stroke_tb <- replace_with_na(data = stroke_tb, 
                                      replace = list(bmi = c("N/A"), smoking_status = c("Unknown"))) %>%
   mutate(bmi = as.numeric(bmi)) %>%
@@ -108,19 +109,276 @@ cat(sprintf("Categorical features: %s\nNumerical features: %s",
 ```
 
 Then, to maximize the number of observations in our dataset, we replaced the N/A values in “bmi” with the median and in “smoking_status” with the modal value.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+
+# Calculate the median for bmi and the mode for smoking_status
+bmi_median <- median(cleaned_stroke_tb$bmi, na.rm = TRUE)
+smoking_status_mode <- names(which.max(table(cleaned_stroke_tb$smoking_status, useNA = "no")))
+
+# Create preprocessed data by replacing NA values
+preprocessed_stroke_tb <- cleaned_stroke_tb %>%
+  mutate(
+    bmi = ifelse(is.na(bmi), bmi_median, bmi),
+    smoking_status = ifelse(is.na(smoking_status), smoking_status_mode, smoking_status)
+  )
+
+preprocessed_stroke_tb
+```
 For the categorical feature encoding, we have converted our categorical variables into dummy variables to utilize them in our predictive model.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+library(fastDummies)
+
+encoded_stroke_tb <- dummy_cols(preprocessed_stroke_tb, select_columns=categorical_variables_1, remove_selected_columns = TRUE)
+
+encoded_stroke_tb
+```
 Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardized all continuous features in the dataset.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+scaled_stroke_tb <- encoded_stroke_tb
+
+#Scale only the double columns
+
+scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
+
+scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
+
+scaled_stroke_tb
+```
 
 ## Spotting Mistakes and Missing Data
 
 Only the features “bmi” and “smoking_status” have missing values. As written upper, we replaced these missing values by N/A and we later replaced them in “bmi” with the median and in “smoking_status” with the modal value.
-The variable “bmi” was imported as a character. We had to change it to a double. 
+As mentionned in the Wrangling/Cleaning section, the variable “bmi” was imported as a character. We had to change it to a double. 
+
 
 ## Listing Anomalies and Outliers
 
 Upon examining the encoded stroke dataset for the categorical variables, we noted that there is only three non-binary quantitative variables: age, average glucose level, and bmi. To visualize outliers in each of these variables, we used boxplots. The points outside the range defined by the whiskers were identified as outliers.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+
+# Boxplot for Age
+boxplot(encoded_stroke_tb$age, main="Boxplot of Age", ylab="Age", col="lightblue")
+
+# Boxplot for Average Glucose Level
+boxplot(encoded_stroke_tb$avg_glucose_level, main="Boxplot of Average Glucose Level", ylab="Average Glucose Level", col="lightgreen")
+
+# Boxplot for BMI
+boxplot(encoded_stroke_tb$bmi, main="Boxplot of BMI", ylab="BMI", col="lightcoral")
+
+#We use the IQR method to identify outliers
+identify_outliers <- function(column) {
+  Q1 <- quantile(column, 0.25)
+  Q3 <- quantile(column, 0.75)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  
+  # Identify Outliers
+  outliers <- column[column < lower_bound | column > upper_bound]
+  return(outliers)
+}
+
+# Apply the function to the variables
+outliers_age <- identify_outliers(encoded_stroke_tb$age)
+outliers_glucose <- identify_outliers(encoded_stroke_tb$avg_glucose_level)
+outliers_bmi <- identify_outliers(encoded_stroke_tb$bmi)
+
+#We create a function count_outliers that we will use to identify and count outliers in each non-binary quantitative variable 
+  count_outliers <- function(column) {
+  Q1 <- quantile(column, 0.25, na.rm = TRUE)
+  Q3 <- quantile(column, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  
+# Count outliers
+outlier_count <- sum(column < lower_bound | column > upper_bound, na.rm = TRUE)
+  return(outlier_count)
+}
+
+# Create a vector to hold the outlier counts
+outlier_counts <- sapply(encoded_stroke_tb[, c("age", "avg_glucose_level", "bmi")], count_outliers)
+outlier_counts
+
+```
+
 Finding zero outliers for age indicated a relatively normative distribution among stroke patients, suggesting accurate and reliable data. With a dataset containing 5,110 rows, the identification of 627 outliers for average glucose levels, representing approximately 12.25% of the total population, and 126 outliers for Body Mass Index (bmi), constituting about 2.47%, highlighted disparities in the distribution of these health metrics. 
 The notably higher percentage of glucose level outliers suggested a prevalence of extreme values that may have indicated issues with glycemic control among individuals in this population. The presence of a relatively significant number of outliers, particularly in average glucose levels, could skew the dataset's overall mean and standard deviation, potentially leading to misleading interpretations. These outliers might disproportionately influence statistical models, such as regression analyses, affecting outcomes and relationships. Hence, it will be essential to assess the impact of these outliers on model performance and prioritize careful handling, whether through removal, transformation, or separate analyses, to ensure robust conclusions and accurate insights. The presence of many outliers sometimes pointed to measurement errors or inconsistencies in data collection.
 To gain a better view of the distribution of values, we also created histograms for these 3 variables. 
-After conducting the analysis of the non-binary variables, we examined the distribution of the binary variables. Two distribution graphs captured our attention: the one for the gender category "Other" and the one for the work type "Never worked." The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these variables from our analysis. 
-Finally, the dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Since the dataset contains only 5,110 individuals, we have chosen to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+
+hist(encoded_stroke_tb$age, breaks=30, main="Histogram of Age", xlab="Age", col="lightblue", border="black")
+
+# Histogram for Average Glucose Level
+hist(encoded_stroke_tb$avg_glucose_level, breaks=30, main="Histogram of Average Glucose Level", xlab="Average Glucose Level", col="lightgreen", border="black")
+
+# Histogram for BMI
+hist(encoded_stroke_tb$bmi, breaks=30, main="Histogram of BMI", xlab="BMI", col="lightcoral", border="black")
+```
+After conducting the analysis of the non-binary variables, we examined the distribution of the binary variables. 
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+
+# Distribution of Gender Male
+table(encoded_stroke_tb$gender_Male)
+ggplot(encoded_stroke_tb, aes(x=factor(gender_Male))) + 
+  geom_bar() + 
+  labs(x='1 if gender is Male, 0 if not', y='Count', title='Distribution of Male gender')
+
+# Distribution of Gender Female
+table(encoded_stroke_tb$gender_Female)
+ggplot(encoded_stroke_tb, aes(x=factor(gender_Female))) + 
+  geom_bar() + 
+  labs(x='1 if gender is Female, 0 if not', y='Count', title='Distribution of Female gender')
+
+# Distribution of Gender Other
+table(encoded_stroke_tb$gender_Other)
+ggplot(encoded_stroke_tb, aes(x=factor(gender_Other))) + 
+  geom_bar() + 
+  labs(x='1 if gender is Other, 0 if not', y='Count', title='Distribution of Other gender')
+
+# Distribution of Ever Married 
+table(encoded_stroke_tb$ever_married_Yes)
+ggplot(encoded_stroke_tb, aes(x=factor(ever_married_Yes))) + 
+  geom_bar() + 
+  labs(x='1 if Ever Married, 0 if not', y='Count', title='Distribution of  Ever Married Status')
+
+# Distribution of Never Married 
+table(encoded_stroke_tb$ever_married_No)
+ggplot(encoded_stroke_tb, aes(x=factor(ever_married_No))) + 
+  geom_bar() + 
+  labs(x='1 if Never Married, 0 if not', y='Count', title='Distribution of Never Married Status')
+
+# Distribution of Work Type is Children
+table(encoded_stroke_tb$work_type_children)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_children))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Children, 0 if not', y='Count', title='Distribution of Work Type is Children')
+
+# Distribution of Work Type is Government job
+table(encoded_stroke_tb$work_type_Govt_job)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_Govt_job))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Government Job, 0 if not', y='Count', title='Distribution of Work Type is Government Job')
+
+# Distribution of Work Type is Never worked
+table(encoded_stroke_tb$work_type_Never_worked)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Never Worked, 0 if not', y='Count', title='Distribution of Work Type is Never worked')
+
+# Distribution of Work Type is Private
+table(encoded_stroke_tb$work_type_Private)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_Private))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Private, 0 if not', y='Count', title='Distribution of Work Type is Private')
+
+# Distribution of Work Type is Self-empployed
+table(encoded_stroke_tb$`work_type_Self-employed`)
+ggplot(encoded_stroke_tb, aes(x=factor(`work_type_Self-employed`))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Self-employed, 0 if not', y='Count', title='Distribution of Work Type is Self-employed')
+
+# Distribution of Residence Type is Rural
+table(encoded_stroke_tb$Residence_type_Rural)
+ggplot(encoded_stroke_tb, aes(x=factor(`Residence_type_Rural`))) + 
+  geom_bar() + 
+  labs(x='1 if Residence Type is Rural, 0 if not', y='Count', title='Distribution of Residence Type is Rural')
+
+# Distribution of Residence Type is Urban
+table(encoded_stroke_tb$Residence_type_Urban)
+ggplot(encoded_stroke_tb, aes(x=factor(`Residence_type_Urban`))) + 
+  geom_bar() + 
+  labs(x='1 if Residence Type is Urban, 0 if not', y='Count', title='Distribution of Residence Type is Urban')
+
+# Distribution of Formerly Smoked Status
+table(encoded_stroke_tb$`smoking_status_formerly smoked`)
+ggplot(encoded_stroke_tb, aes(x=factor(`smoking_status_formerly smoked`))) + 
+  geom_bar() + 
+  labs(x='1 if Formerly Smoked, 0 if not', y='Count', title='Distribution of Formerly Smoked Status')
+
+# Distribution of Never Smoked Status
+table(encoded_stroke_tb$`smoking_status_never smoked`)
+ggplot(encoded_stroke_tb, aes(x=factor(`smoking_status_never smoked`))) + 
+  geom_bar() + 
+  labs(x='1 if Never Smoked, 0 if not', y='Count', title='Distribution of Never Smoked Status')
+
+# Distribution of Smokes Status
+table(encoded_stroke_tb$smoking_status_smokes)
+ggplot(encoded_stroke_tb, aes(x=factor(`smoking_status_smokes`))) + 
+  geom_bar() + 
+  labs(x='1 if Smokes, 0 if not', y='Count', title='Distribution of Smokes Status')
+```
+Two distribution graphs captured our attention: the one for the gender category "Other" and the one for the work type "Never worked." The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these variables from our analysis. 
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+# Distribution of Gender Other
+table(encoded_stroke_tb$gender_Other)
+ggplot(encoded_stroke_tb, aes(x=factor(gender_Other))) + 
+  geom_bar() + 
+  labs(x='1 if gender is Other, 0 if not', y='Count', title='Distribution of Other gender')
+
+#Count of Gender Other
+count_other_gender <- sum(encoded_stroke_tb$gender_Other)
+count_other_gender
+
+# Distribution of Work Type is Never worked
+table(encoded_stroke_tb$work_type_Never_worked)
+ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) + 
+  geom_bar() + 
+  labs(x='1 if Work Type is Never Worked, 0 if not', y='Count', title='Distribution of Work Type is Never worked')
+
+#Count of Work Type is Never worked
+count_work_type_Never_worked <- sum(encoded_stroke_tb$work_type_Never_worked)
+count_work_type_Never_worked
+```
+
+Finally, the dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. 
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show the code"
+
+# Distribution of strokes vs no strokes in the sample
+table(encoded_stroke_tb$stroke)
+ggplot(encoded_stroke_tb, aes(x=factor(`stroke`))) + 
+  geom_bar() + 
+  labs(x='0 no strokes, 1 strokes', y='Count', title='Distribution of strokes')
+
+
+# count how many people had a stroke and the prop
+encoded_stroke_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2))
+```
+To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Since the dataset contains only 5,110 individuals, we have chosen to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show the code"
+
+# Load caret library
+library(caret)
+
+# Convert 'stroke' to a factor, if it isn't already
+encoded_stroke_tb$stroke <- as.factor(encoded_stroke_tb$stroke)
+
+# Use upSample to balance the dataset
+balanced_stroke_tb <- upSample(x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"],
+                               y = encoded_stroke_tb$stroke,
+                               yname = "stroke")
+
+# Check the distribution to confirm balancing
+table(balanced_stroke_tb$stroke)
+```
