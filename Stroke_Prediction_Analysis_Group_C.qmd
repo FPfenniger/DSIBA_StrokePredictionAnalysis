@@ -319,8 +319,6 @@ table(encoded_stroke_tb$smoking_status_smokes)
 ggplot(encoded_stroke_tb, aes(x=factor(`smoking_status_smokes`))) + 
   geom_bar() + 
   labs(x='1 if Smokes, 0 if not', y='Count', title='Distribution of Smokes Status')
-
-
 ```
 
 Looking at the barplot for gender is "Other", it seems that there is no case where gender is "Other" in the dataset. However, by executing the line of code below, we notice that there is one case where gender is "Other".
