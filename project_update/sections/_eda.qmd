@@ -7,7 +7,7 @@ We decided to split our EDA into three distinct parts. Part I treats descriptive
 ### 1. Descriptive Statistics
 
 ### 2. Univariate Analysis
-First, we visualized all numerical variables in a histogram to get an overview of the distribution of the data. The histograms show that the variables `age`, `avg_glucose_level`, and `bmi` are right-skewed. The variable `bmi` has a peak around 30, which is the threshold for obesity. The variable `avg_glucose_level` has a peak around 100, which is the threshold for prediabetes. The variable `age` has a peak around 50, which is the median age of the dataset.
+First, we visualized all numerical variables in a histogram to get an overview of the distribution of the data. 
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -15,8 +15,10 @@ First, we visualized all numerical variables in a histogram to get an overview o
 # Histogram of numerical variables grouped by stroke variable
 # Load necessary libraries
 library(shiny)
-library(ggplot2)
+library(tidyverse)
 library(plotly)
+
+encoded_stroke_tb <- read.csv("../../data/encoded_stroke_tb.csv")
 
 # Define the UI
 ui <- fluidPage(
@@ -98,9 +100,12 @@ server <- function(input, output, session) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
+![Age Histogram](../../data/png_for_update/age_1.png)
+![Average Glucose Level Histogram](../../data/png_for_update/glucose_1.png)
+![BMI Histogram](../../data/png_for_update/bmi_1.png)
 
 For completion we also included a Violin Plot: 
-### 3. Bivariate Analysis 
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -151,19 +156,23 @@ shinyApp(
 )
 ```
 
-![Age vs. Stroke](../../data/png_for_update/age.png)
+![Age Violin Plot](../../data/png_for_update/age.png)
 
-![avg_glucose_level vs. Stroke](../../data/png_for_update/avg_glucose_level.png)
+![avg_glucose_level Violin Plot](../../data/png_for_update/avg_glucose_level.png)
 
-![bmi vs. Stroke](../../data/png_for_update/bmi.png)
+![bmi Violin Plot](../../data/png_for_update/bmi.png)
+
+Based on the table and histogram, we can observe the following characteristics of the numerical variables:
+- `age`: The dataset includes patients with ages ranging from 0.8 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years, and with a peak around 70 years old.
+- `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
+- `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-ibrary(plotly)
+# Barchart of categorical variables grouped by stroke variable
 
 # Define the UI
 ui <- fluidPage(
@@ -212,6 +221,12 @@ server <- function(input, output) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
+
+
+
+### 3. Bivariate Analysis 
+
+
 
 ## Key Findings or Patterns
 
