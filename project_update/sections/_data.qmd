@@ -1,8 +1,8 @@
 # Data
-
-stroke_tb <- read.csv("data/stroke_dataset.csv") 
-stroke_tb 
 library(tidyverse)
+
+stroke_tb <- read.csv("../../data/stroke_dataset.csv") 
+stroke_tb 
 
 ## Sources
 
