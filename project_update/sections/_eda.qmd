@@ -2,7 +2,7 @@
 
 ## Structure & Initial Visualizations
 
-We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable `stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use `plotly`. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots. 
+We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable `stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use `plotly`. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
 
 The first draft of our EDA Visualization examines the distribution of the numerical features and their relationship with the target variable in a violin plot:
 
@@ -56,12 +56,12 @@ shinyApp(
 )
 ```
 
-![Age vs. Stroke](../../data/png_for_update/age.png) 
+![Age vs. Stroke](../../data/png_for_update/age.png)
 
 ![avg_glucose_level vs. Stroke](../../data/png_for_update/avg_glucose_level.png)
 
-
 ![bmi vs. Stroke](../../data/png_for_update/bmi.png)
+
 
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
@@ -143,7 +143,6 @@ shinyApp(
   }
 )
 ```
-
 
 
 ## Summary Statistics
