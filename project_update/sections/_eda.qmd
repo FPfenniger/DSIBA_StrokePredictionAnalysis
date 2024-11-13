@@ -6,11 +6,44 @@ We decided to split our EDA into three distinct parts. Part I treats descriptive
 
 ### 1. Descriptive Statistics
 
-The dataset contains 5,110 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, history of heart disease, marital status, occupation sector, residence type, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
+We started our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the count, mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
 
-The dataset comprises 5,110 patient records. 4861 individuals have experienced no stroke, while 249 individuals have had a stroke.
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 
---> just include summary table & statistics here, the previously mentionned part is not necessary, as it was already discussed in the data chapter
+# Generate summary of selected numerical variables
+summary_table <- summary(preprocessed_stroke_tb[, c("age", "avg_glucose_level", "bmi")])
+
+# Convert the summary to a data frame & display it with kable
+summary_table <- as.data.frame.matrix(summary_table)
+knitr::kable(summary_table, caption = "Summary of numerical Variables", row.names = FALSE)
+```
+
+For categorical variables, we present the frequency of each category’s occurrences. We combined all categorical variables into one table for a better overview.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Summary of categorical variables
+
+# List of categorical variables to summarize
+variables_to_summarize <- c("gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
+
+# Summarize and combine all variables into one table
+summary_table <- bind_rows(lapply(variables_to_summarize, function(var) {
+  preprocessed_stroke_tb %>%
+    group_by(.data[[var]]) %>%
+    summarize(Count = n(), .groups = "drop") %>%
+    rename(Type = .data[[var]]) %>%
+    mutate(Variable = var, Type = as.character(Type))  # Ensure Type is character
+}))
+
+# Display the combined table with kable
+knitr::kable(summary_table, caption = "Summary of Categorical Variables", row.names = FALSE)
+```
+
 
 ### 2. Univariate Analysis
 
