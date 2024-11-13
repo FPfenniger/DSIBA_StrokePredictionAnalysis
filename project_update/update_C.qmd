@@ -52,6 +52,7 @@ library(plotly)
 library(vcd)
 library(naniar)
 library(fastDummies)
+library(caret)
 ```
 
 :::
