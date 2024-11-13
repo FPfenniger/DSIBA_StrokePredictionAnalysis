@@ -19,6 +19,9 @@ First, we visualized all numerical variables in a histogram to get an overview o
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
+
+library(plotly)
+library(shiny)
 # Histogram of numerical variables grouped by stroke variable
 
 encoded_stroke_tb <- read.csv("../../data/encoded_stroke_tb.csv")
@@ -273,7 +276,7 @@ To examine associations and multicollinearity between the categorical variables,
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
+library(vcd)
 outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
 
 cat_variables = c("hypertension", 
