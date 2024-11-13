@@ -163,9 +163,9 @@ Based on the table and histogram, we can observe the following characteristics o
 
 - `age`: The dataset includes patients with ages ranging from 0.8 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years, and with a peak around 70 years old. With increased age, the likelihood of a stroke also seems to increase siginificantly. 
 
-- `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. Prediabetes and diabetes are associated with a range of 100 to 125 mg/dL and 126 mg/dL or higher, respectively. There seems to be an interesting bimodal pattern in the distribution of glucose levels for individuals with stroke.
+- `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. Prediabetes and diabetes are associated with a range of 100 to 125 mg/dL and 126 mg/dL or higher, respectively. The graphic shows a bimodal distribution of average glucose levels, with stroke cases more frequent at higher glucose levels.
 
-- `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
+- `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. BMI doesn't seem to have a strong correlation with the target variable `stroke`.
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
 
@@ -224,15 +224,20 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-![Gender Bar Plot](../../data/png_for_update/gender.png) ![Hypertension Bar Plot](../../data/png_for_update/hypertension.png) ![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
+![Gender Bar Plot](../../data/png_for_update/gender.png) 
+![Hypertension Bar Plot](../../data/png_for_update/hypertension.png) 
+![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
 
-![ever_married Bar Plot](../../data/png_for_update/ever_married.png) ![work_type Bar Plot](../../data/png_for_update/work_type.png) ![residence_type Bar Plot](../../data/png_for_update/residence_type.png) ![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png) 
+![ever_married Bar Plot](../../data/png_for_update/ever_married.png) 
+![work_type Bar Plot](../../data/png_for_update/work_type.png) 
+![residence_type Bar Plot](../../data/png_for_update/residence_type.png) 
+![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png) 
 
-The graphic above displays the distribution of the categorical variables in relation to the target variable `stroke`. The variables `gender`, `hypertension`, and `heart_disease` are binary, while the variables `ever_married`, `work_type`, `residence_type`, and `smoking_status` have multiple categories. The bar chart shows the proportion of patients with and without a stroke for each category of the selected variable.
+The graphic above displays the distribution of the categorical variables in relation to the target variable `stroke`. Overall, we can say that there seems to be very little correlation between these features and our target variable. The only exception is the feature `hypertension` and `heart_disease`, which seems to have a slightly higher prevalence in patients who have had a stroke. Surprisingly, the `smoking_status` doesn't seem to be a significant predictor for a stroke. The higher prevalence of strokes in individuals which formerly smoked, can probably be explained by the correlation with age. 
 
 ### 3. Bivariate Analysis
 
-In the bivariate analysis we examine correlations between our features. We use a correlation matrix to visualize the relationships between the numerical variables and the target variable `stroke`.
+In the bivariate analysis we examined correlations between our features. We used a correlation matrix to visualize the relationships between the numerical variables and the target variable `stroke`.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -261,7 +266,9 @@ plot_ly(
   )
 
 ```
-To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine it's importance we additionally computed the Cramer's V for effect size (general threshold here 0.3).
+Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.33), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features
+
+To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine it's importance we additionally computed the Cramér's V for effect size (general threshold here 0.3).
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -304,6 +311,8 @@ for (index1 in 1:(length(cat_variables) - 1)) {
   }
 }
 ```
+
+As no effect size appears to be greater than 0.3, we can safely conclude that our categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
 ## Key Findings or Patterns
 

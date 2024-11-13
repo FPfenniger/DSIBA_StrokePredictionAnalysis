@@ -24,7 +24,7 @@ format:
             color: #000000;
           }
         </style>
-  pdf: # use this if you want to render pdfs instead
+  html: # use this if you want to render pdfs instead
     include-in-header: # wrapping the code also in the pdf (otherwise, it overflows)
       text: |
         \usepackage{fvextra}

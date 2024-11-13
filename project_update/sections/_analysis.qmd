@@ -2,7 +2,7 @@
 
 ## Methods
 
-We selected logistic regression as the primary statistical method. Since the outcome variable (stroke occurrence) is binary (0 for no stroke, 1 for stroke), logistic regression allows us to model the probability of a patient experiencing a stroke based on various predictor variables. This method provides predicted probabilities constrained between 0 and 1, making it interpretable as a likelihood. Up until now, we focus only on logistic regression, but if time allows we may consider looking into other machine learning methods such as Decision Trees.
+We selected logistic regression as the primary statistical method. Since the outcome variable (stroke occurrence) is binary (0 for no stroke, 1 for stroke), logistic regression allows us to model the probability of a patient experiencing a stroke based on various predictor variables. This method provides predicted probabilities constrained between 0 and 1, making it interpretable as a likelihood.
 
 For general procedure, we plan to do a train-test on our preprocessed dataset. We will fit the logistic regression model on the training set and evaluate its performance on the validation set. This will allow us to do potential fine-tuning before the final evaluation on the test set. As evaluation metrics we plan to use Accuracy, Precision, Recall, and F1-Scores.
 
@@ -11,7 +11,7 @@ In the current EDA, we have seen that age seems to be one of the most significan
 ## Goals for the Method Method
 
 Logistic Regression:\
-The primary goal of logistic regression in this analysis is to model the probability of stroke occurrence based on various predictor variables, such as age, blood pressure, and lifestyle factors. By fitting this model, we aim to identify which factors are associated with an increased likelihood of stroke and quantify their impact. This will allow us to interpret how each predictor affects stroke risk and prioritize significant risk factors that could be targeted for preventive interventions. Additionally, logistic regression provides us with a probabilistic outcome (rather than a strict classification), offering a nuanced understanding of each patient's risk level.
+The primary goal of logistic regression in this analysis is to model the probability of stroke occurrence based on the predictors. By fitting this model, we aim to identify which factors are associated with an increased likelihood of stroke and quantify their impact. This will allow us to interpret how each predictor affects stroke risk and prioritize significant risk factors that could be targeted for preventive interventions. Additionally, logistic regression provides us with a probabilistic outcome (rather than a strict classification), offering a nuanced understanding of each patient's risk level.
 
 Model Evaluation Metrics:
 
