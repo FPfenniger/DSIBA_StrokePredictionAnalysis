@@ -83,11 +83,14 @@ stroke_tb <- read.csv("../../data/stroke_dataset.csv")
 stroke_tb
 ```
 
-Relevant metadata: Name of the owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his Kaggle profile) Last updated 4 years go (seen on Kaggle)
+Relevant metadata: 
+- Name of the owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his Kaggle profile) 
+
+- Last updated 4 years go (seen on Kaggle)
 
 ## Wrangling/Preprocessing
 
-The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, distinguished from the beginning categorical and numerical variables.
+The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguished from the beginning categorical and numerical variables.
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -181,7 +184,7 @@ Only the features `bmi` and `smoking_status` have missing values. As described p
 
 ## Listing Anomalies and Outliers
 
-Upon examining the encoded stroke dataset for the categorical variables, we noticed that there is only three non-binary quantitative variables: age, average glucose level, and bmi. To visualize outliers in each of these variables, we used boxplots. The points outside the range defined by the whiskers were identified as outliers.
+Upon examining the encoded stroke dataset for the categorical variables, we noticed that there is only three non-binary quantitative variables: `age`, `avg_glucose_level` and `bmi`. To visualize outliers in each of these variables, we used boxplots. The points outside the range defined by the whiskers were identified as outliers.
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -232,7 +235,7 @@ outlier_counts <- sapply(encoded_stroke_tb[, c("age", "avg_glucose_level", "bmi"
 outlier_counts
 
 ```
-Finding zero outliers for `age` indicates a nearly normal distribution among the individuals in our population. With a dataset containing 5,110 rows, the identification of 627 outliers for `average_glucose_levels`, representing approximately 12.25% of the total population, and 126 outliers for Body Mass Index, constituting about 2.47%, highlighted disparities in the distribution of these health metrics. Both boxplots display a considerable number of outliers in the higher range, indicating that there are subsets of individuals in the dataset with unusually high average glucose levels and BMI values. These outliers could be due to a variety of factors, such as lifestyle, health conditions, or measurement errors. Considering their importance as risk factors, we decided to keep them in the dataset for now. However, we may revisit this decision later in the analysis, especially as we didn't examine the distributions in the upsampled dataset yet. 
+Finding zero outliers for `age` indicates a nearly normal distribution among the individuals in our population. With a dataset containing 5,110 rows, the identification of 627 outliers for `avg_glucose_level`, representing approximately 12.25% of the total population, and 126 outliers for `bmi`, constituting about 2.47%, highlighted disparities in the distribution of these health metrics. Both boxplots display a considerable number of outliers in the higher range, indicating that there are subsets of individuals in the dataset with unusually high average glucose levels and BMI values. These outliers could be due to a variety of factors, such as lifestyle, health conditions, or measurement errors. Considering their importance as risk factors, we decided to keep them in the dataset for now. However, we may revisit this decision later in the analysis, especially as we didn't examine the distributions in the upsampled dataset yet. 
 
 After conducting the analysis of the numerical variables, we examined the distribution of the categorical variables.
 
@@ -261,7 +264,7 @@ ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) +
 count_work_type_Never_worked <- sum(encoded_stroke_tb$work_type_Never_worked)
 count_work_type_Never_worked
 ```
-Finally, the dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. If don't apply upsampling here, the accuracy of a naive model predicting always "no stroke" would probably significantly higher than our developed prediction model
+Finally, the dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. If don't apply upsampling here, the accuracy of a naive model predicting always "no stroke" would probably significantly higher than our developed prediction model.
 
 ```{r, warning=FALSE}
 #|code-fold: true
