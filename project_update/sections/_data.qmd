@@ -11,48 +11,48 @@ The data contains 5110 observations with 12 attributes. Here's summary of the ma
 1.  id:
 
 -   Type: Numerical (Continous)
--   Description: A unique identifier for each patient in the dataset.
+-   Description: A unique identifier for each individual in the dataset.
 
 2.  gender:
 
 -   Type: Categorical
 -   Values: "Male", "Female", or "Other"
--   Description: Gender of the patient
+-   Description: Gender of the individual
 
 3.  age:
 
 -   Type: Numerical (Continuous)
--   Description: Age of the patient
+-   Description: Age of the individual
 
 4.  hypertension:
 
 -   Type: Categorical (Binary)
 -   Values: 0 (No), 1 (Yes)
--   Description: Indicates whether the patient has hypertension.
+-   Description: Indicates whether the individual has hypertension.
 
 5.  heart_disease:
 
 -   Type: Categorical (Binary)
 -   Values: 0 (No), 1 (Yes)
--   Description: Indicates whether the patient has heart disease
+-   Description: Indicates whether the individual has heart disease
 
 6.  ever_married:
 
 -   Type: Categorical
 -   Values: "No" or "Yes"
--   Description: Indicates whether the patient has ever been married
+-   Description: Indicates whether the individual has ever been married
 
 7.  work_type:
 
 -   Type: Categorical
 -   Values: "children", "Govt_job", "Never_worked", "Private", "Self-employed"
--   Description: Type of work the patient is engaged in
+-   Description: Type of work the individual is engaged in
 
 8.  Residence_type:
 
 -   Type: Categorical
 -   Values: "Rural" or "Urban"
--   Description: Indicates the living area of the patient
+-   Description: Indicates the living area of the individual
 
 9.  avg_glucose_level:
 
@@ -68,13 +68,13 @@ The data contains 5110 observations with 12 attributes. Here's summary of the ma
 
 -   Type: Categorical
 -   Values: "formerly smoked", "never smoked", "smokes", "Unknown"
--   Description: Indicates the smoking habits of the patient, where "Unknown" signifies that the smoking status information is not available.
+-   Description: Indicates the smoking habits of the individual, where "Unknown" signifies that the smoking status information is not available.
 
 12. stroke:
 
 -   Type: Categorical (Binary)
 -   Values: 0 (No), 1 (Yes)
--   Description: The target variable indicating whether the patient has had a stroke.
+-   Description: The target variable indicating whether the individual has had a stroke.
 
 ```{r, warning=FALSE}
 #|code-fold: true 
