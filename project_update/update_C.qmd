@@ -50,6 +50,8 @@ library(shiny)
 library(tidyverse)
 library(plotly)
 library(vcd)
+library(naniar)
+library(fastDummies)
 ```
 
 :::
