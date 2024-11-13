@@ -29,7 +29,7 @@ For categorical variables, we present the frequency of each category’s occurre
 # Summary of categorical variables
 
 # List of categorical variables to summarize
-variables_to_summarize <- c("gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
+variables_to_summarize <- c("stroke", "gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
 
 # Summarize and combine all variables into one table
 summary_table <- bind_rows(lapply(variables_to_summarize, function(var) {
