@@ -5,40 +5,16 @@
 We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable stroke. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use plotly. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
 
 ### 1. Descriptive Statistics
-The dataset contains 5,110 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, history of heart disease, marital status, occupation sector, recidence type, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
+
+The dataset contains 5,110 patient records with 11 variables describing the patients. Collected attributes include gender, age, history of hypertension, history of heart disease, marital status, occupation sector, residence type, average glucose levels, body mass index (BMI), smoking status, and stroke occurrence.
 
 The dataset comprises 5,110 patient records. 4861 individuals have experienced no stroke, while 249 individuals have had a stroke.
 
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-# Summary of the target variable 'stroke'
-preprocessed_stroke_tb <- read.csv("../../data/preprocessed_stroke_tb.csv")
-
-table(preprocessed_stroke_tb$stroke)
-```
-
-The dataset contains 11 variables that can be categorized into two types: numerical and categorical. 
-
-`Numerical variables` include 
-- age
-- average glucose level
-- and body mass index (bmi),
-
-while `categorical variables` include
-- gender
-- history of hypertension
-- history of heart disease
-- marital status
-- occupation sector
-- residence type
-- smoking status
-- and stroke occurrence.
-
-This distinction is important because numerical and categorical variables require different types of plots and charts to effectively present their descriptive statistics.
+--> just include summary table & statistics here, the previously mentionned part is not necessary, as it was already discussed in the data chapter
 
 ### 2. Univariate Analysis
-First, we visualized all numerical variables in a histogram to get an overview of the distribution of the data. 
+
+First, we visualized all numerical variables in a histogram to get an overview of the distribution of the data.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -127,11 +103,12 @@ server <- function(input, output, session) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
-![Age Histogram](../../data/png_for_update/age_1.png)
-![Average Glucose Level Histogram](../../data/png_for_update/glucose_1.png)
+
+![Age Histogram](../../data/png_for_update/age_1.png) 
+![Average Glucose Level Histogram](../../data/png_for_update/glucose_1.png) 
 ![BMI Histogram](../../data/png_for_update/bmi_1.png)
 
-For completion we also included a Violin Plot: 
+For completion we also included a Violin Plot:
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -179,14 +156,15 @@ shinyApp(
 ```
 
 ![Age Violin Plot](../../data/png_for_update/age.png)
-
 ![avg_glucose_level Violin Plot](../../data/png_for_update/avg_glucose_level.png)
-
 ![bmi Violin Plot](../../data/png_for_update/bmi.png)
 
-Based on the table and histogram, we can observe the following characteristics of the numerical variables:
-- `age`: The dataset includes patients with ages ranging from 0.8 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years, and with a peak around 70 years old.
-- `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
+Based on the table and histogram, we can observe the following characteristics of the numerical variables: 
+
+- `age`: The dataset includes patients with ages ranging from 0.8 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years, and with a peak around 70 years old. With increased age, the likelihood of a stroke also seems to increase siginificantly. 
+
+- `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. Prediabetes and diabetes are associated with a range of 100 to 125 mg/dL and 126 mg/dL or higher, respectively. There seems to be an interesting bimodal pattern in the distribution of glucose levels for individuals with stroke.
+
 - `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
 The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
@@ -245,17 +223,15 @@ server <- function(input, output) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
-![Gender Bar Plot](../../data/png_for_update/gender.png)
-![Hypertension Bar Plot](../../data/png_for_update/hypertension.png)
-![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
 
-![ever_married Bar Plot](../../data/png_for_update/ever_married.png)
-![work_type Bar Plot](../../data/png_for_update/work_type.png)
-![residence_type Bar Plot](../../data/png_for_update/residence_type.png)
-![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png)
+![Gender Bar Plot](../../data/png_for_update/gender.png) ![Hypertension Bar Plot](../../data/png_for_update/hypertension.png) ![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
+
+![ever_married Bar Plot](../../data/png_for_update/ever_married.png) ![work_type Bar Plot](../../data/png_for_update/work_type.png) ![residence_type Bar Plot](../../data/png_for_update/residence_type.png) ![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png) 
+
 The graphic above displays the distribution of the categorical variables in relation to the target variable `stroke`. The variables `gender`, `hypertension`, and `heart_disease` are binary, while the variables `ever_married`, `work_type`, `residence_type`, and `smoking_status` have multiple categories. The bar chart shows the proportion of patients with and without a stroke for each category of the selected variable.
 
-### 3. Bivariate Analysis 
+### 3. Bivariate Analysis
+
 In the bivariate analysis we examine correlations between our features. We use a correlation matrix to visualize the relationships between the numerical variables and the target variable `stroke`.
 
 ```{r, message = FALSE}
@@ -285,10 +261,9 @@ plot_ly(
   )
 
 ```
+To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine it's importance we additionally computed the Cramer's V for effect size (general threshold here 0.3).
 
-To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine it's importance we additionally computed the Cramer's V for effect size (general threshold here 0.3). 
-
-```{r, message = FALSE}  
+```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
@@ -330,9 +305,7 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 }
 ```
 
-
 ## Key Findings or Patterns
 
-The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size. But at the current stage, we can not make any definitive conclusions as the scope of interpretations we can make upon our initial analysis is limited. Furthermore, regarding the categorical variables test results, we have to be cautious as we tested variables with multiple components against `stroke`, so that we cannot attribute the correlation to a specific subcategory.
-
+The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size.
 
