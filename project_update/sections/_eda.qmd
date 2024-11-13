@@ -47,7 +47,9 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables", row.na
 
 ### 2. Univariate Analysis
 
-First, we visualized all numerical variables in a histogram to get an overview of the distribution of the data.
+#### Numerical variables
+
+First, we visualized all numerical variables in a histogram grouped by stroke occurance to get an overview of the distribution of the data.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -144,7 +146,13 @@ shinyApp(ui = ui, server = server)
 ![Average Glucose Level Histogram](../../data/png_for_update/glucose_1.png) 
 ![BMI Histogram](../../data/png_for_update/bmi_1.png)
 
-For completion we also included a Violin Plot:
+Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics: 
+
+- `age`: The dataset includes individuals with ages ranging from 0.8 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
+- `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. 
+- `bmi`: The histogram shows a right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. 
+
+The second chart is a violin Plot of the numerical variables with the correlation coefficients displayed below the plot.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -195,15 +203,12 @@ shinyApp(
 ![avg_glucose_level Violin Plot](../../data/png_for_update/avg_glucose_level.png)
 ![bmi Violin Plot](../../data/png_for_update/bmi.png)
 
-Based on the table and histogram, we can observe the following characteristics of the numerical variables: 
+The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. 
+Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases more frequent at higher glucose and higher levels. Only the variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable `stroke` (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.
 
-- `age`: The dataset includes patients with ages ranging from 0.8 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years, and with a peak around 70 years old. With increased age, the likelihood of a stroke also seems to increase siginificantly. 
+#### Categorical variables
 
-- `avg_glucose_level`: Right-skewed distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. Prediabetes and diabetes are associated with a range of 100 to 125 mg/dL and 126 mg/dL or higher, respectively. The graphic shows a bimodal distribution of average glucose levels, with stroke cases more frequent at higher glucose levels.
-
-- `bmi`: Right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. BMI doesn't seem to have a strong correlation with the target variable `stroke`.
-
-The second draft of our EDA Visualization examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
+The second part of our EDA examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -269,7 +274,20 @@ shinyApp(ui = ui, server = server)
 ![residence_type Bar Plot](../../data/png_for_update/residence_type.png) 
 ![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png) 
 
-The graphic above displays the distribution of the categorical variables in relation to the target variable `stroke`. Overall, we can say that there seems to be very little correlation between these features and our target variable. The only exception is the feature `hypertension` and `heart_disease`, which seems to have a slightly higher prevalence in patients who have had a stroke. Surprisingly, the `smoking_status` doesn't seem to be a significant predictor for a stroke. The higher prevalence of strokes in individuals which formerly smoked, can probably be explained by the correlation with age. 
+Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables.
+- `smoking_status`: The proportion of stroke cases is higher among individuals who formerly smoked compared to those who never smoked or currently smoke. Current smokers display a higher proportion of stroke cases than individuals who never smoked.
+- `hypertension`: Individuals with hypertension have a higher proportion of stroke cases compared to those without hypertension.
+- `ever_married`: Strikingly, married individuals have a higher proportion of stroke cases compared to those who have never been married.
+- `work_type`: The distribution of stroke cases differs across various work types, with private sector employees and self-employed individuals showing higher proportions of stroke cases compared to those in other work categories.
+- `heart disease`: Individuals with heart disease have a higher proportion of stroke cases compared to those without heart disease.
+
+In contrast, the following variables appear to be not relevant, as there are no differences in the proportions of stroke cases across their levels:
+- `gender` 
+- `Residence_type`.
+
+
+Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk.
+Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk.
 
 ### 3. Bivariate Analysis
 
