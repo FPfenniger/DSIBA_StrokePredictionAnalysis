@@ -302,7 +302,7 @@ plot_ly(
   )
 
 ```
-Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.33), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features
+Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features
 
 To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine it's importance we additionally computed the Cramér's V for effect size (general threshold here 0.3).
 
@@ -352,5 +352,5 @@ As no effect size appears to be greater than 0.3, we can safely conclude that ou
 
 ## Key Findings or Patterns
 
-The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size.
+The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25, see on the violin plots for age on plotly), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size.
 
