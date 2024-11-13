@@ -9,8 +9,12 @@ The dataset contains 5,110 patient records with 11 variables describing the pati
 
 The dataset comprises 5,110 patient records. 4861 individuals have experienced no stroke, while 249 individuals have had a stroke.
 
-```{r}
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 # Summary of the target variable 'stroke'
+preprocessed_stroke_tb <- read.csv("../../data/preprocessed_stroke_tb.csv")
+
 table(preprocessed_stroke_tb$stroke)
 ```
 
@@ -40,10 +44,6 @@ First, we visualized all numerical variables in a histogram to get an overview o
 #| code-fold: true
 #| code-summary: "Click to show code"
 # Histogram of numerical variables grouped by stroke variable
-# Load necessary libraries
-library(shiny)
-library(tidyverse)
-library(plotly)
 
 encoded_stroke_tb <- read.csv("../../data/encoded_stroke_tb.csv")
 
@@ -136,11 +136,6 @@ For completion we also included a Violin Plot:
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-# Load necessary libraries
-library(shiny)
-library(plotly)
-library(dplyr)
 
 # Load the data using relative path with `..` to go up levels
 outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
@@ -258,7 +253,6 @@ shinyApp(ui = ui, server = server)
 ![work_type Bar Plot](../../data/png_for_update/work_type.png)
 ![residence_type Bar Plot](../../data/png_for_update/residence_type.png)
 ![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png)
-
 The graphic above displays the distribution of the categorical variables in relation to the target variable `stroke`. The variables `gender`, `hypertension`, and `heart_disease` are binary, while the variables `ever_married`, `work_type`, `residence_type`, and `smoking_status` have multiple categories. The bar chart shows the proportion of patients with and without a stroke for each category of the selected variable.
 
 ### 3. Bivariate Analysis 
@@ -297,8 +291,6 @@ To examine associations and multicollinearity between the categorical variables,
 ```{r, message = FALSE}  
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-library(vcd)
 
 outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
 

@@ -2,7 +2,7 @@
 
 ## Project Goals
 
-Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities. The impact is particularly significant given that stroke can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
+Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that stroke can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
 
 This project aims to explore associations between key risk factors and stroke incidence using data analysis and predictive modeling.
 
@@ -16,4 +16,4 @@ These questions are linked to data variables such as age, gender, hypertension, 
 
 ## Adjustments or Refinements
 
-Our initial correlation analysis shows relatively modest associations between stroke and most risk factors. To improve the predictive model, we will explore additional feature engineering techniques and we will try to balance the dataset in the prediction model.
+Our initial explorative data analysis shows relatively modest associations between stroke and most risk factors. To address this issue, we plan to use a stratified model in the predictive analysis based on demographics. Furthermore, an upsampling was required as the proportion of individuals with stroke was relatively low in the dataset. 

@@ -1,11 +1,11 @@
 ---
-title: Project Title
-author:
- - Name I, First Name I
- - Name II, First Name II
- - Name III, First Name III
-institute: Name of the University
-date: today
+title: Stroke Prediction Analysis
+authors:
+ - Battawain, Bolor
+ - Hussein, Mohamed
+ - Pfenniger, Fabio
+institute: University of Lausanne
+date: 14.11.2024
 title-block-banner: "#0095C8" # chosen for the university of lausanne
 toc: true
 toc-location: right
@@ -33,26 +33,24 @@ format:
           breaklines, breaknonspaceingroup, breakanywhere
         }
 abstract: |
-  This is the abstract of the report. It should be a short summary of the project, the data, the analysis and the results. It should be concise and to the point. It should not be longer than 250 words.
+  This project investigates stroke prediction using machine learning techniques to identify individuals at heightened risk of stroke. Utilizing a structured classification framework, we analyze a dataset containing various patient health metrics, with stroke occurrence as the target variable. Logistic regression serves as the primary model for this analysis, chosen for its interpretability and effectiveness in binary classification. Our data preparation process includes preprocessing to address missing values, feature scaling, handling potential outliers and encoding categorical variables. 
+  
+The current EDA shows that the dataset is imbalanced, with only 4.9% of the patients having a stroke. We address this issue by oversampling the minority class. Furthermore, our predictive variables seem to only have weak to moderate correlations with our target variable. We intend to use the strongest predictor `age` as a base for a stratified analysis later on in the modelling part. 
+
 ---
 
-```{r}
+```{r, message= FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 #| label: setup
 #| echo: false
-#| message: false
 
 # loading all the necessary packages
-source(here::here("src", "setup.R"))
+library(shiny)
+library(tidyverse)
+library(plotly)
+library(vcd)
 ```
-
-::: {.callout-tip}
-### How to include sections separately
-- You can use `{{include X}}` to include different sections of your report as separate `.qmd` files. This is also well documented in the Quarto documentation: <https://quarto.org/docs/authoring/includes>
-
-- As mentioned in the documentation, we have used (_) prefix for the included files (e.g., `_introduction.qmd` and `_data.qmd`). You should always use an underscore prefix with included files so that they are automatically ignored (i.e. not treated as standalone files) by a quarto render of a project (not absolutely necessary in your case, but highly recommended).
-
-- Rendering only `report.qmd` will render also all the other files.
-
 
 :::
 
