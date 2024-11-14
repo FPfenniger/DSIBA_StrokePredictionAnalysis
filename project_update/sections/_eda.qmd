@@ -2,16 +2,15 @@
 
 ## Structure & Initial Visualizations
 
-We decided to split our EDA into three distinct parts. Part I treats descriptive statistics, the general structure of our dataset and the distribution of the variables. Part II focuses on a univariate analysis of the features and their correlations with the target variable stroke. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use plotly. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
+We decided to split our EDA into three distinct parts. Part I treats descriptive statistics and the general structure of our dataset. Part II focuses on a univariate analysis of the features and their correlations with the target variable `stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use plotly. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
 
 ### 1. Descriptive Statistics
 
-We started our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the count, mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
+We start our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the count, mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
 # Generate summary of selected numerical variables
 summary_table <- summary(preprocessed_stroke_tb[, c("age", "avg_glucose_level", "bmi")])
 
@@ -20,43 +19,61 @@ summary_table <- as.data.frame.matrix(summary_table)
 knitr::kable(summary_table, caption = "Summary of numerical Variables", row.names = FALSE)
 ```
 
-For categorical variables, we present the frequency of each category’s occurrences. We combined all categorical variables into one table for a better overview.
+For the categorical variables, we present the total number and proportion of each category’s occurrences. We combined all categorical variables into one table for a better overview.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-# Summary of categorical variables
-
-# List of categorical variables to summarize
+# List of categorical variables
 variables_to_summarize <- c("stroke", "gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
 
-# Summarize and combine all variables into one table
-summary_table <- bind_rows(lapply(variables_to_summarize, function(var) {
-  preprocessed_stroke_tb %>%
-    group_by(.data[[var]]) %>%
-    summarize(Count = n(), .groups = "drop") %>%
-    rename(Type = .data[[var]]) %>%
-    mutate(Variable = var, Type = as.character(Type))  # Ensure Type is character
-}))
+# Convert binary integer variables to factors
+preprocessed_stroke_tb <- preprocessed_stroke_tb %>%
+  mutate(
+    stroke = as.factor(stroke),
+    hypertension = as.factor(hypertension),
+    heart_disease = as.factor(heart_disease)
+  )
+
+# Calculate total count for proportion calculation
+total_count <- nrow(preprocessed_stroke_tb)
+
+# Create summary table 
+summary_table <- bind_rows(
+  lapply(variables_to_summarize, function(var) {
+    preprocessed_stroke_tb %>%
+      group_by(.data[[var]]) %>%
+      summarize(
+        Count = n(),
+        Proportion = n() / total_count,
+        .groups = "drop"
+      ) %>%
+      rename(Type = .data[[var]]) %>%
+      mutate(
+        Variable = var,
+        Type = as.character(Type),
+        Proportion = round(Proportion * 100, 2)  
+      )
+  })
+) %>%
+  select(Variable, Type, Count, Proportion) %>%  
+  arrange(Variable, Type)                        
 
 # Display the combined table with kable
-knitr::kable(summary_table, caption = "Summary of Categorical Variables", row.names = FALSE)
-```
+knitr::kable(summary_table, caption = "Summary of Categorical Variables with Proportion", row.names = FALSE)
 
+
+```
 
 ### 2. Univariate Analysis
 
 #### Numerical variables
 
-First, we visualized all numerical variables in a histogram grouped by stroke occurance to get an overview of the distribution of the data.
+First, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-library(plotly)
-library(shiny)
 # Histogram of numerical variables grouped by stroke variable
 
 encoded_stroke_tb <- read.csv("../../data/encoded_stroke_tb.csv")
@@ -142,22 +159,19 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 ```
 
-![Age Histogram](../../data/png_for_update/age_1.png) 
-![Average Glucose Level Histogram](../../data/png_for_update/glucose_1.png) 
-![BMI Histogram](../../data/png_for_update/bmi_1.png)
+![Age Histogram](../../data/png_for_update/age_1.png) ![Average Glucose Level Histogram](../../data/png_for_update/glucose_1.png) ![BMI Histogram](../../data/png_for_update/bmi_1.png)
 
-Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics: 
+Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
-- `age`: The dataset includes individuals with ages ranging from 0.8 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
-- `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL. 
-- `bmi`: The histogram shows a right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. 
+-   `age`: The dataset includes individuals with ages ranging from 0.8 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
+-   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
+-   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
-The second chart is a violin Plot of the numerical variables with the correlation coefficients displayed below the plot.
+For completeness we added a violin Plot of the numerical variables with correlation coefficients respective to `stroke` displayed below the plot.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
 # Load the data using relative path with `..` to go up levels
 outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
 
@@ -199,12 +213,9 @@ shinyApp(
 )
 ```
 
-![Age Violin Plot](../../data/png_for_update/age.png)
-![avg_glucose_level Violin Plot](../../data/png_for_update/avg_glucose_level.png)
-![bmi Violin Plot](../../data/png_for_update/bmi.png)
+![Age Violin Plot](../../data/png_for_update/age.png) ![avg_glucose_level Violin Plot](../../data/png_for_update/avg_glucose_level.png) ![bmi Violin Plot](../../data/png_for_update/bmi.png)
 
-The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. 
-Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases more frequent at higher glucose and higher levels. Only the variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable `stroke` (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.
+The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. Only the variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
 #### Categorical variables
 
@@ -265,29 +276,25 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-![Gender Bar Plot](../../data/png_for_update/gender.png) 
-![Hypertension Bar Plot](../../data/png_for_update/hypertension.png) 
-![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
+![Gender Bar Plot](../../data/png_for_update/gender.png) ![Hypertension Bar Plot](../../data/png_for_update/hypertension.png) ![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
 
-![ever_married Bar Plot](../../data/png_for_update/ever_married.png) 
-![work_type Bar Plot](../../data/png_for_update/work_type.png) 
-![residence_type Bar Plot](../../data/png_for_update/residence_type.png) 
-![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png) 
+![ever_married Bar Plot](../../data/png_for_update/ever_married.png) ![work_type Bar Plot](../../data/png_for_update/work_type.png) ![residence_type Bar Plot](../../data/png_for_update/residence_type.png) ![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png)
 
-Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables.
-- `smoking_status`: The proportion of stroke cases is higher among individuals who formerly smoked compared to those who never smoked or currently smoke. Current smokers display a higher proportion of stroke cases than individuals who never smoked.
-- `hypertension`: Individuals with hypertension have a higher proportion of stroke cases compared to those without hypertension.
-- `ever_married`: Strikingly, married individuals have a higher proportion of stroke cases compared to those who have never been married.
-- `work_type`: The distribution of stroke cases differs across various work types, with private sector employees and self-employed individuals showing higher proportions of stroke cases compared to those in other work categories.
-- `heart disease`: Individuals with heart disease have a higher proportion of stroke cases compared to those without heart disease.
+Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
+
+-   `smoking_status`: The proportion of stroke cases is highest among individuals who formerly smoked, compared to those who never smoked or currently smoke. This relationship could be influenced by age, as individuals who formerly smoked may be older on average. Current smokers show a slightly higher proportion of stroke cases than those who never smoked.
+-   `hypertension`: Individuals with hypertension have a higher proportion of stroke cases compared to those without hypertension.
+-   `ever_married`: Married individuals show a higher proportion of stroke cases compared to those who have never been married. This relationship might be influenced by age, as younger individuals are less likely to be married, and the risk of stroke typically increases with age.
+-   `work_type`: The proportion of stroke cases varies across work types, with private sector employees and self-employed individuals exhibiting higher proportions of stroke cases than individuals in other work categories.
+-   `heart disease`: Individuals with heart disease have a higher proportion of stroke cases compared to those without heart disease.
 
 In contrast, the following variables appear to be not relevant, as there are no differences in the proportions of stroke cases across their levels:
-- `gender` 
-- `Residence_type`.
 
+-   `gender`
 
-Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk.
-Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk.
+-   `Residence_type`
+
+Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk.
 
 ### 3. Bivariate Analysis
 
@@ -320,9 +327,10 @@ plot_ly(
   )
 
 ```
+
 Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features
 
-To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine it's importance we additionally computed the Cramér's V for effect size (general threshold here 0.3).
+To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine the importance of the test result we additionally computed the Cramér's V for effect size (threshold applied here 0.3).
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -370,5 +378,4 @@ As no effect size appears to be greater than 0.3, we can safely conclude that ou
 
 ## Key Findings or Patterns
 
-The findings in our correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable The strongest correlation is observed with the feature `age` (0.25, see on the violin plots for age on plotly), particularly in the age range of 60 to 80 years. The correlation between the other categorical features and the target variable seem to be of low effect size.
-
+The findings in our EDA and particularly in the correlative analysis are up until now rather modest. None of the predictors shows a strong correlation with our target variable. The strongest correlation is observed with the feature `age`, particularly in the age range of 60 to 80 years. `avg_glucose_level` seems to influence stroke risk but only to a minor extent. The feature `bmi` shows no correlation with the target variable. Among the categorical variables, `smoking_status`, `hypertension`, `ever_married`, `work_type`, and `heart_disease` show the most significant differences in the proportions of stroke cases across their levels. However, their relationship with `stroke` are rather small. The categorical variables `gender` and `Residence_type` do not show any differences in the proportions of stroke cases across their levels. The bivariate analysis did not reveal any multicollinearity among the features. We can therefore proceed with the feature selection and modeling phase.

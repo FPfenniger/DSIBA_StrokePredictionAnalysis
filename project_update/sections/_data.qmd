@@ -2,100 +2,100 @@
 
 ## Sources
 
-The data utilized for this project originates from the Stroke Prediction Dataset available on Kaggle, which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting the likelihood of a stroke based on features like age, gender, and medical history. Sadly, we do not have more information on how the data was collected. The source is confidential and the use of it is only for educational purposes.
+The data utilized for this project originates from the Stroke Prediction Dataset available on Kaggle, which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting ocurrences of strokes based on features like age, gender, and medical history. Sadly, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
 
 ## Description
 
-The data contains 5110 observations with 12 attributes. Here's summary of the main features of the dataset:
+Our dataset contains 5110 observations with 12 attributes. Here's a summary of the main features of the dataset:
 
 1.  id:
 
--   Type: Numerical (Continous)
--   Description: A unique identifier for each individual in the dataset.
+-   Type: Integer (Continuous)
+-   Description: A unique identifier for each individual in the dataset
 
 2.  gender:
 
--   Type: Categorical
+-   Type: Character
 -   Values: "Male", "Female", or "Other"
 -   Description: Gender of the individual
 
 3.  age:
 
--   Type: Numerical (Continuous)
+-   Type: Double
 -   Description: Age of the individual
 
 4.  hypertension:
 
--   Type: Categorical (Binary)
+-   Type: Integer (Binary)
 -   Values: 0 (No), 1 (Yes)
--   Description: Indicates whether the individual has hypertension.
+-   Description: Indicates whether the individual has hypertension (high blood pressure)
 
 5.  heart_disease:
 
--   Type: Categorical (Binary)
+-   Type: Integer (Binary)
 -   Values: 0 (No), 1 (Yes)
--   Description: Indicates whether the individual has heart disease
+-   Description: Indicates whether the individual has a heart disease
 
 6.  ever_married:
 
--   Type: Categorical
+-   Type: Character
 -   Values: "No" or "Yes"
 -   Description: Indicates whether the individual has ever been married
 
 7.  work_type:
 
--   Type: Categorical
+-   Type: Character
 -   Values: "children", "Govt_job", "Never_worked", "Private", "Self-employed"
 -   Description: Type of work the individual is engaged in
 
 8.  Residence_type:
 
--   Type: Categorical
+-   Type: Character
 -   Values: "Rural" or "Urban"
 -   Description: Indicates the living area of the individual
 
 9.  avg_glucose_level:
 
--   Type: Numerical (Continuous)
+-   Type: Double
 -   Description: Average glucose level in the blood
 
 10. bmi:
 
--   Type: Numerical (Continuous)
+-   Type: Character (Originally), Double (After Preprocessing)
 -   Description: Body Mass Index, a measure of body fat based on height and weight
 
 11. smoking_status:
 
--   Type: Categorical
+-   Type: Character
 -   Values: "formerly smoked", "never smoked", "smokes", "Unknown"
--   Description: Indicates the smoking habits of the individual, where "Unknown" signifies that the smoking status information is not available.
+-   Description: Indicates the smoking habits of the individual, where "Unknown" signifies that the smoking status information is not available
 
 12. stroke:
 
--   Type: Categorical (Binary)
+-   Type: Integer (Binary)
 -   Values: 0 (No), 1 (Yes)
--   Description: The target variable indicating whether the individual has had a stroke.
+-   Description: The target variable indicating whether the individual has had a stroke
 
 ```{r, warning=FALSE}
 #|code-fold: true 
 #|code-summary: "Click to show code"
 stroke_tb <- read.csv("../../data/stroke_dataset.csv") 
-stroke_tb
+head(stroke_tb)
+str(stroke_tb)
 ```
+Relevant metadata:
 
-Relevant metadata: 
-- Name of the owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his Kaggle profile) 
+-   Owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his     Kaggle profile)
 
-- Last updated 4 years go (seen on Kaggle)
+-   Last update of the dataset was 4 years ago 
 
 ## Wrangling/Preprocessing
 
-The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguished from the beginning categorical and numerical variables.
+The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguish from the beginning categorical and numerical variables.
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-
 # identify categorical and numerical variables
 categorical_variables <- names(stroke_tb)[sapply(stroke_tb, function(x) is.character(x) || is.integer(x))]
 numerical_variables <- names(stroke_tb)[sapply(stroke_tb, is.double)]
@@ -105,13 +105,11 @@ cat(sprintf("Categorical features: %s\nNumerical features: %s",
             paste(categorical_variables, collapse = ", "),
             paste(numerical_variables, collapse = ", ")))
 ```
-Secondly, we addressed missing values in the features “bmi” and “smoking_status” by replacing them with N/A. Additionally, we ensured that “bmi” is recognized as a numerical variable and updated the lists of categorical and numerical columns, as “bmi” is now a double. The id column has also been removed, as it is not relevant for our analysis moving forward.
+Secondly, we address missing values in the features `bmi` and `smoking_status` by replacing them with `N/A`. Additionally, we ensure that `bmi` is recognized as a numerical variable and update the lists of categorical and numerical columns, as `bmi` is now a double. The `id` column is also removed, as it is not relevant for our analysis.
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-library(naniar)
-
 cleaned_stroke_tb <- replace_with_na(data = stroke_tb, 
                                      replace = list(bmi = c("N/A"), smoking_status = c("Unknown"))) %>%
   mutate(bmi = as.numeric(bmi)) %>%
@@ -130,12 +128,11 @@ cat(sprintf("Categorical features: %s\nNumerical features: %s",
             paste(numerical_variables, collapse = ", ")))
 ```
 
-Then, to maintain the number of observations in our dataset, we replaced the N/A values in “bmi” with the median and in “smoking_status” with the modal value.
+Then, to maintain the number of observations in our dataset, we replace the `N/A` values in `bmi` with the median and in `smoking_status` with the modal value.
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-
 # Calculate the median for bmi and the mode for smoking_status
 bmi_median <- median(cleaned_stroke_tb$bmi, na.rm = TRUE)
 smoking_status_mode <- names(which.max(table(cleaned_stroke_tb$smoking_status, useNA = "no")))
@@ -150,46 +147,39 @@ preprocessed_stroke_tb <- cleaned_stroke_tb %>%
 preprocessed_stroke_tb
 ```
 
-For the categorical feature encoding, we have converted our categorical variables into dummy variables to utilize them in our predictive model.
+For the categorical feature encoding, we convert our categorical variables into dummy variables to utilize them in our predictive model.
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-library(fastDummies)
+encoded_stroke_tb <- preprocessed_stroke_tb
 
-encoded_stroke_tb <- dummy_cols(preprocessed_stroke_tb, select_columns=categorical_variables_1, remove_selected_columns = TRUE)
+# Encoding binary categorical variables first
+encoded_stroke_tb$ever_married <- ifelse(encoded_stroke_tb$ever_married == "Yes", 1, 0)
+encoded_stroke_tb$Residence_type <- ifelse(encoded_stroke_tb$Residence_type == "Urban", 1, 0)
 
+# Create dummy variables for the remaining character columns
+to_encode_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb, is.character)]
+encoded_stroke_tb <- dummy_cols(
+  encoded_stroke_tb, 
+  select_columns = to_encode_variables, 
+  remove_selected_columns = TRUE
+)
+
+# View the final encoded dataset
 encoded_stroke_tb
 ```
-
-Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardized all continuous features in the dataset.
-
-```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show code"
-scaled_stroke_tb <- encoded_stroke_tb
-
-#Scale only the double columns
-
-scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
-
-scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
-
-scaled_stroke_tb
-```
-
 ## Spotting Mistakes and Missing Data
 
-Only the features `bmi` and `smoking_status` have missing values. As described previously, we replaced these missing values by N/A and replaced them in “bmi” with the median and in “smoking_status” with the modal value. Additionally, `bmi` had been imported as a character, so we converted it to a numeric variable. The `id` column was also removed as it was not relevant for our analysis.
+Only the features `bmi` and `smoking_status` have missing values. As described previously, we replaced these missing values by `N/A` and swapped them with the median and modal value respectively. Additionally, `bmi` had been imported as a character, so we converted it to a numeric variable. The `id` column was also removed as it was not relevant for our analysis.
 
 ## Listing Anomalies and Outliers
 
-Upon examining the encoded stroke dataset for the categorical variables, we noticed that there is only three non-binary quantitative variables: `age`, `avg_glucose_level` and `bmi`. To visualize outliers in each of these variables, we used boxplots. The points outside the range defined by the whiskers were identified as outliers.
+Upon examining the encoded stroke dataset for the categorical variables, we notice that there is only three non-binary quantitative variables: `age`, `avg_glucose_level` and `bmi`. To visualize outliers in each of these variables, we used boxplots. The points outside the range defined by the whiskers were identified as outliers.
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-
 # Boxplot for Age
 boxplot(encoded_stroke_tb$age, main="Boxplot of Age", ylab="Age", col="lightblue")
 
@@ -235,11 +225,11 @@ outlier_counts <- sapply(encoded_stroke_tb[, c("age", "avg_glucose_level", "bmi"
 outlier_counts
 
 ```
-Finding zero outliers for `age` indicates a nearly normal distribution among the individuals in our population. With a dataset containing 5,110 rows, the identification of 627 outliers for `avg_glucose_level`, representing approximately 12.25% of the total population, and 126 outliers for `bmi`, constituting about 2.47%, highlighted disparities in the distribution of these health metrics. Both boxplots display a considerable number of outliers in the higher range, indicating that there are subsets of individuals in the dataset with unusually high average glucose levels and BMI values. These outliers could be due to a variety of factors, such as lifestyle, health conditions, or measurement errors. Considering their importance as risk factors, we decided to keep them in the dataset for now. However, we may revisit this decision later in the analysis, especially as we didn't examine the distributions in the upsampled dataset yet. 
+Finding zero outliers for `age` indicates a nearly normal distribution among the individuals in our population. With a dataset containing 5,110 rows, the identification of 627 outliers for `avg_glucose_level`, representing approximately 12.25% of the total population, and 126 outliers for `bmi`, constituting about 2.47%. Both boxplots display a considerable number of outliers in the higher range, indicating that there are subsets of individuals in the dataset with unusually high glucose levels and BMI values. These outliers could be due to a variety of factors, such as lifestyle, health conditions, or measurement errors. Considering their importance as risk factors, we decided to keep them in the dataset for now. However, we may revisit this decision later in the analysis, especially as we didn't examine the distributions in the upsampled dataset yet.
 
-After conducting the analysis of the numerical variables, we examined the distribution of the categorical variables.
+After conducting the analysis of the numerical variables, we examine the distribution of the categorical variables.
 
-Two distribution graphs captured our attention: the one for the `gender` category `Other` and the one for the `work_type` `Never worked`. The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these variables from our analysis as they add unnecessary complexity.
+Two bar plots captured our attention: the one for the feature `gender`=`Other` and the one for the `work_type`=`Never worked`. The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these observations from our analysis as they add unnecessary complexity.
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -263,37 +253,63 @@ ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) +
 #Count of Work Type is Never worked
 count_work_type_Never_worked <- sum(encoded_stroke_tb$work_type_Never_worked)
 count_work_type_Never_worked
+
+#Removal of the observations and columns
+encoded_stroke_tb <- encoded_stroke_tb %>%
+  filter(gender_Other == 0, work_type_Never_worked == 0)
+
+encoded_stroke_tb <- encoded_stroke_tb %>%
+  select(-gender_Other, -work_type_Never_worked)
+
+# Verify the columns are removed
+str(encoded_stroke_tb)
 ```
-Finally, the dataset shows that most individuals do not have strokes. However, such an imbalance can negatively impact model performance, as models may become biased towards the majority class, leading to poor prediction accuracy for minority cases, such as strokes. If don't apply upsampling here, the accuracy of a naive model predicting always "no stroke" would probably significantly higher than our developed prediction model.
+The dataset reveals that most individuals do not have strokes, creating a strong class imbalance. This imbalance can negatively impact model performance by biasing it towards the majority class, resulting in poor predictive accuracy for minority cases like strokes. Without applying upsampling, the model might overly favor "no stroke" predictions, yielding high overall accuracy but failing to identify actual stroke cases effectively (low recall). By upsampling the minority class, we ensure the model learns from stroke cases as well, improving its ability to detect strokes and offering a more balanced and meaningful predictive performance.
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show the code"
-
-# Distribution of strokes vs no strokes in the sample
-table(encoded_stroke_tb$stroke)
-ggplot(encoded_stroke_tb, aes(x=factor(`stroke`))) + 
+# Plot the distribution of stroke cases
+ggplot(encoded_stroke_tb, aes(x = factor(stroke))) + 
   geom_bar() + 
-  labs(x='0 no strokes, 1 strokes', y='Count', title='Distribution of strokes')
+  labs(x = '0 = No Stroke, 1 = Stroke', y = 'Count', title = 'Distribution of Strokes')
 
-
-# count how many people had a stroke and the prop
+# Count the number of people who had a stroke and calculate the proportion
 encoded_stroke_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2))
 ```
-To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Since the dataset contains only 5,110 individuals, we have chosen to up-sample the minority class to avoid losing valuable data that could be discarded in down-sampling. By up-sampling, we can enhance the representation of stroke cases, which helps the model learn more effectively and improve prediction accuracy for both classes.
+To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Given that the dataset contains only 5,110 individuals, we chose upsampling the minority class to retain all available data, which would otherwise be reduced through downsampling. By upsampling, we enhance the representation of stroke cases, helping the model learn more effectively and improve both prediction accuracy and recall, particularly for the minority class.
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show the code"
+# Convert 'stroke' to a factor
+encoded_stroke_tb$stroke <- as.factor(encoded_stroke_tb$stroke)
 
 # Use upSample to balance the dataset
-balanced_stroke_tb <- upSample(x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"],
-                               y = encoded_stroke_tb$stroke,
-                               yname = "stroke")
+balanced_stroke_tb <- upSample(
+  x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"], # All columns except 'stroke'
+  y = encoded_stroke_tb$stroke, # Target variable for upsampling
+  yname = "stroke" # Column name for the target variable in the upsampled dataset
+)
 
 # Check the distribution to confirm balancing
 table(balanced_stroke_tb$stroke)
+
+```
+Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardize all continuous features in the dataset.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+scaled_stroke_tb <- balanced_stroke_tb
+
+#Scale only the double columns
+
+scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
+
+scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
+
+scaled_stroke_tb
 ```

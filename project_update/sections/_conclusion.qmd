@@ -1,10 +1,11 @@
 # Conclusion
 
 ## Progress Summary
-Overall, we completed the data cleaning of our dataset, which is now ready to be used for predictive modeling. The EDA showed that correlations are a bit lower than expected, but we were able to identify some interesting patterns. For example, we found that the target variable is more likely to be positive for people who are older and have a higher average glucose level. 
+Overall, we completed the data cleaning and preprocessing of our dataset, which is now ready for predictive modeling. The EDA revealed lower correlations between some features and the target variable than anticipated, but we identified meaningful patterns. For instance, the target variable (stroke occurrence) is more likely to be positive among older individuals and those with higher average glucose levels. Additionally, to gain further insights, we plan to explore the balanced and stratified datasets, which may reveal patterns that were less apparent in the original dataset.
 
 ## Next Steps
-First, we plan to extend our EDA to the stratified dataset, which will allow us to better understand the distribution of the target variable across different age groups. The next step will be to build several predictive models based on logistic regression and evaluate the results and final representations. We hope to increase accuracy with the use of our stratified datasets. 
+Our immediate next step is to extend our EDA to the balanced and stratified datasets. This will help us understand the distribution of the target variable more clearly across different demographic and health-related groups, particularly age. Following this, we will develop several predictive models, starting with logistic regression, and assess their performance. We anticipate that our stratified dataset may improve model accuracy. A key focus will be comparing model performance across different sampling methods, aiming to select the best approach for predicting stroke occurrence. 
 
 ## Final Thoughts
-We are excited to see how our models will perform and to see if we can predict the likelihood of having a stroke based on the features we have. We are also looking forward to exploring the feature importance and understanding which features are the most important in predicting the target variable.
+We are a bit surprised and disappointed by the low correlation between the features and the target variable. However, we are confident that we can still build a good predictive model. Furthermore, we are excited to see how our models will perform and to see if we can predict the likelihood of having a stroke based on the features we have. We are also looking forward to exploring the feature importance and understanding which features are the most important in predicting the target variable. Also the comparison between the models will be interesting.
+
