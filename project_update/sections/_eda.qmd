@@ -207,7 +207,7 @@ shinyApp(
 
 ![Age Violin Plot](../data/png_for_update/age.png) ![avg_glucose_level Violin Plot](../data/png_for_update/avg_glucose_level.png) ![bmi Violin Plot](../data/png_for_update/bmi.png)
 
-The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. Only the variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
+The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
 #### Categorical variables
 
@@ -219,10 +219,9 @@ The second part of our EDA examines the distribution of the categorical variable
 
 # Barchart of categorical variables grouped by stroke variable
 
-
 # Define the UI
 ui <- fluidPage(
-  titlePanel("Categorical variables grouped by stroke variable"),
+  titlePanel("Categorical Variables Grouped by Stroke Variable"),
   sidebarLayout(
     sidebarPanel(
       # Dropdown for selecting the variable for the X-axis
@@ -247,14 +246,21 @@ server <- function(input, output) {
   
   output$histogramPlot <- renderPlotly({
     
-    # If the selected variable is continuous (e.g., age), use geom_histogram
-    if (input$x_variable %in% c("age", "hypertension", "heart_disease")) {
-      p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
-        geom_histogram(position = "fill", binwidth = 1) +
-        labs(fill = "STROKE", y = "Ratio")
+    # Create a reactive data frame that filters "Other" for gender
+    filtered_data <- preprocessed_stroke_tb
+    if (input$x_variable == "gender") {
+      filtered_data <- filtered_data %>% filter(gender != "Other")
+    }
+    
+    # Check if selected variable is Hypertension or Heart Disease
+    if (input$x_variable %in% c("hypertension", "heart_disease")) {
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio") +
+        scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
     } else {
-      # If the selected variable is categorical (e.g., gender, work_type), use geom_bar
-      p <- ggplot(preprocessed_stroke_tb, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+      # For other categorical variables
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
         geom_bar(position = "fill") +
         labs(fill = "STROKE", y = "Ratio")
     }
