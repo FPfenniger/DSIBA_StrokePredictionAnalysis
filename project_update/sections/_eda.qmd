@@ -65,7 +65,7 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 
 ### Univariate Analysis
 
-##### Numerical variables
+#### Numerical variables
 
 First, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
