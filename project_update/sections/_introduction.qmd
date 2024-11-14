@@ -6,6 +6,14 @@ Stroke is a leading global health issue, causing long-term disability and claimi
 
 This project aims to explore associations between key risk factors and stroke incidence using data analysis and predictive modeling.
 
+To be more specific, the goals of this project are to:
+
+- Build a predictive model to identify patients at risk of experiencing a stroke.
+
+- Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence.
+
+- Create visualizations to illustrate the results and enhance the understanding of stroke risk factors.
+
 ## Research Questions
 
 1. What are the most significant risk factors associated with stroke?
