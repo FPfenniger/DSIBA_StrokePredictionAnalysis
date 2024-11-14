@@ -79,7 +79,7 @@ Our dataset contains 5110 observations with 12 attributes. Here's a summary of t
 ```{r, warning=FALSE}
 #|code-fold: true 
 #|code-summary: "Click to show code"
-stroke_tb <- read.csv("../../data/stroke_dataset.csv") 
+stroke_tb <- read.csv("../data/stroke_dataset.csv") 
 head(stroke_tb)
 str(stroke_tb)
 ```
