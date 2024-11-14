@@ -5,7 +5,7 @@ authors:
  - Hussein, Mohamed
  - Pfenniger, Fabio
 institute: University of Lausanne
-date: 14.11.2024
+date: 2024-11-14
 title-block-banner: "#0095C8" # chosen for the university of lausanne
 toc: true
 toc-location: right
@@ -26,9 +26,7 @@ format:
         </style>
 abstract: |
   This project investigates stroke prediction using machine learning techniques to identify individuals at heightened risk of stroke. Utilizing a structured classification framework, we analyze a dataset containing various patient health metrics, with stroke occurrence as the target variable. Logistic regression serves as the primary model for this analysis, chosen for its interpretability and effectiveness in binary classification. Our data preparation process includes preprocessing to address missing values, feature scaling, handling potential outliers and encoding categorical variables. The current EDA shows that the dataset is imbalanced, with only 4.9% of individuals having a stroke. We address this issue by oversampling the minority class. Furthermore, our predictive variables seem to only have weak to moderate correlations with our target variable. We intend to use the strongest predictor `age` as a base for a stratified analysis later on in the modelling part. 
-
 ---
-
 ```{r, message= FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -44,9 +42,6 @@ library(naniar)
 library(fastDummies)
 library(caret)
 ```
-
-:::
-
 {{< include sections/_introduction.qmd >}}
 {{< include sections/_data.qmd >}}
 {{< include sections/_eda.qmd >}}

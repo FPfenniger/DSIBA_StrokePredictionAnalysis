@@ -4,7 +4,7 @@
 
 We decided to split our EDA into three distinct parts. Part I treats descriptive statistics and the general structure of our dataset. Part II focuses on a univariate analysis of the features and their correlations with the target variable `stroke`. Part III will be dedicated to the bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use plotly. Unfortunately, we were not able to implement the interactive plots in the markdown file, but we provide the code for the Shiny app below and the graphs as screenshots.
 
-### 1. Descriptive Statistics
+### Descriptive Statistics
 
 We start our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the count, mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
 
@@ -61,13 +61,11 @@ summary_table <- bind_rows(
 
 # Display the combined table with kable
 knitr::kable(summary_table, caption = "Summary of Categorical Variables with Proportion", row.names = FALSE)
-
-
 ```
 
-### 2. Univariate Analysis
+### Univariate Analysis
 
-#### Numerical variables
+##### Numerical variables
 
 First, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
@@ -75,9 +73,6 @@ First, we visualized all numerical variables in a histogram grouped by stroke oc
 #| code-fold: true
 #| code-summary: "Click to show code"
 # Histogram of numerical variables grouped by stroke variable
-
-encoded_stroke_tb <- read.csv("../../data/encoded_stroke_tb.csv")
-
 # Define the UI
 ui <- fluidPage(
   titlePanel("Numerical variables grouped by stroke variable"),
@@ -146,9 +141,9 @@ server <- function(input, output, session) {
     p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
       geom_histogram(binwidth = input$binwidth, color = "white", position = "stack") +
       labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency", fill = "Stroke Status") +
-      geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", size = 1) +
-      geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", size = 0.8) +
-      geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", size = 0.8)
+      geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", linewidth = 1) +
+      geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", linewidth = 0.8) +
+      geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", linewidth = 0.8)
     
     # Convert ggplot to an interactive plotly object
     ggplotly(p)
@@ -159,7 +154,7 @@ server <- function(input, output, session) {
 shinyApp(ui = ui, server = server)
 ```
 
-![Age Histogram](../../data/png_for_update/age_1.png) ![Average Glucose Level Histogram](../../data/png_for_update/glucose_1.png) ![BMI Histogram](../../data/png_for_update/bmi_1.png)
+![Age Histogram](../data/png_for_update/age_1.png) ![Average Glucose Level Histogram](../data/png_for_update/glucose_1.png) ![BMI Histogram](../data/png_for_update/bmi_1.png)
 
 Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
@@ -172,9 +167,6 @@ For completeness we added a violin Plot of the numerical variables with correlat
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-# Load the data using relative path with `..` to go up levels
-outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
-
 # Define numerical variables (adjust if there are more)
 numerical_variables <- c("age", "avg_glucose_level", "bmi")
 
@@ -213,7 +205,7 @@ shinyApp(
 )
 ```
 
-![Age Violin Plot](../../data/png_for_update/age.png) ![avg_glucose_level Violin Plot](../../data/png_for_update/avg_glucose_level.png) ![bmi Violin Plot](../../data/png_for_update/bmi.png)
+![Age Violin Plot](../data/png_for_update/age.png) ![avg_glucose_level Violin Plot](../data/png_for_update/avg_glucose_level.png) ![bmi Violin Plot](../data/png_for_update/bmi.png)
 
 The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. Only the variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
@@ -276,9 +268,9 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-![Gender Bar Plot](../../data/png_for_update/gender.png) ![Hypertension Bar Plot](../../data/png_for_update/hypertension.png) ![heart_disease Bar Plot](../../data/png_for_update/heart_disease.png)
+![Gender Bar Plot](../data/png_for_update/gender.png) ![Hypertension Bar Plot](../data/png_for_update/hypertension.png) ![heart_disease Bar Plot](../data/png_for_update/heart_disease.png)
 
-![ever_married Bar Plot](../../data/png_for_update/ever_married.png) ![work_type Bar Plot](../../data/png_for_update/work_type.png) ![residence_type Bar Plot](../../data/png_for_update/residence_type.png) ![smoking_status Bar Plot](../../data/png_for_update/smoking_status.png)
+![ever_married Bar Plot](../data/png_for_update/ever_married.png) ![work_type Bar Plot](../data/png_for_update/work_type.png) ![residence_type Bar Plot](../data/png_for_update/residence_type.png) ![smoking_status Bar Plot](../data/png_for_update/smoking_status.png)
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
 
@@ -296,23 +288,23 @@ In contrast, the following variables appear to be not relevant, as there are no 
 
 Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk.
 
-### 3. Bivariate Analysis
+### Bivariate Analysis
 
 In the bivariate analysis we examined correlations between our features. We used a correlation matrix to visualize the relationships between the numerical variables and the target variable `stroke`.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-numeric_columns <- encoded_stroke_tb %>% 
-  select(where(is.double))
+# Select the numeric columns from your data
+numeric_data <- preprocessed_stroke_tb[, c("age", "avg_glucose_level", "bmi")]
 
 # Calculate the correlation matrix
-correlation_matrix <- cor(numeric_columns, use = "complete.obs")
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
 
-# Convert the correlation matrix to a format that plotly can use
+# Convert the correlation matrix to a format that plotly can use (optional step)
 heatmap_data <- as.data.frame(as.table(correlation_matrix))
 
-# Plot the correlation matrix as a heatmap
+# Plot the correlation matrix as a heatmap using plotly
 plot_ly(
   x = colnames(correlation_matrix),
   y = rownames(correlation_matrix),
@@ -325,56 +317,52 @@ plot_ly(
     xaxis = list(title = "", tickangle = 45),
     yaxis = list(title = "")
   )
-
 ```
 
 Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features
 
-To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine the importance of the test result we additionally computed the Cramér's V for effect size (threshold applied here 0.3).
+To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine the importance of the test result we additionally computed the Cramér's V for effect size (threshold applied here 0.3). First we removed all outliers and for security, we apply the Fisher's Exact Test if there are zero counts in the contingency table.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-library(vcd)
-outlier_stroke_tb <- read.csv("../../data/outlier_stroke_tb.csv")
-
 cat_variables = c("hypertension", 
                   "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
 
-# Loop through each unique pair of categorical variables
+preprocessed_stroke_tb <- preprocessed_stroke_tb %>%
+  filter(!(gender == 'Other' & work_type == 'Never_worked'))
+
 for (index1 in 1:(length(cat_variables) - 1)) {
   var1 <- cat_variables[index1]
   
   for (index2 in (index1 + 1):length(cat_variables)) {
     var2 <- cat_variables[index2]
     
-    # Create a contingency table
-    contingency_table <- table(outlier_stroke_tb[[var1]], outlier_stroke_tb[[var2]])
+    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
     
-    # Check if the contingency table has enough data for the chi-square test
-    if (all(contingency_table > 0)) {
-      # Run the chi-square test
-      chi_square_result <- chisq.test(contingency_table)
-      
-      # Calculate Cramér's V to assess the strength of association
-      cramers_v <- assocstats(contingency_table)$cramer
-      
-      # Display the results only if Cramér's V > 0.3 and p-value < 0.05
-      if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
-        cat("Relationship between", var1, "and", var2, "\n")
-        cat("Chi-square P-value:", chi_square_result$p.value, "\n")
-        cat("Cramér's V:", cramers_v, "\n")
-        print(contingency_table)
-        cat("\n")
-      }
+    # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
+    if (any(contingency_table == 0)) {
+      chi_square_result <- fisher.test(contingency_table, simulate.p.value = TRUE)
     } else {
-      cat("Skipping test for", var1, "and", var2, "due to insufficient data\n")
+      chi_square_result <- chisq.test(contingency_table)
+    }
+    
+    cramers_v <- assocstats(contingency_table)$cramer
+    
+    if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
+      cat("Relationship between", var1, "and", var2, "\n")
+      cat("P-value:", chi_square_result$p.value, "\n")
+      cat("Cramér's V:", cramers_v, "\n")
+      print(contingency_table)
+      cat("\n")
     }
   }
 }
-```
 
-As no effect size appears to be greater than 0.3, we can safely conclude that our categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
+```
+The only relationship, which seems to be problematic in terms of multicollinearity seems to be between `ever_married` and `work_type`. For the prediction model, we will therefore exclude one of the two features. Another possibility is to further explore their relationship with the VIF(Variation Inflation Factor), which will help us with the decision to either keep both variables or drop one of them.
+
+As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
 ## Key Findings or Patterns
 

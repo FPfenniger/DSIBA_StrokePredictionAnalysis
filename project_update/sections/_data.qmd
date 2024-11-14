@@ -2,7 +2,7 @@
 
 ## Sources
 
-The data utilized for this project originates from the Stroke Prediction Dataset available on Kaggle, which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting ocurrences of strokes based on features like age, gender, and medical history. Sadly, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
+The data utilized for this project originates from the Stroke Prediction Dataset available on Kaggle, which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting occurrences of strokes based on features like age, gender, and medical history. Sadly, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
 
 ## Description
 
@@ -115,7 +115,7 @@ cleaned_stroke_tb <- replace_with_na(data = stroke_tb,
   mutate(bmi = as.numeric(bmi)) %>%
   select(-id)
 
-cleaned_stroke_tb
+head(cleaned_stroke_tb)
 
 # Selecting categorical variables (character or factor types)
 categorical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, function(x) is.character(x) || is.integer(x))]
@@ -144,7 +144,7 @@ preprocessed_stroke_tb <- cleaned_stroke_tb %>%
     smoking_status = ifelse(is.na(smoking_status), smoking_status_mode, smoking_status)
   )
 
-preprocessed_stroke_tb
+head(preprocessed_stroke_tb)
 ```
 
 For the categorical feature encoding, we convert our categorical variables into dummy variables to utilize them in our predictive model.
@@ -167,7 +167,7 @@ encoded_stroke_tb <- dummy_cols(
 )
 
 # View the final encoded dataset
-encoded_stroke_tb
+head(encoded_stroke_tb)
 ```
 ## Spotting Mistakes and Missing Data
 
@@ -229,7 +229,7 @@ Finding zero outliers for `age` indicates a nearly normal distribution among the
 
 After conducting the analysis of the numerical variables, we examine the distribution of the categorical variables.
 
-Two bar plots captured our attention: the one for the feature `gender`=`Other` and the one for the `work_type`=`Never worked`. The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these observations from our analysis as they add unnecessary complexity.
+Two bar plots captured our attention: the one for the feature `gender`=`Other` and the one for the `work_type`=`Never_worked`. The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these observations from our analysis as they add unnecessary complexity.
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -240,19 +240,11 @@ ggplot(encoded_stroke_tb, aes(x=factor(gender_Other))) +
   geom_bar() + 
   labs(x='1 if gender is Other, 0 if not', y='Count', title='Distribution of Other gender')
 
-#Count of Gender Other
-count_other_gender <- sum(encoded_stroke_tb$gender_Other)
-count_other_gender
-
 # Distribution of Work Type is Never worked
 table(encoded_stroke_tb$work_type_Never_worked)
 ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) + 
   geom_bar() + 
   labs(x='1 if Work Type is Never Worked, 0 if not', y='Count', title='Distribution of Work Type is Never worked')
-
-#Count of Work Type is Never worked
-count_work_type_Never_worked <- sum(encoded_stroke_tb$work_type_Never_worked)
-count_work_type_Never_worked
 
 #Removal of the observations and columns
 encoded_stroke_tb <- encoded_stroke_tb %>%
@@ -311,5 +303,5 @@ scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb
 
 scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
 
-scaled_stroke_tb
+head(scaled_stroke_tb)
 ```
