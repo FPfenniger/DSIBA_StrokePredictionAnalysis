@@ -10,7 +10,7 @@ The dataset is fairly clean. Our dataset contains several categorical variables.
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-# identify categorical and numerical variables
+# identify categorical and numerical variables 
 categorical_variables <- names(stroke_tb)[sapply(stroke_tb, function(x) is.character(x) || is.integer(x))]
 numerical_variables <- names(stroke_tb)[sapply(stroke_tb, is.double)]
 
@@ -173,6 +173,9 @@ encoded_stroke_tb <- encoded_stroke_tb %>%
 
 # Verify the columns are removed
 str(encoded_stroke_tb)
+
+# save
+write.csv(encoded_stroke_tb, "../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 ```
 
 ## Dataset Balancing

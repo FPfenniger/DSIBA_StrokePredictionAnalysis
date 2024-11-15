@@ -5,6 +5,16 @@ server: shiny
 ---
 # Exploratory Data Analysis
 
+```{r}
+library(tidyverse)
+library(plotly)
+library(shiny)
+library(knitr)
+library(caret)
+library(vcd)
+```
+
+
 ## Descriptive Statistics
 
 We start our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the count, mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
@@ -206,8 +216,6 @@ shinyApp(
 )
 ```
 
-![Age Violin Plot](../data/png_for_update/age.png) ![avg_glucose_level Violin Plot](../data/png_for_update/avg_glucose_level.png) ![bmi Violin Plot](../data/png_for_update/bmi.png)
-
 The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
 #### Categorical variables
@@ -274,10 +282,6 @@ server <- function(input, output) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
-
-![Gender Bar Plot](../data/png_for_update/gender.png) ![Hypertension Bar Plot](../data/png_for_update/hypertension.png) ![heart_disease Bar Plot](../data/png_for_update/heart_disease.png)
-
-![ever_married Bar Plot](../data/png_for_update/ever_married.png) ![work_type Bar Plot](../data/png_for_update/work_type.png) ![residence_type Bar Plot](../data/png_for_update/residence_type.png) ![smoking_status Bar Plot](../data/png_for_update/smoking_status.png)
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
 
@@ -372,6 +376,29 @@ The only relationship, which seems to be problematic in terms of multicollineari
 As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
 ## Stratified Dataset Analysis
+
+In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create age groups and ensure that the distribution of these groups is similar in both the training and test datasets. With this sampling method, we hope to increase our model's generalizability and robustness in the section.
+
+```{r}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+
+
+# Create age groups
+stratified_stroke_tb <- encoded_stroke_tb %>%
+  mutate(age_group = case_when(
+    age <= 60 ~ "under_60",
+    age > 60 & age <= 80 ~ "60_80",
+    TRUE ~ "over_80"
+  ))
+
+# Stratified sampling
+set.seed(42)
+trainIndex <- createDataPartition(data$stroke, p = 0.8, list = FALSE, times = 1)
+trainData <- data[trainIndex, ]
+testData <- data[-trainIndex, ]
+
 
 ### Stratified Sampling
 
