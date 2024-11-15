@@ -1,0 +1,51 @@
+---
+title: "final_report_C"
+authors:
+ - Battaiwan, Bolor
+ - Hussein, Mohamed
+ - Pfenniger, Fabio
+institute: University of Lausanne
+date: 2024-11-14
+title-block-banner: "#0095C8" # chosen for the university of lausanne
+toc: true
+toc-location: right
+format: 
+  html:
+    number-sections: true
+    html-math-method: katex
+    self-contained: true
+    code-overflow: wrap
+    code-fold: true
+    code-tools: true
+    include-in-header: # add custom css to make the text in the `</> Code` dropdown black
+      text: |
+        <style type="text/css">
+          .quarto-title-banner a {
+            color: #000000;
+          }
+        </style>
+server: shiny
+abstract: | 
+
+---
+```{r, message= FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+#| label: setup
+#| echo: false
+
+# loading all the necessary packages
+library(tidyverse)
+library(shiny)
+library(plotly)
+library(vcd)
+library(naniar)
+library(fastDummies)
+library(caret)
+```
+{{< include sections/_introduction.qmd >}}
+{{< include sections/_data_cleaning.qmd >}}
+{{< include sections/_eda.qmd >}}
+{{< include sections/_predictive_model.qmd >}}
+{{< include sections/_model_evaluation.qmd >}}
+{{< include sections/_conclusion.qmd >}}
