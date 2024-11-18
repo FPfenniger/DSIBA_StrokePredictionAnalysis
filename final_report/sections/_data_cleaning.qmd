@@ -5,8 +5,16 @@ server: shiny
 ---
 # Data Cleaning & Wrangeling
 
-The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguish from the beginning categorical and numerical variables.
+```{r}
+library(naniar)
+library(fastDummies)
+```
 
+
+The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguish from the beginning categorical and numerical variables.
+```{r}
+stroke_tb <- read_csv("../../data/datasets/stroke_dataset.csv") 
+```
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
@@ -61,6 +69,8 @@ preprocessed_stroke_tb <- cleaned_stroke_tb %>%
   )
 
 head(preprocessed_stroke_tb)
+
+write.csv(preprocessed_stroke_tb, "../../data/datasets/preprocessed_stroke_tb.csv", row.names = FALSE)
 ```
 
 
@@ -86,6 +96,8 @@ encoded_stroke_tb <- dummy_cols(
 
 # View the final encoded dataset
 head(encoded_stroke_tb)
+
+write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 ```
 
 
@@ -165,17 +177,17 @@ ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) +
   labs(x='1 if Work Type is Never Worked, 0 if not', y='Count', title='Distribution of Work Type is Never worked')
 
 #Removal of the observations and columns
-encoded_stroke_tb <- encoded_stroke_tb %>%
+outlier_stroke_tb <- encoded_stroke_tb %>%
   filter(gender_Other == 0, work_type_Never_worked == 0)
 
-encoded_stroke_tb <- encoded_stroke_tb %>%
+outlier_stroke_tb <- encoded_stroke_tb %>%
   select(-gender_Other, -work_type_Never_worked)
 
 # Verify the columns are removed
-str(encoded_stroke_tb)
+str(outlier_stroke_tb)
 
 # save
-write.csv(encoded_stroke_tb, "../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
+write.csv(outlier_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 ```
 
 ## Dataset Balancing

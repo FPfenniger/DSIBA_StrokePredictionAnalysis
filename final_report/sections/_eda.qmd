@@ -13,7 +13,11 @@ library(knitr)
 library(caret)
 library(vcd)
 ```
-
+```{r}
+# Load the preprocessed dataset
+preprocessed_stroke_tb <- read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
+encoded_stroke_tb <- read.csv("../../data/datasets/encoded_stroke_tb.csv")
+```
 
 ## Descriptive Statistics
 
@@ -164,8 +168,6 @@ server <- function(input, output, session) {
 # Run the application
 shinyApp(ui = ui, server = server)
 ```
-
-![Age Histogram](../data/png_for_update/age_1.png) ![Average Glucose Level Histogram](../data/png_for_update/glucose_1.png) ![BMI Histogram](../data/png_for_update/bmi_1.png)
 
 Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
