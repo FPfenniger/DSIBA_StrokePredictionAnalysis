@@ -3,3 +3,117 @@ title: "_predictive_model"
 format: html
 server: shiny
 ---
+```{r}
+library(caret)
+library(tidyverse)
+```
+--> still inconsistencies in the data cleaning part:
+
+- remove gender_male and create a pure gender variable
+- convert stroke into a factor (general factor conversion)
+- problems in the balanced dataset 
+
+
+# Predictive Model
+First of all, we set a seed to guarantee reproducibility of the results in the next chapter
+```{r}
+set.seed(42)
+```
+
+We divided our analysis into four different datasets: the original dataset, the balanced original dataset, the low-risk age group, and the moderate-risk age group. We will train a logistic regression model for each dataset, before evaluating them on the test sets in the next chapter and comparing them to the baseline model.
+
+## Baseline Model
+
+### Train-test split
+
+In order to evaluate the performance of our model, we split the original dataset into a training and a test set. We use 80% of the data for training and 20% for testing.
+```{r}
+# Load the dataset
+unbalanced_original_data <- read.csv("../../data/datasets/encoded_stroke_tb.csv")
+
+# Convert the target variable to a factor with valid level names
+unbalanced_original_data$stroke <- factor(unbalanced_original_data$stroke, 
+                                          levels = c(0, 1), 
+                                          labels = c("No", "Yes"))
+
+# Check the levels to confirm
+levels(unbalanced_original_data$stroke)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_unbalanced <- unbalanced_original_data[trainIndex, ]
+test_unbalanced <- unbalanced_original_data[-trainIndex, ]
+
+train_unbalanced <- train_unbalanced %>% select(-gender_Male)
+```
+
+
+### Model 
+We use k-fold cross validation to train and evaluate our model. 
+
+```{r}
+# Set up k-fold cross-validation (e.g., 5 folds)
+k <- 5
+ctrl <- trainControl(method = "cv", number = k, 
+                     classProbs = TRUE,  # Enables ROC computation
+                     summaryFunction = twoClassSummary)  # Use ROC as metric
+
+# Train a logistic regression model using k-fold CV
+set.seed(42)  
+logistic_model_1 <- train(stroke ~ ., data = train_unbalanced,
+                          method = "glm", family = "binomial",
+                          trControl = ctrl, metric = "ROC")
+
+# Print cross-validation results
+print(logistic_model_1)
+```
+## Balanced Baseline Model
+
+### Train-test split
+```{r}
+# Load the dataset
+balanced_original_data <- read.csv("../../data/datasets/balanced_stroke_tb.csv")
+
+# Convert the target variable to a factor with valid level names
+balanced_original_data$stroke <- factor(balanced_original_data$stroke, 
+                                          levels = c(0, 1), 
+                                          labels = c("No", "Yes"))
+
+# Check the levels to confirm
+levels(unbalanced_original_data$stroke)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_balanced <- unbalanced_original_data[trainIndex, ]
+test_balanced <- unbalanced_original_data[-trainIndex, ]
+
+train_balanced <- train_balanced %>% select(-gender_Male)
+test_balanced <- test_balanced %>% select(-gender_Male)
+```
+### Model
+```{r}
+k <- 5
+ctrl <- trainControl(method = "cv", number = k, 
+                     classProbs = TRUE,  # Enables ROC computation
+                     summaryFunction = twoClassSummary)  # Use ROC as metric
+
+# Train a logistic regression model using k-fold CV
+set.seed(42)  
+logistic_model_2 <- train(stroke ~ ., data = train_balanced,
+                          method = "glm", family = "binomial",
+                          trControl = ctrl, metric = "ROC")
+
+# Print cross-validation results
+print(logistic_model_2)
+```
+
+
+## Low-Risk Age Model
+
+## Moderate-Risk Age Model
