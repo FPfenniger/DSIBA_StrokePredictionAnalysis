@@ -72,30 +72,48 @@ print(logistic_model_1)
 ```
 ## Balanced Baseline Model
 
+
 ### Train-test split
 ```{r}
 # Load the dataset
-balanced_original_data <- read.csv("../../data/datasets/balanced_stroke_tb.csv")
+balanced_original_data <- read.csv("../../data/datasets/scaled_stroke_tb.csv")
+```
 
-# Convert the target variable to a factor with valid level names
-balanced_original_data$stroke <- factor(balanced_original_data$stroke, 
-                                          levels = c(0, 1), 
-                                          labels = c("No", "Yes"))
+```{r}
+categorical_variables <- names(balanced_original_data)[sapply(balanced_original_data, function (x) is.integer(x))]
 
-# Check the levels to confirm
-levels(unbalanced_original_data$stroke)
+balanced_original_data[categorical_variables] <- lapply(balanced_original_data[categorical_variables], factor)
 
+str(balanced_original_data)
+```
+
+
+```{r}
+balanced_original_data[categorical_variables] <- lapply(balanced_original_data[categorical_variables], function(col) {
+  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  return(col)
+})
+```
+
+```{r}
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8, 
                                   list = FALSE, times = 1)
 
-train_balanced <- unbalanced_original_data[trainIndex, ]
-test_balanced <- unbalanced_original_data[-trainIndex, ]
+train_balanced <- balanced_original_data[trainIndex, ]
+test_balanced <- balanced_original_data[-trainIndex, ]
 
-train_balanced <- train_balanced %>% select(-gender_Male)
-test_balanced <- test_balanced %>% select(-gender_Male)
+# Check for missing values
+colSums(is.na(balanced_original_data))
+
+levels(balanced_original_data$stroke)  # Check factor levels
+
+
 ```
+
+
+
 ### Model
 ```{r}
 k <- 5
