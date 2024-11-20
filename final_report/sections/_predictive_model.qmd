@@ -23,8 +23,24 @@ We divide our analysis into four different datasets and predictive models: the o
 In order to evaluate the performance of our model, we split the original dataset into a training and a test set. We use 80% of the data for training and 20% for testing.
 ```{r}
 # Load the dataset
-unbalanced_original_data <- read.csv("../../data/datasets/scaled_stroke_tb.csv")
+unbalanced_original_data <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+str(unbalanced_original_data)
+```
+```{r}
+categorical_variables <- names(unbalanced_original_data)[sapply(unbalanced_original_data, function (x) is.integer(x))]
 
+unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_data[categorical_variables], factor)
+
+str(unbalanced_original_data)
+```
+```{r}
+unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_data[categorical_variables], function(col) {
+  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  return(col)
+})
+```
+
+```{r}
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
