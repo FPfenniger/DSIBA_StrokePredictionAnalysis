@@ -8,13 +8,14 @@ server: shiny
 ```{r}
 library(naniar)
 library(fastDummies)
+library(tidyverse)
+library(caret)
 ```
-
-
 The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguish from the beginning categorical and numerical variables.
 ```{r}
-stroke_tb <- read_csv("../../data/datasets/stroke_dataset.csv") 
+stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
 ```
+
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
@@ -27,6 +28,7 @@ cat(sprintf("Categorical features: %s\nNumerical features: %s",
             paste(categorical_variables, collapse = ", "),
             paste(numerical_variables, collapse = ", ")))
 ```
+Here, we observe that some variables don't get recognized correctly as. `bmi` is a numerical feature and `hypertension` and `heart_disease` ought to be categorical. We will address these issues in the next steps.
 
 ## Missing Values
 Secondly, we address missing values in the features `bmi` and `smoking_status` by replacing them with `N/A`. Additionally, we ensure that `bmi` is recognized as a numerical variable and update the lists of categorical and numerical columns, as `bmi` is now a double. The `id` column is also removed, as it is not relevant for our analysis.
@@ -34,22 +36,32 @@ Secondly, we address missing values in the features `bmi` and `smoking_status` b
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-cleaned_stroke_tb <- replace_with_na(data = stroke_tb, 
-                                     replace = list(bmi = c("N/A"), smoking_status = c("Unknown"))) %>%
+
+# Clean the dataset
+cleaned_stroke_tb <- replace_with_na(
+  data = stroke_tb,
+  replace = list(bmi = c("N/A"), smoking_status = c("Unknown"))
+) %>%
   mutate(bmi = as.numeric(bmi)) %>%
   select(-id)
 
 head(cleaned_stroke_tb)
 
-# Selecting categorical variables (character or factor types)
+# Identify categorical variables (character or factor)
 categorical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, function(x) is.character(x) || is.integer(x))]
 numerical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, is.double)]
 
+# Store the vectors
+categorical_vars <- categorical_variables
+numerical_vars <- numerical_variables
 
-# Use sprintf to format the message, then cat to print it with line breaks
-cat(sprintf("Categorical features: %s\nNumerical features: %s",
-            paste(categorical_variables, collapse = ", "),
-            paste(numerical_variables, collapse = ", ")))
+# Print the vectors to check
+cat("Categorical Variables:\n", paste(categorical_vars, collapse = ", "), "\n")
+cat("Numerical Variables:\n", paste(numerical_vars, collapse = ", "), "\n")
+
+# Save the cleaned dataset if needed
+write.csv(cleaned_stroke_tb, "../../data/datasets/cleaned_stroke_tb.csv", row.names = FALSE)
+
 ```
 
 Then, to maintain the number of observations in our dataset, we replace the `N/A` values in `bmi` with the median and in `smoking_status` with the modal value.
@@ -72,8 +84,6 @@ head(preprocessed_stroke_tb)
 
 write.csv(preprocessed_stroke_tb, "../../data/datasets/preprocessed_stroke_tb.csv", row.names = FALSE)
 ```
-
-
 ## Categorical Feature Encoding
 For the categorical feature encoding, we convert our categorical variables into dummy variables to utilize them in our predictive model.
 
@@ -85,6 +95,7 @@ encoded_stroke_tb <- preprocessed_stroke_tb
 # Encoding binary categorical variables first
 encoded_stroke_tb$ever_married <- ifelse(encoded_stroke_tb$ever_married == "Yes", 1, 0)
 encoded_stroke_tb$Residence_type <- ifelse(encoded_stroke_tb$Residence_type == "Urban", 1, 0)
+encoded_stroke_tb$gender <- ifelse(encoded_stroke_tb$gender == "Female", 1, 0)
 
 # Create dummy variables for the remaining character columns
 to_encode_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb, is.character)]
@@ -99,9 +110,16 @@ head(encoded_stroke_tb)
 
 write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 ```
+To be sure that our model will recognize the binary variables as such, we convert them to factors.
+```{r}
+#|code-fold: true
+#|code-summary: "Click to show code"
+categorical_vars <- c("gender", "ever_married", "work_type_children", "work_type_Govt_job", "work_type_Never_worked", "work_type_Private", "work_type_Self-employed", "Residence_type", "smoking_status_formerly smoked", "smoking_status_never smoked", "smoking_status_smokes", "stroke", "hypertension", "heart_disease")
+encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], factor)
+head(encoded_stroke_tb)
+```
 
 
-Only the features `bmi` and `smoking_status` have missing values. As described previously, we replaced these missing values by `N/A` and swapped them with the median and modal value respectively. Additionally, `bmi` had been imported as a character, so we converted it to a numeric variable. The `id` column was also removed as it was not relevant for our analysis.
 
 ## Outlier Analysis
 
@@ -159,16 +177,19 @@ Finding zero outliers for `age` indicates a nearly normal distribution among the
 
 After conducting the analysis of the numerical variables, we examine the distribution of the categorical variables.
 
-Two bar plots captured our attention: the one for the feature `gender`=`Other` and the one for the `work_type`=`Never_worked`. The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these observations from our analysis as they add unnecessary complexity.
+Two bar plots captured our attention: the one for the feature `gender`=`Other` and the one for the `work_type`=`Never_worked`. The former appears only once in the dataset, while the latter appears just 22 times out of a total of 5,110 observations. Due to their extreme underrepresentation, we decided to exclude these observations from our analysis as they add unnecessary complexity (`gender` = `Other` has already been removed as we didn't encode it the last section).
 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
-# Distribution of Gender Other
-table(encoded_stroke_tb$gender_Other)
-ggplot(encoded_stroke_tb, aes(x=factor(gender_Other))) + 
+
+# Create the barplot 
+table(preprocessed_stroke_tb$gender == 'Other')
+ggplot(preprocessed_stroke_tb, aes(x = factor(gender == "Other"))) +
   geom_bar() + 
   labs(x='1 if gender is Other, 0 if not', y='Count', title='Distribution of Other gender')
+
+
 
 # Distribution of Work Type Never worked
 table(encoded_stroke_tb$work_type_Never_worked)
@@ -178,16 +199,16 @@ ggplot(encoded_stroke_tb, aes(x=factor(work_type_Never_worked))) +
 
 #Removal of the observations and columns
 outlier_stroke_tb <- encoded_stroke_tb %>%
-  filter(gender_Other == 0, work_type_Never_worked == 0)
+  filter(work_type_Never_worked == 0)
 
 outlier_stroke_tb <- encoded_stroke_tb %>%
-  select(-gender_Other, -work_type_Never_worked)
+  select(-work_type_Never_worked)
 
 # Verify the columns are removed
 str(outlier_stroke_tb)
 
 # save
-write.csv(outlier_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
+write.csv(outlier_stroke_tb, "../../data/datasets/outlier_stroke_tb.csv", row.names = FALSE)
 ```
 
 ## Dataset Balancing
@@ -198,7 +219,7 @@ The dataset reveals that most individuals do not have strokes, creating a strong
 #|code-fold: true
 #|code-summary: "Click to show the code"
 # Plot the distribution of stroke cases
-ggplot(encoded_stroke_tb, aes(x = factor(stroke))) + 
+ggplot(outlier_stroke_tb, aes(x = factor(stroke))) + 
   geom_bar() + 
   labs(x = '0 = No Stroke, 1 = Stroke', y = 'Count', title = 'Distribution of Strokes')
 
@@ -213,13 +234,11 @@ To address this, we used dataset balancing techniques to adjust the proportions 
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show the code"
-# Convert 'stroke' to a factor
-encoded_stroke_tb$stroke <- as.factor(encoded_stroke_tb$stroke)
 
 # Use upSample to balance the dataset
 balanced_stroke_tb <- upSample(
-  x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"], # All columns except 'stroke'
-  y = encoded_stroke_tb$stroke, # Target variable for upsampling
+  x = outlier_stroke_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
+  y = outlier_stroke_tb$stroke, # Target variable for upsampling
   yname = "stroke" # Column name for the target variable in the upsampled dataset
 )
 
