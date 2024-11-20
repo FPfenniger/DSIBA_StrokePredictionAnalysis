@@ -107,16 +107,18 @@ encoded_stroke_tb <- dummy_cols(
 
 # View the final encoded dataset
 head(encoded_stroke_tb)
-
-write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 ```
 To be sure that our model will recognize the binary variables as such, we convert them to factors.
 ```{r}
 #|code-fold: true
 #|code-summary: "Click to show code"
+
 categorical_vars <- c("gender", "ever_married", "work_type_children", "work_type_Govt_job", "work_type_Never_worked", "work_type_Private", "work_type_Self-employed", "Residence_type", "smoking_status_formerly smoked", "smoking_status_never smoked", "smoking_status_smokes", "stroke", "hypertension", "heart_disease")
 encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], factor)
 head(encoded_stroke_tb)
+
+# save
+write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 ```
 
 
@@ -245,6 +247,9 @@ balanced_stroke_tb <- upSample(
 # Check the distribution to confirm balancing
 table(balanced_stroke_tb$stroke)
 
+# save
+write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
+
 ```
 
 ## Feature scaling
@@ -253,6 +258,7 @@ Finally, as classification algorithms are often sensitive to scales and to preve
 ```{r, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
+
 scaled_stroke_tb <- balanced_stroke_tb
 
 #Scale only the double columns
@@ -262,3 +268,7 @@ scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb
 scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
 
 head(scaled_stroke_tb)
+
+# save
+write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
+```
