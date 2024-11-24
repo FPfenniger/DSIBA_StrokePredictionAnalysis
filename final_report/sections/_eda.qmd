@@ -393,7 +393,9 @@ stratified_stroke_tb <- encoded_stroke_tb %>%
     age < 60 ~ "under_60",
     age >= 60 ~ "60_and_over"
   ))
-stratified_stroke_tb
+head(stratified_stroke_tb)
+
+save.csv(stratified_stroke_tb, "../../data/datasets/stratified_stroke_tb.csv")
 ```
 
 # Stratified sampling
@@ -1085,6 +1087,8 @@ balanced_over_sampled <- stratified_stroke_tb %>%
   filter(age_class == "60_and_over") %>%
   sample_n(size = count_under_60, replace = TRUE) %>%
   bind_rows(stratified_stroke_tb %>% filter(age_class == "under_60"))
+
+save.csv(balanced_over_sampled, "../../data/datasets/balanced_over_sampled.csv")
 ```
 
 
