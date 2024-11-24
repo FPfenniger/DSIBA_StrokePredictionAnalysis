@@ -479,9 +479,9 @@ summary_table_under_60 <- bind_rows(
 knitr::kable(summary_table_under_60, caption = "Summary of Categorical Variables for Individuals Under 60 Years Old with Proportions", row.names = FALSE)
 ```
 
-## Univariate Analysis under_60
+## Univariate Analysis for under_60
 
-### Numerical variables under_60
+### Numerical variables for under_60
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -619,7 +619,7 @@ shinyApp(
 shinyApp(ui = ui, server = server)
 ```
 
-### Categorical variables under_60 
+### Categorical variables for under_60 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -678,7 +678,7 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-### Bivariate Analysis under_60
+### Bivariate Analysis for under_60
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -749,4 +749,342 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 }
 ```
 
-### Balancing Stratified Dataset
+
+## Descriptive Statistics for 60_and_over
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Filter the dataset for individuals 60 and over using the age_class column
+over_60_group <- stratified_stroke_tb %>%
+  filter(age_class == "60_and_over")
+
+# Generate summary of selected numerical variables for the 60 and over group
+summary_table_over_60 <- summary(over_60_group[, c("age", "avg_glucose_level", "bmi")])
+summary_table_over_60
+
+# Convert the summary to a data frame & display it with kable
+summary_table_over_60 <- as.data.frame.matrix(summary_table_over_60)
+knitr::kable(summary_table_over_60, caption = "Summary of Numerical Variables for Individuals 60 and Over Years Old", row.names = FALSE)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# List of categorical variables
+variables_to_summarize <- c("stroke", "gender", "ever_married", "work_type_children", 
+                             "work_type_Govt_job", "work_type_Private", 
+                             "work_type_Self.employed", "smoking_status_formerly.smoked", 
+                             "smoking_status_never.smoked", 
+                             "smoking_status_smokes", "Residence_type", 
+                             "hypertension", "heart_disease")
+
+# Convert binary integer variables to factors for the stratified dataset if not already done
+stratified_stroke_tb <- stratified_stroke_tb %>%
+  mutate(
+    stroke = as.factor(stroke),
+    hypertension = as.factor(hypertension),
+    heart_disease = as.factor(heart_disease)
+  )
+
+# Filter the dataset for individuals 60 and over using the age_class column
+over_60_group <- stratified_stroke_tb %>%
+  filter(age_class == "60_and_over")
+
+# Calculate total count for proportion calculation
+total_count_over_60 <- nrow(over_60_group)
+
+# Create summary table for individuals 60 and over
+summary_table_over_60 <- bind_rows(
+  lapply(variables_to_summarize, function(var) {
+    over_60_group %>%
+      group_by(.data[[var]]) %>%
+      summarize(
+        Count = n(),
+        Proportion = n() / total_count_over_60,
+        .groups = "drop"
+      ) %>%
+      rename(Type = .data[[var]]) %>%
+      mutate(
+        Variable = var,
+        Type = as.character(Type),
+        Proportion = round(Proportion * 100, 2)
+      )
+  })
+) %>%
+  select(Variable, Type, Count, Proportion) %>%  
+  arrange(Variable, Type)
+
+# Display the combined table with kable
+knitr::kable(summary_table_over_60, caption = "Summary of Categorical Variables for Individuals 60 and Over Years Old with Proportions", row.names = FALSE)
+```
+## Univariate Analysis for 60_and_over
+
+### Numerical variables for 60_and_over
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Histogram of numerical variables grouped by stroke variable for individuals 60 and over
+
+# Define the UI for the histogram
+ui_histogram <- fluidPage(
+  titlePanel("Numerical Variables Grouped by Stroke Variable for Individuals 60 and Over"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting variable
+      selectInput("variable", "Select Variable:", 
+                  choices = c("Age" = "age", "Average Glucose Level" = "avg_glucose_level", "BMI" = "bmi")),
+      
+      # Conditional panel to show the bin width slider only if "Show Standardized Data" is unchecked
+      conditionalPanel(
+        condition = "input.standardize == false",
+        sliderInput("binwidth", "Bin Width:", min = 1, max = 10, value = 5)
+      ),
+      
+      # Checkbox for standardized data
+      checkboxInput("standardize", "Show Standardized Data", value = FALSE)
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
+)
+
+# Define the server logic for the histogram
+server_histogram <- function(input, output, session) {
+  
+  observe({
+    # Change bin width to 1 if standardized data is checked
+    if (input$standardize) {
+      updateSliderInput(session, "binwidth", value = 1)
+    } else {
+      updateSliderInput(session, "binwidth", value = 5)
+    }
+  })
+  
+  output$histogramPlot <- renderPlotly({
+    # Filter the data to include only individuals 60 and over
+    over_60_data <- stratified_stroke_tb[which(stratified_stroke_tb$age_class == "60_and_over"), ]
+    
+    # Retrieve the selected variable and stroke data
+    original_data <- over_60_data[[input$variable]]
+    stroke_data <- over_60_data$stroke
+    
+    # Calculate mean and standard deviation for original data
+    mean_val <- mean(original_data, na.rm = TRUE)
+    sd_val <- sd(original_data, na.rm = TRUE)
+    
+    # Standardize the data if checkbox is selected
+    if (input$standardize) {
+      data <- scale(original_data)
+      x_label <- paste("Standardized", input$variable)
+      # Mean and SD lines at 0 and ±1 for standardized data
+      mean_line <- 0
+      sd_lines <- c(-1, 1)
+    } else {
+      data <- original_data
+      x_label <- input$variable
+      # Use calculated mean and SD for original data
+      mean_line <- mean_val
+      sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
+    }
+    
+    # Combine data and stroke status into a data frame
+    plot_data <- data.frame(data = data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+    
+    # Generate the ggplot stacked histogram with mean and SD lines
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = input$binwidth, color = "white", position = "stack") +
+      labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency", fill = "Stroke Status") +
+      geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", linewidth = 1) +
+      geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", linewidth = 0.8) +
+      geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", linewidth = 0.8)
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the histogram application
+shinyApp(ui = ui_histogram, server = server_histogram)
+```
+
+### Categorical variables for 60_and_over
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Barchart of categorical variables grouped by stroke variable for individuals 60 and over
+
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Categorical Variables Grouped by Stroke Variable for Individuals 60 and Over"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting the variable for the X-axis
+      selectInput("x_variable", "Select Variable for X-Axis:",
+                  choices = c("Gender" = "gender", 
+                              "Ever Married" = "ever_married", 
+                              "Work Type is Children" = "work_type_children", 
+                              "Work Type is Government Job" = "work_type_Govt_job", 
+                              "Work Type is Private" = "work_type_Private", 
+                              "Work Type is Self-employed" = "work_type_Self.employed", 
+                              "Smoking Status is Formerly Smoked" = "smoking_status_formerly.smoked", 
+                              "Smoking Status is Never Smoked" = "smoking_status_never.smoked", 
+                              "Smoking Status is Smokes" = "smoking_status_smokes", 
+                              "Residence Type" = "Residence_type", 
+                              "Hypertension" = "hypertension", 
+                              "Heart Disease" = "heart_disease"))
+      ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
+)
+
+# Define the server logic
+server <- function(input, output) {
+  
+  output$histogramPlot <- renderPlotly({
+    # Filter the dataset to include only individuals 60 and over
+    over_60_data <- stratified_stroke_tb[which(stratified_stroke_tb$age_class == "60_and_over"), ]
+    
+    # Create a reactive data frame that filters "Other" for gender
+    filtered_data <- over_60_data
+    if (input$x_variable == "gender") {
+      filtered_data <- filtered_data %>% filter(gender != "Other")
+    }
+    
+    # Check if selected variable is Hypertension or Heart Disease
+    if (input$x_variable %in% c("hypertension", "heart_disease")) {
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio") +
+        scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
+    } else {
+      # For other categorical variables
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio")
+    }
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+### Bivariate Analysis for 60_and_over
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Filter the data for individuals 60 and over using the stratified_stroke_tb dataset
+over_60_data <- stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ]
+
+# Select the numeric columns from the over_60_data
+numeric_data <- over_60_data[, c("age", "avg_glucose_level", "bmi")]
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
+
+# Plot the correlation matrix as a heatmap using plotly
+plot_ly(
+  x = colnames(correlation_matrix),
+  y = rownames(correlation_matrix),
+  z = correlation_matrix,
+  type = "heatmap",
+  colorscale = "Viridis"
+) %>%
+  layout(
+    title = "Correlation Matrix Heatmap for Individuals 60 and Over",
+    xaxis = list(title = "", tickangle = 45),
+    yaxis = list(title = "")
+  )
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+cat_variables = c("hypertension", 
+                  "heart_disease", "ever_married", "work_type_children", "work_type_Govt_job", 
+                  "work_type_Private","work_type_Self.employed", "smoking_status_formerly.smoked", 
+                  "smoking_status_never.smoked", "smoking_status_smokes", "Residence_type", "gender")
+
+# Filter data for individuals 60 and over and remove outliers
+over_60_data <- stratified_stroke_tb %>%
+  filter(age_class == "60_and_over") %>%
+  select(-work_type_Never_worked)  # If you have already removed it
+
+# Perform Chi-squared tests for the specified categorical variables
+for (index1 in 1:(length(cat_variables) - 1)) {
+  var1 <- cat_variables[index1]
+  
+  for (index2 in (index1 + 1):length(cat_variables)) {
+    var2 <- cat_variables[index2]
+    
+    contingency_table <- table(over_60_data[[var1]], over_60_data[[var2]])
+    
+    # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
+    if (any(contingency_table == 0)) {
+      chi_square_result <- fisher.test(contingency_table, simulate.p.value = TRUE)
+    } else {
+      chi_square_result <- chisq.test(contingency_table)
+    }
+    
+    cramers_v <- assocstats(contingency_table)$cramer
+        if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
+      cat("Relationship between", var1, "and", var2, "\n")
+      cat("P-value:", chi_square_result$p.value, "\n")
+      cat("Cramér's V:", cramers_v, "\n")
+      print(contingency_table)
+      cat("\n")
+    
+    }
+  }
+}
+```
+
+## Balancing Stratified Dataset
+
+In our dataset, we have a total of 1,376 individuals aged 60 and over, and 3,734 individuals under 60.
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+count_over_60 <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ])
+count_over_60
+count_under_60 <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "under_60", ])
+count_under_60
+```
+
+Given this disparity in sample sizes, it is essential to balance the dataset for several reason. Balancing the dataset is crucial because it prevents biased results and misleading conclusions stemming from the unequal representation of age groups. An imbalanced dataset can skew predictive models toward the majority class, hindering their ability to generalize effectively, especially for individuals aged 60 and over. Moreover, it allows for clearer comparisons of outcomes across age groups and minimizes the risk of overfitting. Ultimately, a balanced dataset leads to more reliable insights and easier interpretation of results.
+
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+
+# Count of individuals in each age group
+count_under_60 <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "under_60", ])
+count_60_and_over <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ])
+
+# Over-sampling the 60_and_over group to match the size of under_60
+set.seed(42)  # For reproducibility
+balanced_over_sampled <- stratified_stroke_tb %>%
+  filter(age_class == "60_and_over") %>%
+  sample_n(size = count_under_60, replace = TRUE) %>%
+  bind_rows(stratified_stroke_tb %>% filter(age_class == "under_60"))
+```
+
+
