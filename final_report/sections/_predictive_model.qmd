@@ -3,3 +3,239 @@ title: "_predictive_model"
 format: html
 server: shiny
 ---
+```{r}
+library(caret)
+library(tidyverse)
+```
+# Predictive Model
+First of all, we set a seed to guarantee reproducibility of the results in the next chapter.
+
+```{r}
+set.seed(42)
+```
+
+We divide our analysis into four different datasets and predictive models: the original dataset, the balanced original dataset, the low-risk age group, and the moderate-risk age group. We will train a logistic regression model for each dataset, before evaluating them on the test sets in the next chapter and comparing them to the baseline model.
+
+## Baseline Model
+
+### Train-test split
+
+In order to evaluate the performance of our model, we split the original dataset into a training and a test set. We use 80% of the data for training and 20% for testing.
+```{r}
+# Load the dataset
+unbalanced_original_data <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+str(unbalanced_original_data)
+```
+```{r}
+categorical_variables <- names(unbalanced_original_data)[sapply(unbalanced_original_data, function (x) is.integer(x))]
+
+unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_data[categorical_variables], factor)
+
+str(unbalanced_original_data)
+```
+```{r}
+unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_data[categorical_variables], function(col) {
+  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  return(col)
+})
+```
+
+```{r}
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_unbalanced <- unbalanced_original_data[trainIndex, ]
+test_unbalanced <- unbalanced_original_data[-trainIndex, ]
+```
+
+
+### Model 
+We use k-fold cross validation to train and evaluate our model. 
+
+```{r}
+# Set up k-fold cross-validation (e.g., 5 folds)
+k <- 5
+ctrl <- trainControl(method = "cv", number = k, 
+                     classProbs = TRUE,  # Enables ROC computation
+                     summaryFunction = twoClassSummary)  # Use ROC as metric
+
+# Train a logistic regression model using k-fold CV
+set.seed(42)  
+logistic_model_1 <- train(stroke ~ ., data = train_unbalanced,
+                          method = "glm", family = "binomial",
+                          trControl = ctrl, metric = "ROC")
+
+# Print cross-validation results
+print(logistic_model_1)
+```
+## Balanced Baseline Model
+
+
+### Train-test split
+```{r}
+# Load the dataset
+balanced_original_data <- read.csv("../../data/datasets/scaled_stroke_tb.csv")
+```
+
+```{r}
+categorical_variables <- names(balanced_original_data)[sapply(balanced_original_data, function (x) is.integer(x))]
+
+balanced_original_data[categorical_variables] <- lapply(balanced_original_data[categorical_variables], factor)
+
+str(balanced_original_data)
+```
+
+```{r}
+balanced_original_data[categorical_variables] <- lapply(balanced_original_data[categorical_variables], function(col) {
+  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  return(col)
+})
+```
+
+```{r}
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_balanced <- balanced_original_data[trainIndex, ]
+test_balanced <- balanced_original_data[-trainIndex, ]
+
+# Check for missing values
+colSums(is.na(balanced_original_data))
+
+```
+
+
+
+### Model
+```{r}
+k <- 5
+ctrl <- trainControl(method = "cv", number = k, 
+                     classProbs = TRUE,  # Enables ROC computation
+                     summaryFunction = twoClassSummary)  # Use ROC as metric
+
+# Train a logistic regression model using k-fold CV
+set.seed(42)  
+logistic_model_2 <- train(stroke ~ ., data = train_balanced,
+                          method = "glm", family = "binomial",
+                          trControl = ctrl, metric = "ROC")
+
+# Print cross-validation results
+print(logistic_model_2)
+```
+
+
+## Low-Risk Age Model
+
+### Train-test split
+```{r}
+# Load the dataset
+low_risk_age_data <- read.csv("../../data/datasets/low_risk_age_datatb.csv")
+```
+
+```{r}
+categorical_variables <- names(low_risk_age_data)[sapply(low_risk_age_data, function (x) is.integer(x))]
+
+balanced_original_data[low_risk_age_data] <- lapply(low_risk_age_data[categorical_variables], factor)
+
+str(low_risk_age_data)
+```
+
+```{r}
+low_risk_age_data[categorical_variables] <- lapply(low_risk_age_data[categorical_variables], function(col) {
+  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  return(col)
+})
+```
+
+```{r}
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(low_risk_age_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_low_age <- low_risk_age_data[trainIndex, ]
+test_low_age <- low_risk_age_data[-trainIndex, ]
+
+# Check for missing values
+colSums(is.na(balanced_original_data))
+
+```
+
+
+
+### Model
+```{r}
+k <- 5
+ctrl <- trainControl(method = "cv", number = k, 
+                     classProbs = TRUE,  # Enables ROC computation
+                     summaryFunction = twoClassSummary)  # Use ROC as metric
+
+# Train a logistic regression model using k-fold CV
+set.seed(42)  
+logistic_model_3 <- train(stroke ~ ., data = train_low_age,
+                          method = "glm", family = "binomial",
+                          trControl = ctrl, metric = "ROC")
+
+# Print cross-validation results
+print(logistic_model_3)
+```
+
+## Moderate-Risk Age Model
+
+### Train-test split
+```{r}
+# Load the dataset
+moderate_risk_age_data <- read.csv("../../data/datasets/scaled_stroke_tb.csv")
+```
+
+```{r}
+categorical_variables <- names(moderate_risk_age_data)[sapply(moderate_risk_age_data, function (x) is.integer(x))]
+
+moderate_risk_age_data[categorical_variables] <- lapply(moderate_risk_age_data[categorical_variables], factor)
+
+str(moderate_risk_age_data)
+```
+
+```{r}
+moderate_risk_age_data[categorical_variables] <- lapply(moderate_risk_age_data[categorical_variables], function(col) {
+  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  return(col)
+})
+```
+
+```{r}
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartitionmoderate_risk_age_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_moderate_age <- moderate_risk_age_data[trainIndex, ]
+test_moderate_age <- moderate_risk_age_data[-trainIndex, ]
+
+# Check for missing values
+colSums(is.na(moderate_risk_age_data))
+
+```
+
+
+
+### Model
+```{r}
+k <- 5
+ctrl <- trainControl(method = "cv", number = k, 
+                     classProbs = TRUE,  # Enables ROC computation
+                     summaryFunction = twoClassSummary)  # Use ROC as metric
+
+# Train a logistic regression model using k-fold CV
+set.seed(42)  
+logistic_model_4 <- train(stroke ~ ., data = train_moderate_age,
+                          method = "glm", family = "binomial",
+                          trControl = ctrl, metric = "ROC")
+
+# Print cross-validation results
+print(logistic_model_4)
+```
