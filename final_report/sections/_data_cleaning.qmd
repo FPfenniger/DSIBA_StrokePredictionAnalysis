@@ -12,6 +12,7 @@ library(tidyverse)
 library(caret)
 ```
 The dataset is fairly clean. Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguish from the beginning categorical and numerical variables.
+
 ```{r}
 stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
 ```
@@ -269,6 +270,12 @@ scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
 
 head(scaled_stroke_tb)
 
+
+scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)] <- lapply(scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)], scale)
+
+scaled_unbalanced_stroke_tb <- as_tibble(scaled_unbalanced_stroke_tb)
+
 # save
 write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
+write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
 ```

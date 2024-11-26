@@ -23,7 +23,7 @@ We divide our analysis into four different datasets and predictive models: the o
 In order to evaluate the performance of our model, we split the original dataset into a training and a test set. We use 80% of the data for training and 20% for testing.
 ```{r}
 # Load the dataset
-unbalanced_original_data <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+unbalanced_original_data <- read.csv("../../data/datasets/scaled_unbalanced_stroke_tb.csv")
 str(unbalanced_original_data)
 ```
 ```{r}
@@ -50,7 +50,6 @@ train_unbalanced <- unbalanced_original_data[trainIndex, ]
 test_unbalanced <- unbalanced_original_data[-trainIndex, ]
 ```
 
-
 ### Model 
 We use k-fold cross validation to train and evaluate our model. 
 
@@ -58,20 +57,19 @@ We use k-fold cross validation to train and evaluate our model.
 # Set up k-fold cross-validation (e.g., 5 folds)
 k <- 5
 ctrl <- trainControl(method = "cv", number = k, 
-                     classProbs = TRUE,  # Enables ROC computation
-                     summaryFunction = twoClassSummary)  # Use ROC as metric
+                     classProbs = TRUE,  
+                     summaryFunction = twoClassSummary)  
 
 # Train a logistic regression model using k-fold CV
 set.seed(42)  
 logistic_model_1 <- train(stroke ~ ., data = train_unbalanced,
                           method = "glm", family = "binomial",
-                          trControl = ctrl, metric = "ROC")
+                          trControl = ctrl, metric = "ROC") 
 
 # Print cross-validation results
 print(logistic_model_1)
 ```
 ## Balanced Baseline Model
-
 
 ### Train-test split
 ```{r}
@@ -102,13 +100,7 @@ trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8,
 
 train_balanced <- balanced_original_data[trainIndex, ]
 test_balanced <- balanced_original_data[-trainIndex, ]
-
-# Check for missing values
-colSums(is.na(balanced_original_data))
-
 ```
-
-
 
 ### Model
 ```{r}
@@ -221,8 +213,6 @@ colSums(is.na(moderate_risk_age_data))
 
 ```
 
-
-
 ### Model
 ```{r}
 k <- 5
@@ -238,4 +228,4 @@ logistic_model_4 <- train(stroke ~ ., data = train_moderate_age,
 
 # Print cross-validation results
 print(logistic_model_4)
-```
+``` 
