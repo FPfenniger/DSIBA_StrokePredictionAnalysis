@@ -1336,10 +1336,9 @@ balanced_over_60_stroke_tb <- upSample(
 table(over_60_data_tb$stroke)
 
 # save
-write.csv(balanced_over_60_stroke_tb, "../../data/datasets/balanced__over_60_stroke_tb.csv", row.names = FALSE)
+write.csv(balanced_over_60_stroke_tb, "../../data/datasets/balanced_over_60_stroke_tb.csv", row.names = FALSE)
 
 ```
-
 
 ```{r, warning=FALSE}
 #|code-fold: true
