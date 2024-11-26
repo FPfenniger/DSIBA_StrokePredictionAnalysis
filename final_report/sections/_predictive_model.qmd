@@ -125,7 +125,10 @@ print(logistic_model_2)
 ### Train-test split
 ```{r}
 # Load the dataset
-low_risk_age_data <- read.csv("../../data/datasets/low_risk_age_datatb.csv")
+low_risk_age_data <- read.csv("../../data/datasets/balanced_under_60_stroke_tb.csv")
+
+low_risk_age_data[sapply(low_risk_age_data, is.double)] <- lapply(low_risk_age_data[sapply(low_risk_age_data, is.double)], scale)
+
 ```
 
 ```{r}
