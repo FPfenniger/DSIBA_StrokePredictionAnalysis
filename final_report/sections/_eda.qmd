@@ -17,10 +17,10 @@ library(vcd)
 # Load the preprocessed dataset
 preprocessed_stroke_tb <- read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
 encoded_stroke_tb <- read.csv("../../data/datasets/encoded_stroke_tb.csv")
-outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
-balanced_stroke_tb <- read.csv("../../data/datasets/balanced_stroke_tb.csv")
-
-
+outlier_stroke_tb <- 
+read.csv("../../data/datasets/outlier_stroke_tb.csv")
+scaled_stroke_tb <-
+  read.csv("../../data/datasets/scaled_stroke_tb.csv")
 ```
 
 ## Descriptive Statistics
@@ -381,6 +381,8 @@ The only relationship, which seems to be problematic in terms of multicollineari
 
 As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
+<<<<<<< HEAD
+=======
 ## Balanced Dataset Analysis
 
 ### Proportions of the Target Variable (Stroke)
@@ -619,25 +621,28 @@ shinyApp(
 )
 ```
 
+>>>>>>> 490c0048d1ac08aacbdeab71605a39d2b72d9198
 ## Stratified Dataset Analysis
 
-In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. With this sampling method, we hope to increase our model's generalizability and robustness in the section.
+In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. 
+
+Looking at the violin plot for individuals that have experienced a stroke, the average age  is 67.73 years. We have arbitrarily chosen to divide the dataset into two age groups at age 60 for several reasons. This age threshold may clinically be significant because we know that the risk of stroke increases notably after a certain age, allowing us to focus our analysis more effectively on the populations most affected. Additionally, individuals over 60 may exhibit different biological changes that impact stroke risk factors.
+
+With this sampling method, we hope to increase our model's generalizability and robustness in the section.
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
+# Create dataset for individuals under 60 years old
+under_60_data <- outlier_stroke_tb[outlier_stroke_tb$age < 60, ]
 
+# Create dataset for individuals aged 60 years and older
+over_60_data <- outlier_stroke_tb[outlier_stroke_tb$age >= 60, ]
 
-# Create age groups
-stratified_stroke_tb <- encoded_stroke_tb %>%
-  mutate(age_class = case_when(
-    age < 60 ~ "under_60",
-    age >= 60 ~ "60_and_over"
-  ))
-head(stratified_stroke_tb)
-
-save.csv(stratified_stroke_tb, "../../data/datasets/stratified_stroke_tb.csv")
+# Display the first few rows of each dataset 
+head(under_60_data)
+head(over_60_data)
 ```
 
 # Stratified sampling
@@ -674,7 +679,6 @@ summary_table_under_60
 # Convert the summary to a data frame & display it with kable
 summary_table_under_60 <- as.data.frame.matrix(summary_table_under_60)
 knitr::kable(summary_table_under_60, caption = "Summary of Numerical Variables for Individuals Under 60 Years Old", row.names = FALSE)
-
 ```
 
 ```{r, message = FALSE}
@@ -1339,6 +1343,7 @@ table(over_60_data_tb$stroke)
 write.csv(balanced_over_60_stroke_tb, "../../data/datasets/balanced_over_60_stroke_tb.csv", row.names = FALSE)
 
 ```
+
 
 ```{r, warning=FALSE}
 #|code-fold: true
