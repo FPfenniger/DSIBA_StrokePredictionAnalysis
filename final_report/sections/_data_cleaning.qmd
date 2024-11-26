@@ -262,6 +262,8 @@ Finally, as classification algorithms are often sensitive to scales and to preve
 
 scaled_stroke_tb <- balanced_stroke_tb
 
+scaled_unbalanced_stroke_tb <- outlier_stroke_tb
+
 #Scale only the double columns
 
 scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
