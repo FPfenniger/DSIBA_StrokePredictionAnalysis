@@ -171,9 +171,9 @@ shinyApp(ui = ui, server = server)
 
 Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
--   `age`: The dataset includes individuals with ages ranging from 0.8 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
+-   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
 -   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
--   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.89 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
+-   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
 For completeness we added a violin Plot of the numerical variables with correlation coefficients respective to `stroke` displayed below the plot.
 
@@ -379,7 +379,7 @@ As all other effect sizes appear to be smaller than 0.3, we can safely conclude 
 
 ## Stratified Dataset Analysis
 
-In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals over 60) and ensure that the distribution of these groups is similar in both the training and test datasets. With this sampling method, we hope to increase our model's generalizability and robustness in the section.
+In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. With this sampling method, we hope to increase our model's generalizability and robustness in the section.
 
 ```{r}
 #| code-fold: true
@@ -414,11 +414,11 @@ testData <- data[-trainIndex, ]
 ## EDA for Stratified Dataset
 We perform an Exploratory Data Analysis on two distinct age groups: individuals under 60 years old and those of 60 years old and over. This analysis aims to uncover valuable insights regarding stroke occurrences, risk factors, and demographic characteristics within each group.
 
-To begin our analysis, we focus first on the group of individuals under 60 years old.
+To begin our analysis, we focus first on the group of individuals under 60 years old. 
 
 ## Descriptive Statistics for under_60 
 
-```{r}
+```{r, message=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 # Filter the dataset for individuals under 60 years old using the age_group column
@@ -484,6 +484,8 @@ knitr::kable(summary_table_under_60, caption = "Summary of Categorical Variables
 ## Univariate Analysis for under_60
 
 ### Numerical variables for under_60
+
+Same as for the whole group EDA, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -621,6 +623,14 @@ shinyApp(
 shinyApp(ui = ui, server = server)
 ```
 
+Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
+
+-   `age`: The dataset includes individuals with ages ranging from 0.08 to 59 years, with an average age of 33.03 years but a peak around ### years, a second peak around ### years, and a standard deviation of ### years.
+-   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 100.34 and a standard deviation of ###. The average glucose levels range from 55.12 to 267.76 mg/dL.
+-   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.5 and a standard deviation of ###. The BMI values range from 10.3 to 97.6.
+
+For completeness we added a violin Plot of the numerical variables with correlation coefficients respective to `stroke` displayed below the plot.
+
 ### Categorical variables for under_60 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -751,6 +761,7 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 }
 ```
 
+Now that we completed the EDA of the group aged below 60, let's check for the group aged of 60 and over.
 
 ## Descriptive Statistics for 60_and_over
 
