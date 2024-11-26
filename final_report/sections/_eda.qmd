@@ -17,6 +17,10 @@ library(vcd)
 # Load the preprocessed dataset
 preprocessed_stroke_tb <- read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
 encoded_stroke_tb <- read.csv("../../data/datasets/encoded_stroke_tb.csv")
+outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+balanced_stroke_tb <- read.csv("../../data/datasets/balanced_stroke_tb.csv")
+
+
 ```
 
 ## Descriptive Statistics
@@ -376,6 +380,202 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 The only relationship, which seems to be problematic in terms of multicollinearity seems to be between `ever_married` and `work_type`. For the prediction model, we will therefore exclude one of the two features. Another possibility is to further explore their relationship with the VIF(Variation Inflation Factor), which will help us with the decision to either keep both variables or drop one of them.
 
 As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
+
+## Balanced Dataset Analysis
+
+### Proportions of the Target Variable (Stroke)
+We would like to compare the original dataset with the balanced dataset.
+First, we expect plots showing the distribution of the target variable to appear more balanced in the oversampled datase compared to the original dataset.
+
+```{r}
+# Bar chart for the original dataset (preprocessed_stroke_tb)
+# Load necessary library
+library(ggplot2)
+
+# Bar chart for the original dataset
+ggplot(preprocessed_stroke_tb, aes(x = factor(stroke))) +
+  geom_bar() +
+  labs(title = "Stroke Distribution in Original Dataset",
+       x = "Stroke (0 = No Stroke, 1 = Stroke)",
+       y = "Count") +
+  theme_minimal()
+
+```
+
+```{r}
+# Balanced dataset
+# Bar chart for the balanced dataset
+ggplot(balanced_stroke_tb, aes(x = factor(stroke))) +
+  geom_bar() +
+  labs(title = "Stroke Distribution in Balanced Dataset",
+       x = "Stroke (0 = No Stroke, 1 = Stroke)",
+       y = "Count") +
+  theme_minimal()
+```
+
+Indeed, the distribution of the target variable `stroke` appears  balanced in the oversampled dataset compared to the original dataset. This is a positive outcome, as a balanced dataset can help improve the performance of machine learning models by reducing bias towards the majority class.However, lets check how the predictor variables have been affected by the oversampling.
+
+### Descriptive Statistics for the balanced dataset
+
+```{r}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Generate summary of selected numerical variables
+summary_table <- summary(balanced_stroke_tb[, c("age", "avg_glucose_level", "bmi")])
+
+# Convert the summary to a data frame & display it with kable
+summary_table <- as.data.frame.matrix(summary_table)
+knitr::kable(summary_table, caption = "Summary of numerical Variables", row.names = FALSE)
+```
+
+`age` and `avg_glucose_level` have very different summary statistics. The median age in the balanced dataset increased by 14 years to 59 years, up from 45 years in the original dataset. The average glucose level is 93,51 mg/dL, with only s slight increase from 91,89 mg/dL.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Histogram of numerical variables grouped by stroke variable
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Numerical variables grouped by stroke variable"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting variable
+      selectInput("variable", "Select Variable:", 
+                  choices = c("Age" = "age", "Average Glucose Level" = "avg_glucose_level")),
+      
+      # Conditional panel to show the bin width slider only if "Show Standardized Data" is unchecked
+      conditionalPanel(
+        condition = "input.standardize == false",
+        sliderInput("binwidth", "Bin Width:", min = 1, max = 10, value = 5)
+      ),
+      
+      # Checkbox for standardized data
+      checkboxInput("standardize", "Show Standardized Data", value = FALSE)
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
+)
+
+# Define the server logic
+server <- function(input, output, session) {
+  
+  observe({
+    # Change bin width to 1 if standardized data is checked
+    if (input$standardize) {
+      updateSliderInput(session, "binwidth", value = 1)
+    } else {
+      updateSliderInput(session, "binwidth", value = 5)
+    }
+  })
+  
+  output$histogramPlot <- renderPlotly({
+    # Retrieve the selected variable and stroke data
+    original_data <- balanced_stroke_tb[[input$variable]]
+    stroke_data <- balanced_stroke_tb$stroke
+    
+    # Calculate mean and standard deviation for original data
+    mean_val <- mean(original_data)
+    sd_val <- sd(original_data)
+    
+    # Standardize the data if checkbox is selected
+    if (input$standardize) {
+      data <- scale(original_data)
+      x_label <- paste("Standardized", input$variable)
+      # Mean and SD lines at 0 and ±1 for standardized data
+      mean_line <- 0
+      sd_lines <- c(-1, 1)
+    } else {
+      data <- original_data
+      x_label <- input$variable
+      # Use calculated mean and SD for original data
+      mean_line <- mean_val
+      sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
+    }
+    
+    # Combine data and stroke status into a data frame
+    plot_data <- data.frame(data = data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+    
+    # Generate the ggplot stacked histogram with mean and SD lines
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = input$binwidth, color = "white", position = "stack") +
+      labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency", fill = "Stroke Status") +
+      geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", linewidth = 1) +
+      geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", linewidth = 0.8) +
+      geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", linewidth = 0.8)
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
+
+Now incorporating the balanced dataset, the univariate analysis of categorical variables such as `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` will be re-examined to observe differences. These variables previously showed notable disparities in the proportions of stroke cases across their levels in the original dataset, indicating their potential as predictors of stroke risk. Visualizing these variables with the balanced dataset will help identify any shifts in patterns and strengthen their relevance for further exploration and modeling.
+
+#### Note to myself: use upsampled dataset on preprocessed instead of encoded dataset. errors in smoking status and work type when using balanced_stroke_tb
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Barchart of categorical variables grouped by stroke variable
+
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Categorical Variables Grouped by Stroke Variable"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting the variable for the X-axis
+      selectInput("x_variable", "Select Variable for X-Axis:",
+                  choices = c("Ever Married" = "ever_married",
+                              "Work Type" = "work_type", 
+                              "Smoking Status" = "smoking_status",
+                              "Hypertension" = "hypertension", 
+                              "Heart Disease" = "heart_disease"))
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
+    )
+  )
+)
+
+# Define the server logic
+server <- function(input, output) {
+  
+  output$histogramPlot <- renderPlotly({
+    
+    # Create a reactive data frame that filters "Other" for gender
+    filtered_data <- balanced_stroke_tb
+    if (input$x_variable == "gender") {
+      filtered_data <- filtered_data %>% filter(gender != "Other")
+    }
+    
+    # Check if selected variable is Hypertension or Heart Disease
+    if (input$x_variable %in% c("hypertension", "heart_disease")) {
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio") +
+        scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
+    } else {
+      # For other categorical variables
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio")
+    }
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
+}
+
+# Run the application
+shinyApp(ui = ui, server = server)
+```
 
 ## Stratified Dataset Analysis
 
