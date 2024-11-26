@@ -577,6 +577,48 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Define numerical variables (adjust if there are more)
+numerical_variables <- c("age", "avg_glucose_level", "bmi")
+
+# Shiny app with separate display of the correlation coefficient
+shinyApp(
+  ui = fluidPage(
+    selectInput("selected_variable", "Choose a Variable:", choices = numerical_variables),
+    plotlyOutput("violin_plot"),
+    htmlOutput("correlation_text")  # Separate output for the correlation coefficient
+  ),
+  server = function(input, output) {
+    
+    output$violin_plot <- renderPlotly({
+      selected_variable <- input$selected_variable
+      
+      # Generate the violin plot
+      plot <- plot_ly(outlier_stroke_tb, x = ~factor(stroke), y = ~as.numeric(balanced_stroke_tb[[selected_variable]]), type = "violin",
+                      box = list(visible = TRUE),
+                      meanline = list(visible = TRUE)) %>%
+        layout(
+          title = paste("Violin Plot of", selected_variable, "by Stroke"),
+          xaxis = list(title = "Stroke"),
+          yaxis = list(title = selected_variable)
+        )
+      
+      plot  # Display the plot
+    })
+    
+    # Render the correlation text below the plot
+    output$correlation_text <- renderUI({
+      selected_variable <- input$selected_variable
+      correlation <- cor(as.numeric(outlier_stroke_tb[[selected_variable]]), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+      HTML(paste("Correlation Coefficient with Stroke:", round(correlation, 2)))
+    })
+  }
+)
+```
+
 ## Stratified Dataset Analysis
 
 In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. With this sampling method, we hope to increase our model's generalizability and robustness in the section.
@@ -897,7 +939,7 @@ shinyApp(ui = ui, server = server)
 #| code-summary: "Click to show code"
 
 # Filter the data for individuals under 60 using the stratified_stroke_df dataset
-under_60_data <- stratified_stroke_tb[stratified_stroke_tb$age_class == "under_60", ]
+under_60_data_tb <- stratified_stroke_tb[stratified_stroke_tb$age_class == "under_60", ]
 
 # Select the numeric columns from the under_60_data
 numeric_data <- under_60_data[, c("age", "avg_glucose_level", "bmi")]
@@ -918,6 +960,9 @@ plot_ly(
     xaxis = list(title = "", tickangle = 45),
     yaxis = list(title = "")
   )
+
+# save
+write.csv(under_60_data_tb, "../../data/datasets/under_60_data_tb.csv", row.names = FALSE)
 ```
 
 ```{r, message = FALSE}
@@ -1202,7 +1247,7 @@ shinyApp(ui = ui, server = server)
 #| code-summary: "Click to show code"
 
 # Filter the data for individuals 60 and over using the stratified_stroke_tb dataset
-over_60_data <- stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ]
+over_60_data_tb <- stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ]
 
 # Select the numeric columns from the over_60_data
 numeric_data <- over_60_data[, c("age", "avg_glucose_level", "bmi")]
@@ -1223,6 +1268,9 @@ plot_ly(
     xaxis = list(title = "", tickangle = 45),
     yaxis = list(title = "")
   )
+
+# save
+write.csv(over_60_data_tb, "../../data/datasets/over_60_data_tb.csv", row.names = FALSE)
 ```
 
 ```{r, message = FALSE}
@@ -1235,7 +1283,7 @@ cat_variables = c("hypertension",
                   "smoking_status_never.smoked", "smoking_status_smokes", "Residence_type", "gender")
 
 # Filter data for individuals 60 and over and remove outliers
-over_60_data <- stratified_stroke_tb %>%
+over_60_data_tb <- stratified_stroke_tb %>%
   filter(age_class == "60_and_over") %>%
   select(-work_type_Never_worked)  # If you have already removed it
 
@@ -1266,40 +1314,48 @@ for (index1 in 1:(length(cat_variables) - 1)) {
     }
   }
 }
+
 ```
 
 ## Balancing Stratified Dataset
 
 In our dataset, we have a total of 1,376 individuals aged 60 and over, and 3,734 individuals under 60.
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-count_over_60 <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ])
-count_over_60
-count_under_60 <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "under_60", ])
-count_under_60
-```
 
-Given this disparity in sample sizes, it is essential to balance the dataset for several reason. Balancing the dataset is crucial because it prevents biased results and misleading conclusions stemming from the unequal representation of age groups. An imbalanced dataset can skew predictive models toward the majority class, hindering their ability to generalize effectively, especially for individuals aged 60 and over. Moreover, it allows for clearer comparisons of outcomes across age groups and minimizes the risk of overfitting. Ultimately, a balanced dataset leads to more reliable insights and easier interpretation of results.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show the code"
 
+# Use upSample to balance the over 60 stratified dataset
+balanced_over_60_stroke_tb <- upSample(
+  x = over_60_data_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
+  y = over_60_data_tb$stroke, # Target variable for upsampling
+  yname = "stroke" # Column name for the target variable in the upsampled dataset
+)
 
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
+# Check the distribution to confirm balancing
+table(over_60_data_tb$stroke)
 
+# save
+write.csv(balanced_over_60_stroke_tb, "../../data/datasets/balanced__over_60_stroke_tb.csv", row.names = FALSE)
 
-# Count of individuals in each age group
-count_under_60 <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "under_60", ])
-count_60_and_over <- nrow(stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ])
-
-# Over-sampling the 60_and_over group to match the size of under_60
-set.seed(42)  # For reproducibility
-balanced_over_sampled <- stratified_stroke_tb %>%
-  filter(age_class == "60_and_over") %>%
-  sample_n(size = count_under_60, replace = TRUE) %>%
-  bind_rows(stratified_stroke_tb %>% filter(age_class == "under_60"))
-
-save.csv(balanced_over_sampled, "../../data/datasets/balanced_over_sampled.csv")
 ```
 
 
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show the code"
+
+# Use upSample to balance the under 60 stratified dataset
+balanced_under_60_stroke_tb <- upSample(
+  x = under_60_data_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
+  y = under_60_data_tb$stroke, # Target variable for upsampling
+  yname = "stroke" # Column name for the target variable in the upsampled dataset
+)
+
+# Check the distribution to confirm balancing
+table(balanced_under_60_stroke_tb$stroke)
+
+# save
+write.csv(balanced_under_60_stroke_tb, "../../data/datasets/balanced_under_60_stroke_tb.csv", row.names = FALSE)
+
+```
