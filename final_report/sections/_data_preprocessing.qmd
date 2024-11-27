@@ -181,3 +181,16 @@ lapply(preprocessed_stroke_tb[categorical_vars], table) %>%
 
 ```
 To simplify the further data exploration, we remove the less frequent categories in `gender`(Other) and `work_type` (Never_worked) as they are not representative of the majority of the population. We further notice that `heart_disease` and `hypertension` aren't very common in our dataset and `stroke` occurrences are also pretty rare, which we will need to consider in our modelling part. 
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Removal of observations of `Never_worked`
+outlier_stroke_tb <- preprocessed_stroke_tb %>%
+  filter(work_type != "Never_worked") %>%
+  filter(gender != "Other")
+
+# save
+write.csv(outlier_stroke_tb, "../../data/datasets/outlier_stroke_tb.csv", row.names = FALSE)
+```
+
