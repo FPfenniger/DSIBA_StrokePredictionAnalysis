@@ -7,6 +7,61 @@ library(caret)
 library(tidyverse)
 ```
 # Predictive Model
+
+## Data Preparation for Predictive Modelling 
+
+### Feature Encoding 
+For the categorical feature encoding, we convert our categorical variables into dummy variables to utilize them in our predictive model.
+
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+encoded_stroke_tb <- preprocessed_stroke_tb
+
+# Encoding binary categorical variables first
+encoded_stroke_tb$ever_married <- ifelse(encoded_stroke_tb$ever_married == "Yes", 1, 0)
+encoded_stroke_tb$Residence_type <- ifelse(encoded_stroke_tb$Residence_type == "Urban", 1, 0)
+encoded_stroke_tb$gender <- ifelse(encoded_stroke_tb$gender == "Female", 1, 0)
+
+# Create dummy variables for the remaining character columns
+to_encode_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb, is.character)]
+encoded_stroke_tb <- dummy_cols(
+  encoded_stroke_tb, 
+  select_columns = to_encode_variables, 
+  remove_selected_columns = TRUE
+)
+
+# View the final encoded dataset
+head(encoded_stroke_tb)
+```
+To be sure that our model will recognize the binary variables as such, we convert them to factors.
+```{r}
+#|code-fold: true
+#|code-summary: "Click to show code"
+# Convert categorical variables to factors
+# Ensure proper factor levels for categorical variables
+categorical_vars <- c("gender", "ever_married", "Residence_type", "smoking_status_formerly smoked", 
+                      "smoking_status_never smoked", "smoking_status_smokes", "stroke", 
+                      "hypertension", "heart_disease", "work_type_children", 
+                      "work_type_Govt_job", "work_type_Never_worked", "work_type_Private", 
+                      "work_type_Self-employed")
+
+# Explicitly convert these columns to factors, and ensure their levels are correct
+encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], function(col) {
+  if (is.numeric(col)) { # If column is numeric, convert to factor first
+    col <- factor(col, levels = unique(col))
+  }
+  col
+})
+
+
+str(encoded_stroke_tb)
+
+# Save the updated dataset to CSV
+write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
+
+```
+
 First of all, we set a seed to guarantee reproducibility of the results in the next chapter.
 
 ```{r}
