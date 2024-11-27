@@ -127,6 +127,7 @@ print(logistic_model_2)
 ```{r}
 # Load the dataset
 low_risk_age_data <- read.csv("../../data/datasets/low_risk_age_tb.csv")
+str(low_risk_age_data)
 ```
 
 ```{r}

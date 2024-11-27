@@ -1,7 +1,7 @@
 ---
 title: "_data_cleaning"
 format: html
-server: shiny
+
 ---
 # Data Cleaning & Wrangeling
 
@@ -15,9 +15,11 @@ The dataset is fairly clean. Our dataset contains several categorical variables.
 
 ```{r}
 stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
+
+str(stroke_tb)
 ```
 
-```{r, warning=FALSE}
+```{r echo=FALSE, warning=FALSE}
 #|code-fold: true
 #|code-summary: "Click to show code"
 # identify categorical and numerical variables 
@@ -29,7 +31,8 @@ cat(sprintf("Categorical features: %s\nNumerical features: %s",
             paste(categorical_variables, collapse = ", "),
             paste(numerical_variables, collapse = ", ")))
 ```
-Here, we observe that some variables don't get recognized correctly as. `bmi` is a numerical feature and `hypertension` and `heart_disease` ought to be categorical. We will address these issues in the next steps.
+
+Here, we observe that some variables don't get recognized correctly. `bmi` is a numerical feature and `hypertension` and `heart_disease` ought to be categorical. We will address these issues in the next steps.
 
 ## Missing Values
 Secondly, we address missing values in the features `bmi` and `smoking_status` by replacing them with `N/A`. Additionally, we ensure that `bmi` is recognized as a numerical variable and update the lists of categorical and numerical columns, as `bmi` is now a double. The `id` column is also removed, as it is not relevant for our analysis.
@@ -60,11 +63,10 @@ numerical_vars <- numerical_variables
 cat("Categorical Variables:\n", paste(categorical_vars, collapse = ", "), "\n")
 cat("Numerical Variables:\n", paste(numerical_vars, collapse = ", "), "\n")
 
-# Save the cleaned dataset if needed
+# Save 
 write.csv(cleaned_stroke_tb, "../../data/datasets/cleaned_stroke_tb.csv", row.names = FALSE)
 
 ```
-
 Then, to maintain the number of observations in our dataset, we replace the `N/A` values in `bmi` with the median and in `smoking_status` with the modal value.
 
 ```{r, warning=FALSE}
@@ -85,6 +87,7 @@ head(preprocessed_stroke_tb)
 
 write.csv(preprocessed_stroke_tb, "../../data/datasets/preprocessed_stroke_tb.csv", row.names = FALSE)
 ```
+
 ## Categorical Feature Encoding
 For the categorical feature encoding, we convert our categorical variables into dummy variables to utilize them in our predictive model.
 
@@ -129,13 +132,12 @@ encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars
   col
 })
 
-# Optionally convert factor levels to strings before writing
-encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], as.character)
+
+str(encoded_stroke_tb)
 
 # Save the updated dataset to CSV
 write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 
-str(encoded_stroke_tb)
 ```
 
 
@@ -261,10 +263,14 @@ balanced_stroke_tb <- upSample(
   yname = "stroke" # Column name for the target variable in the upsampled dataset
 )
 
+
+# Check the structure to confirm changes
+str(balanced_stroke_tb)
+
 # Check the distribution to confirm balancing
 table(balanced_stroke_tb$stroke)
 
-# save
+# Save the dataset
 write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
 
 ```
