@@ -62,6 +62,79 @@ write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.na
 
 ```
 
+### Dataset Balancing
+
+The dataset reveals that most individuals do not have strokes, creating a strong class imbalance. This imbalance can negatively impact model performance by biasing it towards the majority class, resulting in poor predictive accuracy for minority cases like strokes. Without applying upsampling, the model might overly favor "no stroke" predictions, yielding high overall accuracy but failing to identify actual stroke cases effectively (low recall). By upsampling the minority class, we ensure the model learns from stroke cases as well, improving its ability to detect strokes and offering a more balanced and meaningful predictive performance.
+
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show the code"
+# Plot the distribution of stroke cases
+ggplot(outlier_stroke_tb, aes(x = factor(stroke))) + 
+  geom_bar() + 
+  labs(x = '0 = No Stroke, 1 = Stroke', y = 'Count', title = 'Distribution of Strokes')
+
+# Count the number of people who had a stroke and calculate the proportion
+encoded_stroke_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2))
+```
+To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Given that the dataset contains only 5,110 individuals, we chose upsampling the minority class to retain all available data, which would otherwise be reduced through downsampling. By upsampling, we enhance the representation of stroke cases, helping the model learn more effectively and improve both prediction accuracy and recall, particularly for the minority class.
+
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show the code"
+
+# Use upSample to balance the dataset
+balanced_stroke_tb <- upSample(
+  x = outlier_stroke_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
+  y = outlier_stroke_tb$stroke, # Target variable for upsampling
+  yname = "stroke" # Column name for the target variable in the upsampled dataset
+)
+
+
+# Check the structure to confirm changes
+str(balanced_stroke_tb)
+
+# Check the distribution to confirm balancing
+table(balanced_stroke_tb$stroke)
+
+# Save the dataset
+write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
+
+```
+
+### Feature scaling
+
+Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardize all continuous features in the dataset.
+```{r, warning=FALSE}
+#|code-fold: true
+#|code-summary: "Click to show code"
+
+scaled_stroke_tb <- balanced_stroke_tb
+
+scaled_unbalanced_stroke_tb <- outlier_stroke_tb
+
+#Scale only the double columns
+
+scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
+
+scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
+
+head(scaled_stroke_tb)
+
+
+scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)] <- lapply(scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)], scale)
+
+scaled_unbalanced_stroke_tb <- as_tibble(scaled_unbalanced_stroke_tb)
+
+# save
+write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
+write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
+```
+
+## Baseline Model
 First of all, we set a seed to guarantee reproducibility of the results in the next chapter.
 
 ```{r}
@@ -69,8 +142,6 @@ set.seed(42)
 ```
 
 We divide our analysis into four different datasets and predictive models: the original dataset, the balanced original dataset, the low-risk age group, and the moderate-risk age group. We will train a logistic regression model for each dataset, before evaluating them on the test sets in the next chapter and comparing them to the baseline model.
-
-## Baseline Model
 
 ### Train-test split
 
