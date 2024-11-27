@@ -1183,6 +1183,10 @@ low_risk_age_tb <- upSample(
 # Step 3: Check the class distribution to confirm balancing
 table(low_risk_age_tb$stroke)
 
+# Scaling
+low_risk_age_tb[sapply(low_risk_age_tb, is.double)] <- lapply(low_risk_age_tb[sapply(low_risk_age_tb, is.double)], scale)
+
+
 # save
 
 write.csv(low_risk_age_tb, "../../data/datasets/low_risk_age_tb.csv")
@@ -1211,6 +1215,9 @@ high_risk_age_tb <- upSample(
 
 # Step 3: Check the class distribution to confirm balancing
 table(high_risk_age_tb$stroke)
+
+# Scaling
+high_risk_age_tb[sapply(high_risk_age_tb, is.double)] <- lapply(high_risk_age_tb[sapply(high_risk_age_tb, is.double)], scale)
 
 # save
 
