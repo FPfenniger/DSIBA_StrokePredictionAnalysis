@@ -113,13 +113,29 @@ To be sure that our model will recognize the binary variables as such, we conver
 ```{r}
 #|code-fold: true
 #|code-summary: "Click to show code"
+# Convert categorical variables to factors
+# Ensure proper factor levels for categorical variables
+categorical_vars <- c("gender", "ever_married", "Residence_type", "smoking_status_formerly smoked", 
+                      "smoking_status_never smoked", "smoking_status_smokes", "stroke", 
+                      "hypertension", "heart_disease", "work_type_children", 
+                      "work_type_Govt_job", "work_type_Never_worked", "work_type_Private", 
+                      "work_type_Self-employed")
 
-categorical_vars <- c("gender", "ever_married", "work_type_children", "work_type_Govt_job", "work_type_Never_worked", "work_type_Private", "work_type_Self-employed", "Residence_type", "smoking_status_formerly smoked", "smoking_status_never smoked", "smoking_status_smokes", "stroke", "hypertension", "heart_disease")
-encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], factor)
-head(encoded_stroke_tb)
+# Explicitly convert these columns to factors, and ensure their levels are correct
+encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], function(col) {
+  if (is.numeric(col)) { # If column is numeric, convert to factor first
+    col <- factor(col, levels = unique(col))
+  }
+  col
+})
 
-# save
+# Optionally convert factor levels to strings before writing
+encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], as.character)
+
+# Save the updated dataset to CSV
 write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
+
+str(encoded_stroke_tb)
 ```
 
 

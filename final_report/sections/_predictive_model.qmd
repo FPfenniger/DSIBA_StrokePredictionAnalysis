@@ -25,6 +25,7 @@ In order to evaluate the performance of our model, we split the original dataset
 unbalanced_original_data <- read.csv("../../data/datasets/scaled_unbalanced_stroke_tb.csv")
 str(unbalanced_original_data)
 ```
+
 ```{r}
 categorical_variables <- names(unbalanced_original_data)[sapply(unbalanced_original_data, function (x) is.integer(x))]
 
@@ -32,6 +33,7 @@ unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_da
 
 str(unbalanced_original_data)
 ```
+
 ```{r}
 unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_data[categorical_variables], function(col) {
   levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
@@ -125,9 +127,6 @@ print(logistic_model_2)
 ```{r}
 # Load the dataset
 low_risk_age_data <- read.csv("../../data/datasets/low_risk_age_tb.csv")
-
-low_risk_age_data[sapply(low_risk_age_data, is.double)] <- lapply(low_risk_age_data[sapply(low_risk_age_data, is.double)], scale)
-
 ```
 
 ```{r}
