@@ -192,70 +192,67 @@ The second part of our EDA examines the distribution of the categorical variable
 #| code-fold: true
 #| code-summary: "Click to show code"
 library(plotly)
-library(ggplot2)
 library(dplyr)
 
-# Function to create bar plots for categorical variables grouped by stroke
-create_bar_plot <- function(data, x_variable, stroke_variable = "stroke") {
-  # Filter out "Other" from gender if applicable
-  if (x_variable == "gender") {
-    data <- data %>% filter(gender != "Other")
-  }
+library(plotly)
+library(dplyr)
+
+# Function to create one stacked bar plot for a categorical variable
+one_bar_plot <- function(data, x_var) {
+  # Summarize data to count occurrences for each combination of `x_var` and `stroke`
+  summarized_data <- data %>%
+    group_by(!!sym(x_var), stroke) %>%
+    summarize(count = n(), .groups = "drop") %>%
+    mutate(stroke = factor(stroke, labels = c("No Stroke", "Stroke"))) # Convert stroke to factor
   
-  # Generate ggplot bar chart with "fill" by stroke
-  if (x_variable %in% c("hypertension", "heart_disease")) {
-    # Custom x-axis labels for binary variables
-    p <- ggplot(data, aes_string(x = x_variable, fill = stroke_variable)) +
-      geom_bar(position = "fill") +
-      labs(fill = "Stroke", y = "Ratio", x = x_variable) +
-      scale_x_discrete(labels = c("0" = "No", "1" = "Yes")) +  # Use discrete scale for binary variables
-      theme_minimal() +
-      theme(plot.title = element_blank())  # Remove individual plot titles
-  } else {
-    # For other categorical variables
-    p <- ggplot(data, aes_string(x = x_variable, fill = stroke_variable)) +
-      geom_bar(position = "fill") +
-      labs(fill = "Stroke", y = "Ratio", x = x_variable) +
-      theme_minimal() +
-      theme(plot.title = element_blank())  # Remove individual plot titles
-  }
-  
-  # Convert to interactive Plotly plot
-  ggplotly(p, tooltip = c("x", "y", "fill")) %>%  # Add tooltips for better interactivity
-    layout(showlegend = FALSE)  # Legend will be displayed only once in the combined plot
+  # Create the plot
+  plot_ly(
+    data = summarized_data,
+    x = ~get(x_var),
+    y = ~count,
+    color = ~stroke,
+    type = "bar",
+    text = ~paste("Count: ", count),
+    hoverinfo = "text"
+  ) %>%
+    layout(
+      title = x_var,         # Title for each subplot
+      xaxis = list(title = ""), # No individual x-axis titles
+      yaxis = list(title = "Count"),
+      showlegend = FALSE     # Disable individual legends
+    )
 }
 
-# Example usage
-# Replace `preprocessed_stroke_tb` with your actual dataset
+# Example dataset (replace `preprocessed_stroke_tb` with your dataset)
 categorical_variables <- c("gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
-plots <- list()  # List to store the plots
+data <- preprocessed_stroke_tb
 
-# Generate plots for each categorical variable
-for (i in seq_along(categorical_variables)) {
-  plots[[i]] <- create_bar_plot(outlier_stroke_tb, categorical_variables[i])
-}
+# Generate one plot per categorical variable
+plots <- lapply(categorical_variables, function(x_var) one_bar_plot(data, x_var))
 
-# Combine all plots into a grid layout (adjust rows as needed)
-combined_plots <- subplot(
+# Arrange all plots in a grid layout using subplot
+fig <- subplot(
   plots,
-  nrows = ceiling(length(categorical_variables) / 2),  # Arrange 2 plots per row
+  nrows = ceiling(length(categorical_variables) / 2), # Arrange in 2 columns
+  shareX = TRUE,
+  shareY = TRUE,
   titleX = TRUE,
   titleY = TRUE
 ) %>%
   layout(
-    title = "Categorical Variables Grouped by Stroke",  # Global title
-    showlegend = TRUE,  # Unified legend
+    title = "Categorical Variables Grouped by Stroke",
     legend = list(
-      x = 1.02,         # Position the legend outside the grid
-      y = 1,            # Align to the top
-      orientation = "v" # Vertical legend
+      orientation = "h",   # Horizontal legend
+      x = 0.5,             # Centered
+      y = -0.2,            # Below the plots
+      xanchor = "center"
     ),
-    height = 1000,      # Adjust grid height
-    width = 1200        # Adjust grid width
+    width = 1000,          # Overall plot width
+    height = 800           # Overall plot height
   )
 
-# Display the combined plots
-combined_plots
+# Display the final figure
+fig
 
 ```
 
