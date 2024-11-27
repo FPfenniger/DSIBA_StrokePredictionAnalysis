@@ -381,8 +381,7 @@ The only relationship, which seems to be problematic in terms of multicollineari
 
 As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
-<<<<<<< HEAD
-=======
+
 ## Balanced Dataset Analysis
 
 ### Proportions of the Target Variable (Stroke)
@@ -621,7 +620,6 @@ shinyApp(
 )
 ```
 
->>>>>>> 490c0048d1ac08aacbdeab71605a39d2b72d9198
 ## Stratified Dataset Analysis
 
 In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. 
@@ -645,25 +643,12 @@ head(under_60_data)
 head(over_60_data)
 ```
 
-# Stratified sampling
-```{r}
-#| code-fold: true
-#| code-summary: "Click to show code"
-set.seed(42)
-trainIndex <- createDataPartition(data$stroke, p = 0.8, list = FALSE, times = 1)
-trainData <- data[trainIndex, ]
-testData <- data[-trainIndex, ]
-```
-
-
-### Stratified Sampling
-
-## EDA for Stratified Dataset
+### EDA for Stratified Dataset
 We perform an Exploratory Data Analysis on two distinct age groups: individuals under 60 years old and those of 60 years old and over. This analysis aims to uncover valuable insights regarding stroke occurrences, risk factors, and demographic characteristics within each group.
 
 To begin our analysis, we focus first on the group of individuals under 60 years old. 
 
-## Descriptive Statistics for under_60 
+#### Descriptive Statistics for under_60 
 
 ```{r, message=FALSE}
 #| code-fold: true
@@ -936,83 +921,9 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-### Bivariate Analysis for under_60
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Filter the data for individuals under 60 using the stratified_stroke_df dataset
-under_60_data_tb <- stratified_stroke_tb[stratified_stroke_tb$age_class == "under_60", ]
-
-# Select the numeric columns from the under_60_data
-numeric_data <- under_60_data[, c("age", "avg_glucose_level", "bmi")]
-
-# Calculate the correlation matrix
-correlation_matrix <- cor(numeric_data, use = "complete.obs")
-
-# Plot the correlation matrix as a heatmap using plotly
-plot_ly(
-  x = colnames(correlation_matrix),
-  y = rownames(correlation_matrix),
-  z = correlation_matrix,
-  type = "heatmap",
-  colorscale = "Viridis"
-) %>%
-  layout(
-    title = "Correlation Matrix Heatmap for Individuals Under 60",
-    xaxis = list(title = "", tickangle = 45),
-    yaxis = list(title = "")
-  )
-
-# save
-write.csv(under_60_data_tb, "../../data/datasets/under_60_data_tb.csv", row.names = FALSE)
-```
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-cat_variables = c("hypertension", 
-                  "heart_disease", "ever_married", "work_type_children", "work_type_Govt_job", "work_type_Private","work_type_Self.employed", "smoking_status_formerly.smoked", "smoking_status_never.smoked", "smoking_status_smokes", "Residence_type", "gender")
-
-# Filter data for individuals under 60 and remove outliers
-under_60_data <- stratified_stroke_tb %>%
-  filter(age_class == "under_60") %>%
-  select(-work_type_Never_worked) 
-
-# Perform Chi-squared tests for the specified categorical variables
-for (index1 in 1:(length(cat_variables) - 1)) {
-  var1 <- cat_variables[index1]
-  
-  for (index2 in (index1 + 1):length(cat_variables)) {
-    var2 <- cat_variables[index2]
-    
-    contingency_table <- table(under_60_data[[var1]], under_60_data[[var2]])
-    
-    # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
-    if (any(contingency_table == 0)) {
-      chi_square_result <- fisher.test(contingency_table, simulate.p.value = TRUE)
-    } else {
-      chi_square_result <- chisq.test(contingency_table)
-    }
-    
-    cramers_v <- assocstats(contingency_table)$cramer
-    
-    if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
-      cat("Relationship between", var1, "and", var2, "\n")
-      cat("P-value:", chi_square_result$p.value, "\n")
-      cat("Cramér's V:", cramers_v, "\n")
-      print(contingency_table)
-      cat("\n")
-    }
-  }
-}
-```
-
 Now that we completed the EDA of the group aged below 60, let's check for the group aged of 60 and over.
 
-## Descriptive Statistics for 60_and_over
+#### Descriptive Statistics for 60_and_over
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1244,84 +1155,9 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 ```
 
-### Bivariate Analysis for 60_and_over
 
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
 
-# Filter the data for individuals 60 and over using the stratified_stroke_tb dataset
-over_60_data_tb <- stratified_stroke_tb[stratified_stroke_tb$age_class == "60_and_over", ]
-
-# Select the numeric columns from the over_60_data
-numeric_data <- over_60_data[, c("age", "avg_glucose_level", "bmi")]
-
-# Calculate the correlation matrix
-correlation_matrix <- cor(numeric_data, use = "complete.obs")
-
-# Plot the correlation matrix as a heatmap using plotly
-plot_ly(
-  x = colnames(correlation_matrix),
-  y = rownames(correlation_matrix),
-  z = correlation_matrix,
-  type = "heatmap",
-  colorscale = "Viridis"
-) %>%
-  layout(
-    title = "Correlation Matrix Heatmap for Individuals 60 and Over",
-    xaxis = list(title = "", tickangle = 45),
-    yaxis = list(title = "")
-  )
-
-# save
-write.csv(over_60_data_tb, "../../data/datasets/over_60_data_tb.csv", row.names = FALSE)
-```
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-cat_variables = c("hypertension", 
-                  "heart_disease", "ever_married", "work_type_children", "work_type_Govt_job", 
-                  "work_type_Private","work_type_Self.employed", "smoking_status_formerly.smoked", 
-                  "smoking_status_never.smoked", "smoking_status_smokes", "Residence_type", "gender")
-
-# Filter data for individuals 60 and over and remove outliers
-over_60_data_tb <- stratified_stroke_tb %>%
-  filter(age_class == "60_and_over") %>%
-  select(-work_type_Never_worked)  # If you have already removed it
-
-# Perform Chi-squared tests for the specified categorical variables
-for (index1 in 1:(length(cat_variables) - 1)) {
-  var1 <- cat_variables[index1]
-  
-  for (index2 in (index1 + 1):length(cat_variables)) {
-    var2 <- cat_variables[index2]
-    
-    contingency_table <- table(over_60_data[[var1]], over_60_data[[var2]])
-    
-    # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
-    if (any(contingency_table == 0)) {
-      chi_square_result <- fisher.test(contingency_table, simulate.p.value = TRUE)
-    } else {
-      chi_square_result <- chisq.test(contingency_table)
-    }
-    
-    cramers_v <- assocstats(contingency_table)$cramer
-        if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
-      cat("Relationship between", var1, "and", var2, "\n")
-      cat("P-value:", chi_square_result$p.value, "\n")
-      cat("Cramér's V:", cramers_v, "\n")
-      print(contingency_table)
-      cat("\n")
-    
-    }
-  }
-}
-
-```
-
-## Balancing Stratified Dataset
+#### Balancing Stratified Dataset
 
 In our dataset, we have a total of 1,376 individuals aged 60 and over, and 3,734 individuals under 60.
 
@@ -1329,18 +1165,27 @@ In our dataset, we have a total of 1,376 individuals aged 60 and over, and 3,734
 #|code-fold: true
 #|code-summary: "Click to show the code"
 
-# Use upSample to balance the over 60 stratified dataset
-balanced_over_60_stroke_tb <- upSample(
-  x = over_60_data_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
-  y = over_60_data_tb$stroke, # Target variable for upsampling
+low_risk_age_tb <- outlier_stroke_tb %>%
+  filter(age < 60)
+
+low_risk_age_tb$stroke <- as.factor(low_risk_age_tb$stroke)
+
+x_data <- low_risk_age_tb[, names(low_risk_age_tb) != "stroke"] 
+y_data <- low_risk_age_tb$stroke                             
+
+# Perform upsampling
+low_risk_age_tb <- upSample(
+  x = x_data,
+  y = y_data,
   yname = "stroke" # Column name for the target variable in the upsampled dataset
 )
 
-# Check the distribution to confirm balancing
-table(over_60_data_tb$stroke)
+# Step 3: Check the class distribution to confirm balancing
+table(low_risk_age_tb$stroke)
 
 # save
-write.csv(balanced_over_60_stroke_tb, "../../data/datasets/balanced_over_60_stroke_tb.csv", row.names = FALSE)
+
+write.csv(low_risk_age_tb, "../../data/datasets/low_risk_age_tb.csv")
 
 ```
 
@@ -1349,17 +1194,26 @@ write.csv(balanced_over_60_stroke_tb, "../../data/datasets/balanced_over_60_stro
 #|code-fold: true
 #|code-summary: "Click to show the code"
 
-# Use upSample to balance the under 60 stratified dataset
-balanced_under_60_stroke_tb <- upSample(
-  x = under_60_data_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
-  y = under_60_data_tb$stroke, # Target variable for upsampling
+high_risk_age_tb <- outlier_stroke_tb %>%
+  filter(age >= 60)
+
+high_risk_age_tb$stroke <- as.factor(high_risk_age_tb$stroke)
+
+x_data <- high_risk_age_tb[, names(high_risk_age_tb) != "stroke"] 
+y_data <- high_risk_age_tb$stroke                             
+
+# Perform upsampling
+high_risk_age_tb <- upSample(
+  x = x_data,
+  y = y_data,
   yname = "stroke" # Column name for the target variable in the upsampled dataset
 )
 
-# Check the distribution to confirm balancing
-table(balanced_under_60_stroke_tb$stroke)
+# Step 3: Check the class distribution to confirm balancing
+table(high_risk_age_tb$stroke)
 
 # save
-write.csv(balanced_under_60_stroke_tb, "../../data/datasets/balanced_under_60_stroke_tb.csv", row.names = FALSE)
+
+write.csv(high_risk_age_tb, "../../data/datasets/high_risk_age_tb.csv")
 
 ```

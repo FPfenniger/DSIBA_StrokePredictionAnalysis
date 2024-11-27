@@ -1,7 +1,6 @@
 ---
 title: "_predictive_model"
 format: html
-server: shiny
 ---
 ```{r}
 library(caret)
