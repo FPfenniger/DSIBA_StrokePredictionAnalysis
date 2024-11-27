@@ -1,8 +1,8 @@
 ---
 title: "_data_cleaning"
 format: html
-
 ---
+
 # Data Cleaning & Wrangeling
 
 ```{r}
@@ -139,8 +139,6 @@ str(encoded_stroke_tb)
 write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 
 ```
-
-
 
 ## Outlier Analysis
 
