@@ -116,87 +116,68 @@ We notice that there is only three non-binary quantitative variables: `age`, `av
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# Create interactive boxplots for each variable
 variables <- c("age", "avg_glucose_level", "bmi")
 
+# Loop through each variable and render the plots
 for (var in variables) {
-  p <- plot_ly(data, y = ~get(var), type = "box", name = var,
-               boxpoints = "outliers", marker = list(color = 'red')) %>%
-    layout(title = paste("Boxplot of", var), yaxis = list(title = var))
-  print(p)
+  p <- ggplot(preprocessed_stroke_tb, aes_string(y = var)) +
+    geom_boxplot(outlier.color = "red", outlier.size = 2) +
+    labs(title = paste("Boxplot of", var), y = var, x = "") 
+  
+  # Explicitly print the plot
+  print(ggplotly(p))
+}
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+identify_outliers <- function(column) {
+  Q1 <- quantile(column, 0.25)
+  Q3 <- quantile(column, 0.75)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  
+  # Identify Outliers
+  outliers <- column[column < lower_bound | column > upper_bound]
+  return(outliers)
 }
 
+# Apply the function to the variables
+outliers_age <- identify_outliers(preprocessed_stroke_tb$age)
+outliers_glucose <- identify_outliers(preprocessed_stroke_tb$avg_glucose_level)
+outliers_bmi <- identify_outliers(preprocessed_stroke_tb$bmi)
+
+#We create a function count_outliers that we will use to identify and count outliers in each non-binary quantitative variable 
+  count_outliers <- function(column) {
+  Q1 <- quantile(column, 0.25, na.rm = TRUE)
+  Q3 <- quantile(column, 0.75, na.rm = TRUE)
+  IQR <- Q3 - Q1
+  lower_bound <- Q1 - 1.5 * IQR
+  upper_bound <- Q3 + 1.5 * IQR
+  
+# Count outliers
+outlier_count <- sum(column < lower_bound | column > upper_bound, na.rm = TRUE)
+  return(outlier_count)
+}
+
+# Create a vector to hold the outlier counts
+outlier_counts <- sapply(preprocessed_stroke_tb[, c("age", "avg_glucose_level", "bmi")], count_outliers)
+outlier_counts
 ```
+Finding zero outliers for age indicates a nearly normal distribution among the individuals in our population. With a dataset containing 5,110 rows, the identification of 627 outliers for avg_glucose_level, representing approximately 12.25% of the total population, and 126 outliers for bmi, constituting about 2.47%. Both boxplots display a considerable number of outliers in the higher range, indicating that there are subsets of individuals in the dataset with unusually high glucose levels and BMI values. These outliers could be due to a variety of factors, such as lifestyle, health conditions, or measurement errors. Considering their importance as risk factors, we decided to keep them in the dataset for now. However, we may revisit this decision later in the analysis, especially as we didn't examine the distributions in the upsampled dataset yet.
 
-
-## Dataset Balancing
-
-The dataset reveals that most individuals do not have strokes, creating a strong class imbalance. This imbalance can negatively impact model performance by biasing it towards the majority class, resulting in poor predictive accuracy for minority cases like strokes. Without applying upsampling, the model might overly favor "no stroke" predictions, yielding high overall accuracy but failing to identify actual stroke cases effectively (low recall). By upsampling the minority class, we ensure the model learns from stroke cases as well, improving its ability to detect strokes and offering a more balanced and meaningful predictive performance.
-
+After conducting the analysis of the numerical variables, we examine the distribution of the categorical variables.
 ```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show the code"
-# Plot the distribution of stroke cases
-ggplot(outlier_stroke_tb, aes(x = factor(stroke))) + 
-  geom_bar() + 
-  labs(x = '0 = No Stroke, 1 = Stroke', y = 'Count', title = 'Distribution of Strokes')
+#| code-fold: true
+#| code-summary: "Click to show code"
 
-# Count the number of people who had a stroke and calculate the proportion
-encoded_stroke_tb %>%
-  group_by(stroke) %>%
-  summarize(count = n()) %>%
-  mutate(proportion = round(count / sum(count), 2))
-```
-To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Given that the dataset contains only 5,110 individuals, we chose upsampling the minority class to retain all available data, which would otherwise be reduced through downsampling. By upsampling, we enhance the representation of stroke cases, helping the model learn more effectively and improve both prediction accuracy and recall, particularly for the minority class.
-
-```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show the code"
-
-# Use upSample to balance the dataset
-balanced_stroke_tb <- upSample(
-  x = outlier_stroke_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
-  y = outlier_stroke_tb$stroke, # Target variable for upsampling
-  yname = "stroke" # Column name for the target variable in the upsampled dataset
-)
-
-
-# Check the structure to confirm changes
-str(balanced_stroke_tb)
-
-# Check the distribution to confirm balancing
-table(balanced_stroke_tb$stroke)
-
-# Save the dataset
-write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
+lapply(preprocessed_stroke_tb[categorical_vars], table) %>%
+  lapply(as.data.frame) %>%
+  bind_rows(.id = "Variable") %>%
+  rename(Value = Var1, Count = Freq) %>%
+  kable(col.names = c("Variable", "Category", "Count"))
 
 ```
-
-## Feature scaling
-
-Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardize all continuous features in the dataset.
-```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show code"
-
-scaled_stroke_tb <- balanced_stroke_tb
-
-scaled_unbalanced_stroke_tb <- outlier_stroke_tb
-
-#Scale only the double columns
-
-scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
-
-scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
-
-head(scaled_stroke_tb)
-
-
-scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)] <- lapply(scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)], scale)
-
-scaled_unbalanced_stroke_tb <- as_tibble(scaled_unbalanced_stroke_tb)
-
-# save
-write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
-write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
-```
+To simplify the further data exploration, we remove the less frequent categories in `gender`(Other) and `work_type` (Never_worked) as they are not representative of the majority of the population. We further notice that `heart_disease` and `hypertension` aren't very common in our dataset and `stroke` occurrences are also pretty rare, which we will need to consider in our modelling part. 
