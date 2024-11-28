@@ -7,7 +7,6 @@ format: html
 ```{r, warning=FALSE}
 library(tidyverse)
 library(plotly)
-library(shiny)
 library(knitr)
 library(caret)
 library(vcd)
@@ -191,69 +190,61 @@ The second part of our EDA examines the distribution of the categorical variable
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-library(plotly)
-library(dplyr)
+# Barchart of categorical variables grouped by stroke variable
 
-library(plotly)
-library(dplyr)
-
-# Function to create one stacked bar plot for a categorical variable
-one_bar_plot <- function(data, x_var) {
-  # Summarize data to count occurrences for each combination of `x_var` and `stroke`
-  summarized_data <- data %>%
-    group_by(!!sym(x_var), stroke) %>%
-    summarize(count = n(), .groups = "drop") %>%
-    mutate(stroke = factor(stroke, labels = c("No Stroke", "Stroke"))) # Convert stroke to factor
-  
-  # Create the plot
-  plot_ly(
-    data = summarized_data,
-    x = ~get(x_var),
-    y = ~count,
-    color = ~stroke,
-    type = "bar",
-    text = ~paste("Count: ", count),
-    hoverinfo = "text"
-  ) %>%
-    layout(
-      title = x_var,         # Title for each subplot
-      xaxis = list(title = ""), # No individual x-axis titles
-      yaxis = list(title = "Count"),
-      showlegend = FALSE     # Disable individual legends
+# Define the UI
+ui <- fluidPage(
+  titlePanel("Categorical Variables Grouped by Stroke Variable"),
+  sidebarLayout(
+    sidebarPanel(
+      # Dropdown for selecting the variable for the X-axis
+      selectInput("x_variable", "Select Variable for X-Axis:",
+                  choices = c("Gender" = "gender", 
+                              "Ever Married" = "ever_married",
+                              "Work Type" = "work_type", 
+                              "Residence Type" = "Residence_type", 
+                              "Smoking Status" = "smoking_status",
+                              "Hypertension" = "hypertension", 
+                              "Heart Disease" = "heart_disease"))
+    ),
+    mainPanel(
+      # Display the interactive plotly histogram
+      plotlyOutput("histogramPlot")
     )
+  )
+)
+
+# Define the server logic
+server <- function(input, output) {
+  
+  output$histogramPlot <- renderPlotly({
+    
+    # Create a reactive data frame that filters "Other" for gender
+    filtered_data <- preprocessed_stroke_tb
+    if (input$x_variable == "gender") {
+      filtered_data <- filtered_data %>% filter(gender != "Other")
+    }
+    
+    # Check if selected variable is Hypertension or Heart Disease
+    if (input$x_variable %in% c("hypertension", "heart_disease")) {
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio") +
+        scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
+    } else {
+      # For other categorical variables
+      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
+        geom_bar(position = "fill") +
+        labs(fill = "STROKE", y = "Ratio")
+    }
+    
+    # Convert ggplot to an interactive plotly object
+    ggplotly(p)
+  })
 }
 
-# Example dataset (replace `preprocessed_stroke_tb` with your dataset)
-categorical_variables <- c("gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
-data <- preprocessed_stroke_tb
-
-# Generate one plot per categorical variable
-plots <- lapply(categorical_variables, function(x_var) one_bar_plot(data, x_var))
-
-# Arrange all plots in a grid layout using subplot
-fig <- subplot(
-  plots,
-  nrows = ceiling(length(categorical_variables) / 2), # Arrange in 2 columns
-  shareX = TRUE,
-  shareY = TRUE,
-  titleX = TRUE,
-  titleY = TRUE
-) %>%
-  layout(
-    title = "Categorical Variables Grouped by Stroke",
-    legend = list(
-      orientation = "h",   # Horizontal legend
-      x = 0.5,             # Centered
-      y = -0.2,            # Below the plots
-      xanchor = "center"
-    ),
-    width = 1000,          # Overall plot width
-    height = 800           # Overall plot height
-  )
-
-# Display the final figure
-fig
-
+# Run the application
+shinyApp(ui = ui, server = server)
 ```
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
@@ -270,7 +261,7 @@ In contrast, the following variables appear to be not relevant, as there are no 
 
 -   `Residence_type`
 
-Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk.
+Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk. These predictors may even become more relevant when examined in a balanced dataset, which our initial hypotheses would suggest. 
 
 ## Bivariate Analysis
 
@@ -305,48 +296,6 @@ plot_ly(
 
 Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features
 
-To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine the importance of the test result we additionally computed the Cramér's V for effect size (threshold applied here 0.3). First we removed all outliers and for security, we apply the Fisher's Exact Test if there are zero counts in the contingency table.
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-cat_variables = c("hypertension", 
-                  "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
-
-preprocessed_stroke_tb <- preprocessed_stroke_tb %>%
-  filter(!(gender == 'Other' & work_type == 'Never_worked'))
-
-for (index1 in 1:(length(cat_variables) - 1)) {
-  var1 <- cat_variables[index1]
-  
-  for (index2 in (index1 + 1):length(cat_variables)) {
-    var2 <- cat_variables[index2]
-    
-    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
-    
-    # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
-    if (any(contingency_table == 0)) {
-      chi_square_result <- fisher.test(contingency_table, simulate.p.value = TRUE)
-    } else {
-      chi_square_result <- chisq.test(contingency_table)
-    }
-    
-    cramers_v <- assocstats(contingency_table)$cramer
-    
-    if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
-      cat("Relationship between", var1, "and", var2, "\n")
-      cat("P-value:", chi_square_result$p.value, "\n")
-      cat("Cramér's V:", cramers_v, "\n")
-      print(contingency_table)
-      cat("\n")
-    }
-  }
-}
-
-```
-The only relationship, which seems to be problematic in terms of multicollinearity seems to be between `ever_married` and `work_type`. For the prediction model, we will therefore exclude one of the two features. Another possibility is to further explore their relationship with the VIF(Variation Inflation Factor), which will help us with the decision to either keep both variables or drop one of them.
-
-As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 
 
 ## Balanced Dataset Analysis

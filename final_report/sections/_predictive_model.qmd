@@ -10,6 +10,50 @@ library(tidyverse)
 
 ## Data Preparation for Predictive Modelling 
 
+### Multicollinearity
+
+To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine the importance of the test result we additionally computed the Cramér's V for effect size (threshold applied here 0.3). First we removed all outliers and for security, we apply the Fisher's Exact Test if there are zero counts in the contingency table.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+cat_variables = c("hypertension", 
+                  "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
+
+preprocessed_stroke_tb <- preprocessed_stroke_tb %>%
+  filter(!(gender == 'Other' & work_type == 'Never_worked'))
+
+for (index1 in 1:(length(cat_variables) - 1)) {
+  var1 <- cat_variables[index1]
+  
+  for (index2 in (index1 + 1):length(cat_variables)) {
+    var2 <- cat_variables[index2]
+    
+    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
+    
+    # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
+    if (any(contingency_table == 0)) {
+      chi_square_result <- fisher.test(contingency_table, simulate.p.value = TRUE)
+    } else {
+      chi_square_result <- chisq.test(contingency_table)
+    }
+    
+    cramers_v <- assocstats(contingency_table)$cramer
+    
+    if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
+      cat("Relationship between", var1, "and", var2, "\n")
+      cat("P-value:", chi_square_result$p.value, "\n")
+      cat("Cramér's V:", cramers_v, "\n")
+      print(contingency_table)
+      cat("\n")
+    }
+  }
+}
+
+```
+The only relationship, which seems to be problematic in terms of multicollinearity seems to be between `ever_married` and `work_type`. For the prediction model, we will therefore exclude one of the two features. Another possibility is to further explore their relationship with the VIF(Variation Inflation Factor), which will help us with the decision to either keep both variables or drop one of them.
+
+As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
 ### Feature Encoding 
 For the categorical feature encoding, we convert our categorical variables into dummy variables to utilize them in our predictive model.
 
