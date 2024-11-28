@@ -2,3 +2,19 @@
 title: "_model_evaluation"
 format: html
 ---
+
+# Model Evaluation
+
+Confusion Matrix
+
+Precision, Recall
+
+ROC Curve 
+
+## Baseline Model
+
+## Balanced Baseline Mode
+
+## Low-Risk Age Model
+
+## High-Risk Age Model 

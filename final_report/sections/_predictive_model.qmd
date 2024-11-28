@@ -1,35 +1,122 @@
 ---
 title: "_predictive_model"
 format: html
+editor: 
+  markdown: 
+    wrap: 72
 ---
+
 ```{r}
 library(caret)
 library(tidyverse)
+library(vcd)
+library(knitr)
+library(fastDummies)
 ```
+
 # Predictive Model
 
-## Data Preparation for Predictive Modelling 
-
-### Multicollinearity
-
-To examine associations and multicollinearity between the categorical variables, we use a chi-squared test. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. To determine the importance of the test result we additionally computed the Cramér's V for effect size (threshold applied here 0.3). First we removed all outliers and for security, we apply the Fisher's Exact Test if there are zero counts in the contingency table.
+## Final Data Preparations
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-cat_variables = c("hypertension", 
-                  "heart_disease", "ever_married", "work_type", "Residence_type", "smoking_status", "gender")
+outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+```
 
-preprocessed_stroke_tb <- preprocessed_stroke_tb %>%
-  filter(!(gender == 'Other' & work_type == 'Never_worked'))
 
+
+### Feature Encoding
+
+For the categorical feature encoding, we convert our categorical
+variables into dummy variables to utilize them in our predictive model.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+encoded_stroke_tb <- outlier_stroke_tb
+
+# Encoding binary categorical variables first
+encoded_stroke_tb$ever_married <- ifelse(encoded_stroke_tb$ever_married == "Yes", 1, 0)
+encoded_stroke_tb$Residence_type <- ifelse(encoded_stroke_tb$Residence_type == "Urban", 1, 0)
+encoded_stroke_tb$gender <- ifelse(encoded_stroke_tb$gender == "Female", 1, 0)
+
+# Create dummy variables for the remaining character columns
+to_encode_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb, is.character)]
+encoded_stroke_tb <- dummy_cols(
+  encoded_stroke_tb, 
+  select_columns = to_encode_variables, 
+  remove_selected_columns = TRUE
+)
+
+# View the final encoded dataset
+kable(encoded_stroke_tb)
+```
+
+To be sure that our model will recognize the binary variables as such,
+we convert them to factors.
+
+```{r}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Convert categorical variables to factors
+# Ensure proper factor levels for categorical variables
+categorical_vars <- c("gender", "ever_married", "Residence_type", "smoking_status_formerly smoked", 
+                      "smoking_status_never smoked", "smoking_status_smokes", "stroke", 
+                      "hypertension", "heart_disease", "work_type_children", 
+                      "work_type_Govt_job", "work_type_Private", 
+                      "work_type_Self-employed")
+
+# Explicitly convert these columns to factors, and ensure their levels are correct
+encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], function(col) {
+  if (is.numeric(col)) { # If column is numeric, convert to factor first
+    col <- factor(col, levels = unique(col))
+  }
+  col
+})
+
+colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
+
+str(encoded_stroke_tb)
+
+# Save the updated dataset to CSV
+write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
+
+```
+### Multicollinearity
+
+To examine associations and multicollinearity between the categorical
+variables, we use a chi-squared test. The chi-squared test is a
+statistical test used to determine whether there is a significant
+association between two categorical variables. To determine the
+importance of the test result we additionally computed the Cramér's V
+for effect size (threshold applied here 0.3). Additionally, we apply the Fisher's Exact Test if there are
+zero counts in the contingency table.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(car)
+
+# List of categorical variables to analyze
+cat_variables <- c("hypertension", 
+                   "heart_disease", "ever_married", "work_type_Self.employed", 
+                   "work_type_Private", "work_type_Govt_job", "work_type_children", 
+                   "Residence_type", "smoking_status_smokes", 
+                   "smoking_status_never.smoked", "smoking_status_formerly.smoked", 
+                   "gender")
+
+# Placeholder for variables with high Cramér's V
+selected_variables <- c()
+
+# Loop through pairs of categorical variables
 for (index1 in 1:(length(cat_variables) - 1)) {
   var1 <- cat_variables[index1]
   
   for (index2 in (index1 + 1):length(cat_variables)) {
     var2 <- cat_variables[index2]
     
-    contingency_table <- table(preprocessed_stroke_tb[[var1]], preprocessed_stroke_tb[[var2]])
+    contingency_table <- table(encoded_stroke_tb[[var1]], encoded_stroke_tb[[var2]])
     
     # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
     if (any(contingency_table == 0)) {
@@ -46,77 +133,65 @@ for (index1 in 1:(length(cat_variables) - 1)) {
       cat("Cramér's V:", cramers_v, "\n")
       print(contingency_table)
       cat("\n")
+      
+      # Add variables to the selected list if not already added
+      selected_variables <- unique(c(selected_variables, var1, var2))
     }
   }
 }
 
-```
-The only relationship, which seems to be problematic in terms of multicollinearity seems to be between `ever_married` and `work_type`. For the prediction model, we will therefore exclude one of the two features. Another possibility is to further explore their relationship with the VIF(Variation Inflation Factor), which will help us with the decision to either keep both variables or drop one of them.
+# Display variables with high Cramér's V
+cat("\nVariables with High Cramér's V (> 0.3):\n")
+print(selected_variables)
 
-As all other effect sizes appear to be smaller than 0.3, we can safely conclude that all other categorical features are sufficiently independent to use as predictors. In conclusion, multicollinearity does not appear to be present among the variables, and we can therefore proceed. We refrain from conducting a multivariate analysis, as the results from this section seem robust enough to also conclude no multicollinearity among multiple features.
-### Feature Encoding 
-For the categorical feature encoding, we convert our categorical variables into dummy variables to utilize them in our predictive model.
-
-```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show code"
-encoded_stroke_tb <- preprocessed_stroke_tb
-
-# Encoding binary categorical variables first
-encoded_stroke_tb$ever_married <- ifelse(encoded_stroke_tb$ever_married == "Yes", 1, 0)
-encoded_stroke_tb$Residence_type <- ifelse(encoded_stroke_tb$Residence_type == "Urban", 1, 0)
-encoded_stroke_tb$gender <- ifelse(encoded_stroke_tb$gender == "Female", 1, 0)
-
-# Create dummy variables for the remaining character columns
-to_encode_variables <- names(encoded_stroke_tb)[sapply(encoded_stroke_tb, is.character)]
-encoded_stroke_tb <- dummy_cols(
-  encoded_stroke_tb, 
-  select_columns = to_encode_variables, 
-  remove_selected_columns = TRUE
-)
-
-# View the final encoded dataset
-head(encoded_stroke_tb)
-```
-To be sure that our model will recognize the binary variables as such, we convert them to factors.
-```{r}
-#|code-fold: true
-#|code-summary: "Click to show code"
-# Convert categorical variables to factors
-# Ensure proper factor levels for categorical variables
-categorical_vars <- c("gender", "ever_married", "Residence_type", "smoking_status_formerly smoked", 
-                      "smoking_status_never smoked", "smoking_status_smokes", "stroke", 
-                      "hypertension", "heart_disease", "work_type_children", 
-                      "work_type_Govt_job", "work_type_Never_worked", "work_type_Private", 
-                      "work_type_Self-employed")
-
-# Explicitly convert these columns to factors, and ensure their levels are correct
-encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], function(col) {
-  if (is.numeric(col)) { # If column is numeric, convert to factor first
-    col <- factor(col, levels = unique(col))
-  }
-  col
-})
-
-
-str(encoded_stroke_tb)
-
-# Save the updated dataset to CSV
-write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
+# Calculate VIF for the selected variables
+# Ensure selected variables exist in the dataset
+if (length(selected_variables) > 0) {
+  formula <- as.formula(paste("stroke ~", paste(selected_variables, collapse = " + ")))
+  vif_model <- lm(formula, data = encoded_stroke_tb)  # Linear model for VIF computation
+  vif_values <- vif(vif_model)
+  
+  # Display VIF values
+  cat("\nVIF Values for Selected Variables:\n")
+  print(vif_values)
+} else {
+  cat("No variables with high Cramér's V were identified.\n")
+}
 
 ```
 
+The only relationship, which seems to be problematic in terms of
+multicollinearity seems to be between `ever_married` and `work_type`.
+For the prediction model, we will therefore exclude one of the two
+features. Another possibility is to further explore their relationship
+with the VIF(Variation Inflation Factor), which will help us with the
+decision to either keep both variables or drop one of them.
+
+As all other effect sizes appear to be smaller than 0.3, we can safely
+conclude that all other categorical features are sufficiently
+independent to use as predictors. In conclusion, multicollinearity does
+not appear to be present among the variables, and we can therefore
+proceed. The correlation matrix in the previous chapter indicated low
+correlations between features as well. We therefore refrain from
+conducting a multivariate analysis, as the results from this section
+seem robust enough to also conclude no multicollinearity among multiple
+features.
 ### Dataset Balancing
 
-The dataset reveals that most individuals do not have strokes, creating a strong class imbalance. This imbalance can negatively impact model performance by biasing it towards the majority class, resulting in poor predictive accuracy for minority cases like strokes. Without applying upsampling, the model might overly favor "no stroke" predictions, yielding high overall accuracy but failing to identify actual stroke cases effectively (low recall). By upsampling the minority class, we ensure the model learns from stroke cases as well, improving its ability to detect strokes and offering a more balanced and meaningful predictive performance.
+The dataset revealed that most individuals do not have strokes, creating
+a strong class imbalance. This imbalance can negatively impact model
+performance by biasing it towards the majority class, resulting in poor
+predictive accuracy for minority cases like strokes. Without applying
+upsampling, the model might overly favor "no stroke" predictions,
+yielding high overall accuracy but failing to identify actual stroke
+cases effectively (low recall). By upsampling the minority class, we
+ensure the model learns from stroke cases as well, improving its ability
+to detect strokes and offering a more balanced and meaningful predictive
+performance.
 
 ```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show the code"
-# Plot the distribution of stroke cases
-ggplot(outlier_stroke_tb, aes(x = factor(stroke))) + 
-  geom_bar() + 
-  labs(x = '0 = No Stroke, 1 = Stroke', y = 'Count', title = 'Distribution of Strokes')
+#| code-fold: true
+#| code-summary: "Click to show the code"
 
 # Count the number of people who had a stroke and calculate the proportion
 encoded_stroke_tb %>%
@@ -124,7 +199,15 @@ encoded_stroke_tb %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2))
 ```
-To address this, we used dataset balancing techniques to adjust the proportions of stroke and no-stroke cases. Given that the dataset contains only 5,110 individuals, we chose upsampling the minority class to retain all available data, which would otherwise be reduced through downsampling. By upsampling, we enhance the representation of stroke cases, helping the model learn more effectively and improve both prediction accuracy and recall, particularly for the minority class.
+
+To address this issue, we use dataset balancing techniques to adjust the
+proportions of stroke and no-stroke cases. Given that the dataset
+contains only 5,110 individuals, we chose upsampling the minority class
+to retain all available data, which would otherwise be reduced through
+downsampling. By upsampling, we enhance the representation of stroke
+cases, helping the model learn more effectively and improve both
+prediction accuracy and recall, particularly for the minority class
+(here when strokes occur).
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -132,9 +215,9 @@ To address this, we used dataset balancing techniques to adjust the proportions 
 
 # Use upSample to balance the dataset
 balanced_stroke_tb <- upSample(
-  x = outlier_stroke_tb[, names(outlier_stroke_tb) != "stroke"], # All columns except 'stroke'
-  y = outlier_stroke_tb$stroke, # Target variable for upsampling
-  yname = "stroke" # Column name for the target variable in the upsampled dataset
+  x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"], 
+  y = encoded_stroke_tb$stroke, 
+  yname = "stroke"
 )
 
 
@@ -146,72 +229,83 @@ table(balanced_stroke_tb$stroke)
 
 # Save the dataset
 write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
-
 ```
 
 ### Feature scaling
 
-Finally, as classification algorithms are often sensitive to scales and to prevent perturbations, we standardize all continuous features in the dataset.
+Finally, as classification algorithms are often sensitive to feature scales, we standardize all continuous features in the dataset to prevent perturbations and improve model performance. Standardization rescales features to have a mean of 0 and a standard deviation of 1. The mathematical formula for standardization is as follows:
+
+$$
+z = \frac{x - \mu}{\sigma}
+$$
+
+Where:
+-   z is the standardized value,
+-   x is the original feature value,
+-   ( \mu ) is the mean of the feature,
+-   ( \sigma ) is the standard deviation of the feature.
+
+
 ```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show code"
+#| code-fold: true
+#| code-summary: "Click to show code"
 
-scaled_stroke_tb <- balanced_stroke_tb
+# Define a function to standardize continuous variables
+standardize <- function(x) {
+  (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
+}
 
-scaled_unbalanced_stroke_tb <- outlier_stroke_tb
+# Apply standardization to continuous (numeric) columns in the dataset
+scaled_stroke_tb <- balanced_stroke_tb %>%
+  mutate(across(where(is.double), ~ standardize(.)))
 
-#Scale only the double columns
+scaled_unbalanced_stroke_tb <- encoded_stroke_tb %>%
+  mutate(across(where(is.double), ~ standardize(.)))
 
-scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)] <- lapply(scaled_stroke_tb[sapply(scaled_stroke_tb, is.double)], scale)
+# Display the scaled dataset
+kable(scaled_stroke_tb)
 
-scaled_stroke_tb <- as_tibble(scaled_stroke_tb)
-
-head(scaled_stroke_tb)
-
-
-scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)] <- lapply(scaled_unbalanced_stroke_tb[sapply(scaled_unbalanced_stroke_tb, is.double)], scale)
-
-scaled_unbalanced_stroke_tb <- as_tibble(scaled_unbalanced_stroke_tb)
-
-# save
+# Save the scaled datasets
 write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
 write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
 ```
 
 ## Baseline Model
-First of all, we set a seed to guarantee reproducibility of the results in the next chapter.
 
-```{r}
-set.seed(42)
-```
-
-We divide our analysis into four different datasets and predictive models: the original dataset, the balanced original dataset, the low-risk age group, and the moderate-risk age group. We will train a logistic regression model for each dataset, before evaluating them on the test sets in the next chapter and comparing them to the baseline model.
+We divide our analysis into four different datasets and predictive
+models: the original dataset, the balanced original dataset, the
+low-risk age group, and the moderate-risk age group. We will train a
+logistic regression model for each dataset, before evaluating them on
+the test sets in the next chapter and comparing them to the baseline
+model.
 
 ### Train-test split
 
-In order to evaluate the performance of our model, we split the original dataset into a training and a test set. We use 80% of the data for training and 20% for testing.
-```{r}
+In order to evaluate the performance of our model, we split the original
+dataset into a training and a test set. We use 80% of the data for
+training and 20% for testing.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 # Load the dataset
-unbalanced_original_data <- read.csv("../../data/datasets/scaled_unbalanced_stroke_tb.csv")
+unbalanced_original_data <- scaled_unbalanced_stroke_tb
 str(unbalanced_original_data)
 ```
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 
-```{r}
-categorical_variables <- names(unbalanced_original_data)[sapply(unbalanced_original_data, function (x) is.integer(x))]
-
-unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_data[categorical_variables], factor)
-
-str(unbalanced_original_data)
-```
-
-```{r}
+# Ensure valid names for all levels
 unbalanced_original_data[categorical_variables] <- lapply(unbalanced_original_data[categorical_variables], function(col) {
-  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  levels(col) <- make.names(levels(col)) 
   return(col)
 })
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
@@ -221,49 +315,71 @@ train_unbalanced <- unbalanced_original_data[trainIndex, ]
 test_unbalanced <- unbalanced_original_data[-trainIndex, ]
 ```
 
-### Model 
-We use k-fold cross validation to train and evaluate our model. 
+### Model
 
-```{r}
-# Set up k-fold cross-validation (e.g., 5 folds)
-k <- 5
-ctrl <- trainControl(method = "cv", number = k, 
-                     classProbs = TRUE,  
-                     summaryFunction = twoClassSummary)  
+We use k-fold cross validation to train and evaluate our model. With the `caret` package, we specify our first logistic model by specifying (method= "glm") and (family = "binomial") to train a logistic regression model.
 
-# Train a logistic regression model using k-fold CV
-set.seed(42)  
-logistic_model_1 <- train(stroke ~ ., data = train_unbalanced,
-                          method = "glm", family = "binomial",
-                          trControl = ctrl, metric = "ROC") 
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 
-# Print cross-validation results
-print(logistic_model_1)
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::roc(data$obs, data[, lev[1]])$auc, error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train 
+ctrl <- trainControl(
+  method = "none",    
+  classProbs = TRUE   # Enable class probabilities
+)
+
+# Train logistic regression model on the entire training dataset
+set.seed(42)
+logistic_model_1 <- train(
+  stroke ~ ., 
+  data = train_unbalanced,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+
+# Print model summary
+summary(logistic_model$finalModel)
+
 ```
+
 ## Balanced Baseline Model
 
 ### Train-test split
-```{r}
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 # Load the dataset
-balanced_original_data <- read.csv("../../data/datasets/scaled_stroke_tb.csv")
+balanced_original_data <- scaled_stroke_tb
 ```
 
-```{r}
-categorical_variables <- names(balanced_original_data)[sapply(balanced_original_data, function (x) is.integer(x))]
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 
-balanced_original_data[categorical_variables] <- lapply(balanced_original_data[categorical_variables], factor)
-
-str(balanced_original_data)
-```
-
-```{r}
+# Ensure valid names for all levels
 balanced_original_data[categorical_variables] <- lapply(balanced_original_data[categorical_variables], function(col) {
-  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  levels(col) <- make.names(levels(col))  
   return(col)
 })
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8, 
@@ -274,7 +390,11 @@ test_balanced <- balanced_original_data[-trainIndex, ]
 ```
 
 ### Model
-```{r}
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 k <- 5
 ctrl <- trainControl(method = "cv", number = k, 
                      classProbs = TRUE,  # Enables ROC computation
@@ -290,17 +410,23 @@ logistic_model_2 <- train(stroke ~ ., data = train_balanced,
 print(logistic_model_2)
 ```
 
-
 ## Low-Risk Age Model
 
 ### Train-test split
-```{r}
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 # Load the dataset
 low_risk_age_data <- read.csv("../../data/datasets/low_risk_age_tb.csv")
 str(low_risk_age_data)
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 categorical_variables <- names(low_risk_age_data)[sapply(low_risk_age_data, function (x) is.integer(x))]
 
 balanced_original_data[low_risk_age_data] <- lapply(low_risk_age_data[categorical_variables], factor)
@@ -308,14 +434,20 @@ balanced_original_data[low_risk_age_data] <- lapply(low_risk_age_data[categorica
 str(low_risk_age_data)
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 low_risk_age_data[categorical_variables] <- lapply(low_risk_age_data[categorical_variables], function(col) {
   levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
   return(col)
 })
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartition(low_risk_age_data$stroke, p = 0.8, 
@@ -329,10 +461,12 @@ colSums(is.na(balanced_original_data))
 
 ```
 
-
-
 ### Model
-```{r}
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 k <- 5
 ctrl <- trainControl(method = "cv", number = k, 
                      classProbs = TRUE,  # Enables ROC computation
@@ -351,12 +485,19 @@ print(logistic_model_3)
 ## Moderate-Risk Age Model
 
 ### Train-test split
-```{r}
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 # Load the dataset
 moderate_risk_age_data <- read.csv("../../data/datasets/scaled_stroke_tb.csv")
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 categorical_variables <- names(moderate_risk_age_data)[sapply(moderate_risk_age_data, function (x) is.integer(x))]
 
 moderate_risk_age_data[categorical_variables] <- lapply(moderate_risk_age_data[categorical_variables], factor)
@@ -364,14 +505,20 @@ moderate_risk_age_data[categorical_variables] <- lapply(moderate_risk_age_data[c
 str(moderate_risk_age_data)
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 moderate_risk_age_data[categorical_variables] <- lapply(moderate_risk_age_data[categorical_variables], function(col) {
   levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
   return(col)
 })
 ```
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartitionmoderate_risk_age_data$stroke, p = 0.8, 
@@ -386,7 +533,11 @@ colSums(is.na(moderate_risk_age_data))
 ```
 
 ### Model
-```{r}
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
 k <- 5
 ctrl <- trainControl(method = "cv", number = k, 
                      classProbs = TRUE,  # Enables ROC computation
@@ -400,4 +551,4 @@ logistic_model_4 <- train(stroke ~ ., data = train_moderate_age,
 
 # Print cross-validation results
 print(logistic_model_4)
-``` 
+```
