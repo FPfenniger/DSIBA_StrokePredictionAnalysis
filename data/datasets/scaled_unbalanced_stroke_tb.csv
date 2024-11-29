@@ -1,4 +1,4 @@
-"gender","age","hypertension","heart_disease","ever_married","Residence_type","avg_glucose_level","bmi","stroke","work_type_children","work_type_Govt_job","work_type_Private","work_type_Self-employed","smoking_status_formerly smoked","smoking_status_never smoked","smoking_status_smokes"
+"gender","age","hypertension","heart_disease","ever_married","residence_type","avg_glucose_level","bmi","stroke","work_type_children","work_type_govt_job","work_type_private","work_type_self_employed","smoking_status_formerly_smoked","smoking_status_never_smoked","smoking_status_smokes"
 "0",1.04697917355717,"0","1","1","1",2.70191089555695,1.0031002379471,"1","0","0","1","0","1","0","0"
 "1",0.78139488513923,"0","0","1","0",2.11788528924724,-0.101013253146222,"1","0","0","0","1","0","1","0"
 "0",1.62241179846271,"0","1","1","0",-0.00582413792657282,0.470527848125615,"1","0","0","1","0","0","1","0"

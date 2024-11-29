@@ -12,6 +12,7 @@ library(tidyverse)
 library(vcd)
 library(knitr)
 library(fastDummies)
+library(janitor)
 ```
 
 # Predictive Model
@@ -48,6 +49,8 @@ encoded_stroke_tb <- dummy_cols(
   select_columns = to_encode_variables, 
   remove_selected_columns = TRUE
 )
+# Clean names
+encoded_stroke_tb <- clean_names(encoded_stroke_tb)
 
 # View the final encoded dataset
 kable(encoded_stroke_tb)
@@ -61,11 +64,11 @@ we convert them to factors.
 #| code-summary: "Click to show code"
 # Convert categorical variables to factors
 # Ensure proper factor levels for categorical variables
-categorical_vars <- c("gender", "ever_married", "Residence_type", "smoking_status_formerly smoked", 
-                      "smoking_status_never smoked", "smoking_status_smokes", "stroke", 
+categorical_vars <- c("gender", "ever_married", "residence_type", "smoking_status_formerly_smoked", 
+                      "smoking_status_never_smoked", "smoking_status_smokes", 
                       "hypertension", "heart_disease", "work_type_children", 
-                      "work_type_Govt_job", "work_type_Private", 
-                      "work_type_Self-employed")
+                      "work_type_govt_job", "work_type_private", 
+                      "work_type_self_employed", "stroke")
 
 # Explicitly convert these columns to factors, and ensure their levels are correct
 encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], function(col) {
@@ -96,20 +99,13 @@ zero counts in the contingency table.
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-library(car)
 
-# List of categorical variables to analyze
-cat_variables <- c("hypertension", 
-                   "heart_disease", "ever_married", "work_type_Self.employed", 
-                   "work_type_Private", "work_type_Govt_job", "work_type_children", 
-                   "Residence_type", "smoking_status_smokes", 
-                   "smoking_status_never.smoked", "smoking_status_formerly.smoked", 
-                   "gender")
+cat_variables = c("gender", "ever_married", "residence_type", "smoking_status_formerly_smoked", 
+                      "smoking_status_never_smoked", "smoking_status_smokes", 
+                      "hypertension", "heart_disease", "work_type_children", 
+                      "work_type_govt_job", "work_type_private", 
+                      "work_type_self_employed")
 
-# Placeholder for variables with high Cramér's V
-selected_variables <- c()
-
-# Loop through pairs of categorical variables
 for (index1 in 1:(length(cat_variables) - 1)) {
   var1 <- cat_variables[index1]
   
@@ -133,31 +129,9 @@ for (index1 in 1:(length(cat_variables) - 1)) {
       cat("Cramér's V:", cramers_v, "\n")
       print(contingency_table)
       cat("\n")
-      
-      # Add variables to the selected list if not already added
-      selected_variables <- unique(c(selected_variables, var1, var2))
     }
   }
 }
-
-# Display variables with high Cramér's V
-cat("\nVariables with High Cramér's V (> 0.3):\n")
-print(selected_variables)
-
-# Calculate VIF for the selected variables
-# Ensure selected variables exist in the dataset
-if (length(selected_variables) > 0) {
-  formula <- as.formula(paste("stroke ~", paste(selected_variables, collapse = " + ")))
-  vif_model <- lm(formula, data = encoded_stroke_tb)  # Linear model for VIF computation
-  vif_values <- vif(vif_model)
-  
-  # Display VIF values
-  cat("\nVIF Values for Selected Variables:\n")
-  print(vif_values)
-} else {
-  cat("No variables with high Cramér's V were identified.\n")
-}
-
 ```
 
 The only relationship, which seems to be problematic in terms of
@@ -176,6 +150,7 @@ correlations between features as well. We therefore refrain from
 conducting a multivariate analysis, as the results from this section
 seem robust enough to also conclude no multicollinearity among multiple
 features.
+
 ### Dataset Balancing
 
 The dataset revealed that most individuals do not have strokes, creating
@@ -189,6 +164,19 @@ ensure the model learns from stroke cases as well, improving its ability
 to detect strokes and offering a more balanced and meaningful predictive
 performance.
 
+Let's start by creating the two stratified datasets, where we take the age of 60 to split our sample in two groups. As seen in our EDA, individuals aged over 60 have a significantly higher risk of stroke. 
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show the code"
+
+low_risk_age_tb <- encoded_stroke_tb %>%
+  filter(age < 60)
+
+high_risk_age_tb <- encoded_stroke_tb %>%
+  filter(age >= 60)
+```
+
+Let's look at stroke occurrences in our three datasets:
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show the code"
@@ -198,6 +186,18 @@ encoded_stroke_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2))
+
+low_risk_age_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2))
+
+high_risk_age_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2))
+
+
 ```
 
 To address this issue, we use dataset balancing techniques to adjust the
@@ -220,18 +220,31 @@ balanced_stroke_tb <- upSample(
   yname = "stroke"
 )
 
+low_risk_age_data <- upSample(
+  x = low_risk_age_tb[, names(low_risk_age_tb) != "stroke"], 
+  y = low_risk_age_tb$stroke, 
+  yname = "stroke"
+)
+
+high_risk_age_data <- upSample(
+  x = high_risk_age_tb[, names(high_risk_age_tb) != "stroke"], 
+  y = high_risk_age_tb$stroke, 
+  yname = "stroke"
+)
+
 
 # Check the structure to confirm changes
 str(balanced_stroke_tb)
 
+
 # Check the distribution to confirm balancing
 table(balanced_stroke_tb$stroke)
+table(low_risk_age_data$stroke)
 
 # Save the dataset
 write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
 ```
-
-### Feature scaling
+Because the upsampling in the low-risk age group is rather extreme (from 1.5% to 50% stroke cases), we will use the upsampled dataset only for training and use the original dataset for the evaluation. 
 
 Finally, as classification algorithms are often sensitive to feature scales, we standardize all continuous features in the dataset to prevent perturbations and improve model performance. Standardization rescales features to have a mean of 0 and a standard deviation of 1. The mathematical formula for standardization is as follows:
 
@@ -262,12 +275,20 @@ scaled_stroke_tb <- balanced_stroke_tb %>%
 scaled_unbalanced_stroke_tb <- encoded_stroke_tb %>%
   mutate(across(where(is.double), ~ standardize(.)))
 
+scaled_low_risk_age_tb <- low_risk_age_data %>%
+  mutate(across(where(is.double), ~ standardize(.)))
+
+scaled_high_risk_age_tb <- high_risk_age_data %>%
+  mutate(across(where(is.double), ~ standardize(.)))
+
 # Display the scaled dataset
 kable(scaled_stroke_tb)
 
 # Save the scaled datasets
 write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
 write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
+write.csv(scaled_low_risk_age_tb, "../../data/datasets/scaled_low_risk_age_tb.csv", row.names = FALSE)
+write.csv(scaled_high_risk_age_tb, "../../data/datasets/scaled_high_risk_age_tb.csv", row.names = FALSE)
 ```
 
 ## Baseline Model
@@ -313,6 +334,7 @@ trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8,
 
 train_unbalanced <- unbalanced_original_data[trainIndex, ]
 test_unbalanced <- unbalanced_original_data[-trainIndex, ]
+
 ```
 
 ### Model
@@ -349,7 +371,7 @@ logistic_model_1 <- train(
 )
 
 # Print model summary
-summary(logistic_model$finalModel)
+summary(logistic_model_1)
 
 ```
 
