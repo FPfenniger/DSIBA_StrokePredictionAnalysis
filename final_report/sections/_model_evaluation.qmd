@@ -2,19 +2,260 @@
 title: "_model_evaluation"
 format: html
 ---
+```{r}
+library(caret)   
+library(pROC)    
+library(ggplot2)
+library(tidyverse)
+```
 
 # Model Evaluation
 
-Confusion Matrix
+In this final section, we analyze our models performance on unseen data and compare how they perform. First of all we introduce the metrics we will be using to evaluate our models. 
 
-Precision, Recall
+- Confusion matrix
 
-ROC Curve 
+- Precision
+
+- Recall
+
+- F1 Score
+
+- ROC Curve
 
 ## Baseline Model
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+logistic_model_2 <- readRDS("../../data/models/logistic_model_1.rds")
+test_unbalanced <- read.csv("../../data/datasets/test_sets/test_unbalanced.csv")
+```
+
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(caret)
+library(pROC)
+library(ggplot2)
+
+# Step 1: Predict probabilities and classes on the test set
+test_predictions_prob <- predict(logistic_model_1, newdata = test_unbalanced, type = "prob")
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Step 2: Convert predictions to factors to match the test set
+test_unbalanced$stroke <- factor(test_unbalanced$stroke, levels = c("No", "Yes"))
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Step 3: Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(test_predictions_class, test_unbalanced$stroke, positive = "Yes")
+
+# Step 4: Extract Metrics
+precision <- conf_matrix_test$byClass["Precision"]
+recall <- conf_matrix_test$byClass["Recall"]
+f1_score <- conf_matrix_test$byClass["F1"]
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Step 5: Classification Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+print(classification_report_test)
+
+# Step 6: ROC Curve
+roc_curve <- roc(test_unbalanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve
+ggroc(roc_curve) +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "1 - Specificity",
+    y = "Sensitivity"
+  ) +
+  theme_minimal()
+
+# Step 7: Print AUC
+auc_value <- auc(roc_curve)
+cat("Area Under the Curve (AUC):", auc_value, "\n")
+
+```
 
 ## Balanced Baseline Mode
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+logistic_model_2 <- readRDS("../../data/models/logistic_model_2.rds")
+test_balanced <- read.csv("../../data/datasets/test_sets/test_balanced.csv")
+```
+
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(caret)
+library(pROC)
+library(ggplot2)
+
+# Step 1: Predict probabilities and classes on the test set
+test_predictions_prob <- predict(logistic_model_2, newdata = test_balanced, type = "prob")
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Step 2: Convert predictions to factors to match the test set
+test_balanced$stroke <- factor(test_balanced$stroke, levels = c("No", "Yes"))
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Step 3: Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(test_predictions_class, test_balanced$stroke, positive = "Yes")
+
+# Step 4: Extract Metrics
+precision <- conf_matrix_test$byClass["Precision"]
+recall <- conf_matrix_test$byClass["Recall"]
+f1_score <- conf_matrix_test$byClass["F1"]
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Step 5: Classification Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+print(classification_report_test)
+
+# Step 6: ROC Curve
+roc_curve <- roc(test_balanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve
+ggroc(roc_curve) +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "1 - Specificity",
+    y = "Sensitivity"
+  ) +
+  theme_minimal()
+
+# Step 7: Print AUC
+auc_value <- auc(roc_curve)
+cat("Area Under the Curve (AUC):", auc_value, "\n")
+```
 
 ## Low-Risk Age Model
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+logistic_model_3 <- readRDS("../../data/models/logistic_model_3.rds")
+test_low_risk <- read.csv("../../data/datasets/test_sets/test_low_risk.csv")
+```
+
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(caret)
+library(pROC)
+library(ggplot2)
+
+# Step 1: Predict probabilities and classes on the test set
+test_predictions_prob <- predict(logistic_model_3, newdata = test_low_risk, type = "prob")
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Step 2: Convert predictions to factors to match the test set
+test_low_risk$stroke <- factor(test_low_risk$stroke, levels = c("No", "Yes"))
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Step 3: Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(test_predictions_class, test_low_risk$stroke, positive = "Yes")
+
+# Step 4: Extract Metrics
+precision <- conf_matrix_test$byClass["Precision"]
+recall <- conf_matrix_test$byClass["Recall"]
+f1_score <- conf_matrix_test$byClass["F1"]
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Step 5: Classification Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+print(classification_report_test)
+
+# Step 6: ROC Curve
+roc_curve <- roc(test_low_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve
+ggroc(roc_curve) +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "1 - Specificity",
+    y = "Sensitivity"
+  ) +
+  theme_minimal()
+
+# Step 7: Print AUC
+auc_value <- auc(roc_curve)
+cat("Area Under the Curve (AUC):", auc_value, "\n")
+```
 
 ## High-Risk Age Model 
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+logistic_model_4 <- readRDS("../../data/models/logistic_model_4.rds")
+test_high_risk <- read.csv("../../data/datasets/test_sets/test_high_risk.csv")
+```
+
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(caret)
+library(pROC)
+library(ggplot2)
+
+# Step 1: Predict probabilities and classes on the test set
+test_predictions_prob <- predict(logistic_model_4, newdata = test_high_risk, type = "prob")
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Step 2: Convert predictions to factors to match the test set
+test_high_risk$stroke <- factor(test_high_risk$stroke, levels = c("No", "Yes"))
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Step 3: Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(test_predictions_class, test_high_risk$stroke, positive = "Yes")
+
+# Step 4: Extract Metrics
+precision <- conf_matrix_test$byClass["Precision"]
+recall <- conf_matrix_test$byClass["Recall"]
+f1_score <- conf_matrix_test$byClass["F1"]
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Step 5: Classification Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+print(classification_report_test)
+
+# Step 6: ROC Curve
+roc_curve <- roc(test_high_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve
+ggroc(roc_curve) +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "1 - Specificity",
+    y = "Sensitivity"
+  ) +
+  theme_minimal()
+
+# Step 7: Print AUC
+auc_value <- auc(roc_curve)
+cat("Area Under the Curve (AUC):", auc_value, "\n")
+```
