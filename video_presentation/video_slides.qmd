@@ -1,5 +1,5 @@
 ---
-title: "presentation_slides"
+title: "Stroke risk factors"
 format: revealjs
 editor: visual
 ---
