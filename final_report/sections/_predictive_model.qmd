@@ -27,8 +27,6 @@ library(MLmetrics)
 outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
 ```
 
-
-
 ### Feature Encoding
 
 For the categorical feature encoding, we convert our categorical
@@ -37,31 +35,30 @@ variables into dummy variables to utilize them in our predictive model. To avoid
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-library(janitor)
-library(knitr)
 
-# Step 1: Initialize the dataset
+# Initialize the dataset
 encoded_stroke_tb <- outlier_stroke_tb
 
-# Step 2: Encode binary categorical variables
+# Encode binary categorical variables
 encoded_stroke_tb$ever_married <- ifelse(encoded_stroke_tb$ever_married == "Yes", 1, 0)
 encoded_stroke_tb$Residence_type <- ifelse(encoded_stroke_tb$Residence_type == "Urban", 1, 0)
 encoded_stroke_tb$gender <- ifelse(encoded_stroke_tb$gender == "Female", 1, 0)
 
-# Step 3: Encode smoking_status and work_type using model.matrix
+# Encode smoking_status and work_type using model.matrix
+
 # Smoking_status
 smoking_status_matrix <- model.matrix(~ smoking_status - 1, data = encoded_stroke_tb)
 colnames(smoking_status_matrix) <- gsub("smoking_status", "smoking_status", colnames(smoking_status_matrix))
-# Exclude the reference level "never smoked" (it is automatically excluded if not in formula)
+# Exclude the reference level "never smoked"
 smoking_status_matrix <- smoking_status_matrix[, -grep("never smoked", colnames(smoking_status_matrix))]
 
 # Work_type
 work_type_matrix <- model.matrix(~ work_type - 1, data = encoded_stroke_tb)
 colnames(work_type_matrix) <- gsub("work_type", "work_type", colnames(work_type_matrix))
-# Exclude the reference level "Private" (it is automatically excluded if not in formula)
+# Exclude the reference level "Private"
 work_type_matrix <- work_type_matrix[, -grep("Private", colnames(work_type_matrix))]
 
-# Step 4: Bind the matrices to the dataset and remove the original columns
+# Bind the matrices to the dataset and remove the original columns
 encoded_stroke_tb <- cbind(
   encoded_stroke_tb,
   smoking_status_matrix,
@@ -72,23 +69,18 @@ encoded_stroke_tb <- cbind(
 encoded_stroke_tb$smoking_status <- NULL
 encoded_stroke_tb$work_type <- NULL
 
-# Step 5: Clean column names
+# Clean column names
 colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
 encoded_stroke_tb <- clean_names(encoded_stroke_tb)
 
-# Step 6: Validate the dataset
-print(str(encoded_stroke_tb))  # Check structure
-kable(encoded_stroke_tb) # Preview the data
+kable(encoded_stroke_tb) 
 ```
---> describe the reference levels of the categorical variables 
-
-To be sure that our model will recognize the binary variables as such,
-we convert them to factors.
+We set the reference level for `smoking_status` to "never smoked" and for `work_type` to "Private". This way, we ensure that the model can interpret the dummy variables correctly.To be sure that our model will recognize the binary variables as such, we convert them to factors.
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Click to show code"
-# Convert categorical variables to factors
+ 
 # Ensure proper factor levels for categorical variables
 categorical_vars <- c("gender", "ever_married", "residence_type", "smoking_statusformerly_smoked", 
                       "smoking_statussmokes", 
@@ -221,8 +213,6 @@ high_risk_age_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2))
-
-
 ```
 
 To address this issue, we use dataset balancing techniques to adjust the
