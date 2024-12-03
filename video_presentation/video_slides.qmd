@@ -4,33 +4,84 @@ format: revealjs
 editor: visual
 ---
 
+Length:
+
+The presentation should be 7 minutes or less. The time limit will be strictly enforced.
+Content:
+
+Introduction: Briefly introduce your project goals and motivation.
+Research Questions: What were the key research questions?
+Data: Provide a high-level overview of your data sources and preprocessing.
+Findings and Results: Highlight your key findings, insights, or model results.
+Conclusion: Summarize your main takeaways and future potential directions.
+Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀
+
+
 ## Understanding Stroke: A Data-Driven Approach
 
 ### Stroke: A Global Health Emergency
 
 The Problem:
 
-	•	15M strokes/year (WHO): 5M deaths, 5M disabilities.
-	•	Stroke disrupts brain blood flow: caused by blockage or bleeding.
+```         
+•   15M strokes/year (WHO): 5M deaths, 5M disabilities.
+•   Stroke disrupts brain blood flow: caused by blockage or bleeding.
+```
 
 Project Goals:
 
-	•	Predict stroke risk using data.
-	•	Analyze key factors like age, heart disease, & lifestyle.
-	•	Visualize insights for better understanding.
+```         
+•   Predict stroke risk using data.
+•   Analyze key factors like age, heart disease, & lifestyle.
+•   Visualize insights for better understanding.
+```
 
 Key Question:
 
 What factors best predict stroke, and how can we intervene?
-	
-## Data preprocessing
 
-When you click the **Render** button a document will be generated that includes:
+## Stroke Prediction Dataset Overview
 
--   Content authored with markdown
--   Output from executable code
+Data Source
 
-## Exploratory data analysis
+	•	Origin: Kaggle’s Stroke Prediction Dataset
+	•	Observations: 5110
+	•	Features: 12 (including binary target variable stroke)
+	•	Usage: Educational purposes only; source details are confidential.
+
+Key Variables
+
+	•	Target Variable: stroke (0 = No, 1 = Yes)
+	•	Demographics: gender, age, Residence_type
+	•	Health Metrics: hypertension, heart_disease, avg_glucose_level, bmi
+	•	Lifestyle: smoking_status, work_type, ever_married
+
+Additional Info
+
+	•	Dataset Owner: Federico Soriano Palacios
+	•	Last Updated: 4 years ago
+	•	Preprocessing Note: bmi converted to numeric.
+
+## Data Preprocessing
+
+	1.	Data Overview:
+	•	Dataset is clean with no duplicate rows.
+	•	Missing values in bmi and smoking_status.
+	2.	Variable Adjustments:
+	•	Reclassified variables: bmi → numerical; hypertension, heart_disease → categorical.
+	•	Removed irrelevant column: id.
+	3.	Handling Missing Values:
+	•	Replaced missing values: bmi → median, smoking_status → mode.
+	4.	Outlier Analysis:
+	•	Visualized outliers in age, avg_glucose_level, and bmi using boxplots.
+	•	Outliers Identified:
+	•	avg_glucose_level: 12.25% (627 points).
+	•	bmi: 2.47% (126 points).
+	•	Retained outliers for now due to potential relevance as risk factors.
+	5.	Categorical Variables:
+	•	Removed infrequent categories in gender (Other) and work_type (Never_worked).
+	•	Noted rare occurrences in heart_disease, hypertension, and stroke.
+## Conclusion
 
 When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
 

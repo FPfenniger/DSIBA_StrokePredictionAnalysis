@@ -1,7 +1,7 @@
 ---
 title: "_introduction"
 format: html
-bibliography: references.bib
+bibliography: appendix.qmd
 ---
 # Introduction and Data Structure
 
@@ -18,10 +18,6 @@ To be more specific, the goals of this project are to:
 - Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence.
 
 - Create visualizations to illustrate the results and enhance the understanding of stroke risk factors.
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 
 ## Research Questions
 
