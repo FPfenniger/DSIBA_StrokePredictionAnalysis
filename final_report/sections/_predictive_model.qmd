@@ -33,6 +33,7 @@ outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
 
 For the categorical feature encoding, we convert our categorical
 variables into dummy variables to utilize them in our predictive model. To avoid the dummy variable trap, we drop the first level of each categorical variable. We start by encoding binary variables as 0 and 1, and then create dummy variables for the remaining categorical variables. We use the `model.matrix` function to create dummy variables and drop the first level to set a reference. 
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -79,7 +80,7 @@ encoded_stroke_tb <- clean_names(encoded_stroke_tb)
 print(str(encoded_stroke_tb))  # Check structure
 kable(encoded_stroke_tb) # Preview the data
 ```
-
+--> describe the reference levels of the categorical variables 
 
 To be sure that our model will recognize the binary variables as such,
 we convert them to factors.
@@ -268,7 +269,7 @@ table(low_risk_age_data$stroke)
 # Save the dataset
 write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
 ```
-Because the upsampling in the low-risk age group is rather extreme (from 1.5% to 50% stroke cases), we will use the upsampled dataset only for training and use the original dataset for the evaluation. 
+Because the upsampling in the low-risk age group is rather extreme (from 1.5% to 50% stroke cases), we will use the upsampled dataset only for training and use the original dataset for the evaluation. --> implementation
 
 ### Scaling
 
@@ -359,17 +360,6 @@ trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8,
 
 train_unbalanced <- unbalanced_original_data[trainIndex, ]
 test_unbalanced <- unbalanced_original_data[-trainIndex, ]
-```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Ensure valid names for all levels
-unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
-  levels(col) <- make.names(levels(col)) 
-  return(col)
-})
 ```
 
 ### Model
