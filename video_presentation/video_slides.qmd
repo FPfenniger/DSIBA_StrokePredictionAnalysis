@@ -4,21 +4,42 @@ format: revealjs
 editor: visual
 ---
 
-## Quarto
+## Understanding Stroke: A Data-Driven Approach
 
-Quarto enables you to weave together content and executable code into a finished presentation. To learn more about Quarto presentations see <https://quarto.org/docs/presentations/>.
+### Stroke: A Global Health Emergency
 
-## Bullets
+The Problem:
+
+	•	15M strokes/year (WHO): 5M deaths, 5M disabilities.
+	•	Stroke disrupts brain blood flow: caused by blockage or bleeding.
+
+Project Goals:
+
+	•	Predict stroke risk using data.
+	•	Analyze key factors like age, heart disease, & lifestyle.
+	•	Visualize insights for better understanding.
+
+Key Question:
+
+What factors best predict stroke, and how can we intervene?
+	
+## Data preprocessing
 
 When you click the **Render** button a document will be generated that includes:
 
 -   Content authored with markdown
 -   Output from executable code
 
-## Code
+## Exploratory data analysis
 
 When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
 
 ```{r}
 1 + 1
 ```
+
+## Predictive model
+
+## Model evaluation
+
+## Conclusion
