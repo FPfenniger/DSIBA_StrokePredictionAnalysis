@@ -14,7 +14,13 @@ library(vcd)
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+outlier_stroke_tb <- 
+  read.csv("../../data/datasets/outlier_stroke_tb.csv")
+balanced_stroke_tb <-
+  read.csv("../../data/datasets/balanced_stroke_tb.csv")
+preprocessed_stroke_tb <-
+  read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
+
 ```
 
 ## Descriptive Statistics
@@ -86,6 +92,9 @@ First, we visualized all numerical variables in a histogram grouped by stroke oc
 #| code-fold: true
 #| code-summary: "Click to show code"
 
+library(ggplot2)
+library(plotly)
+
 # Function to create the histogram
 create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
   # Extract the variable and stroke data
@@ -115,24 +124,15 @@ create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show
     layout(showlegend = show_legend) # Control legend visibility
 }
 
-
-# Generate histograms
+# Generate histograms for each variable separately
 hist_age <- create_histogram(outlier_stroke_tb, "age", "stroke", binwidth = 5, show_legend = TRUE)
 hist_glucose <- create_histogram(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE)
 hist_bmi <- create_histogram(outlier_stroke_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE)
 
-# Combine histograms into a grid layout (1 row)
-combined_histograms <- subplot(
-  hist_age, hist_glucose, hist_bmi,
-  nrows = 1, titleX = TRUE, titleY = TRUE
-) %>%
-  layout(
-    title = "Histograms of Numerical Variables by Stroke",
-    showlegend = TRUE  # Ensure unified legend is displayed
-  )
-
-# Display the combined histograms
-combined_histograms
+# Display each histogram separately
+print(hist_age)
+print(hist_glucose)
+print(hist_bmi)
 ```
 Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
@@ -188,61 +188,55 @@ The second part of our EDA examines the distribution of the categorical variable
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-# Barchart of categorical variables grouped by stroke variable
+library(ggplot2)
+library(plotly)
+library(dplyr)
 
-# Define the UI
-ui <- fluidPage(
-  titlePanel("Categorical Variables Grouped by Stroke Variable"),
-  sidebarLayout(
-    sidebarPanel(
-      # Dropdown for selecting the variable for the X-axis
-      selectInput("x_variable", "Select Variable for X-Axis:",
-                  choices = c("Gender" = "gender", 
-                              "Ever Married" = "ever_married",
-                              "Work Type" = "work_type", 
-                              "Residence Type" = "Residence_type", 
-                              "Smoking Status" = "smoking_status",
-                              "Hypertension" = "hypertension", 
-                              "Heart Disease" = "heart_disease"))
-    ),
-    mainPanel(
-      # Display the interactive plotly histogram
-      plotlyOutput("histogramPlot")
-    )
-  )
-)
+# Define choices for the variable selection
+x_variable_choices <- c("Gender" = "gender", 
+                        "Ever Married" = "ever_married",
+                        "Work Type" = "work_type", 
+                        "Residence Type" = "Residence_type", 
+                        "Smoking Status" = "smoking_status",
+                        "Hypertension" = "hypertension", 
+                        "Heart Disease" = "heart_disease")
 
-# Define the server logic
-server <- function(input, output) {
+# Create a filtered data frame based on all selected variables
+filtered_data <- preprocessed_stroke_tb
+# Remove "Other" for the gender variable
+filtered_data <- filtered_data %>% filter(!(gender == "Other"))  # Simply check for 'Other' in gender
+
+# Initialize an empty list to store plots
+plots <- list()
+
+# Loop through each categorical variable and create a bar chart
+for (selected_variable in x_variable_choices) {
   
-  output$histogramPlot <- renderPlotly({
-    
-    # Create a reactive data frame that filters "Other" for gender
-    filtered_data <- preprocessed_stroke_tb
-    if (input$x_variable == "gender") {
-      filtered_data <- filtered_data %>% filter(gender != "Other")
-    }
-    
-    # Check if selected variable is Hypertension or Heart Disease
-    if (input$x_variable %in% c("hypertension", "heart_disease")) {
-      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
-        geom_bar(position = "fill") +
-        labs(fill = "STROKE", y = "Ratio") +
-        scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
-    } else {
-      # For other categorical variables
-      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
-        geom_bar(position = "fill") +
-        labs(fill = "STROKE", y = "Ratio")
-    }
-    
-    # Convert ggplot to an interactive plotly object
-    ggplotly(p)
-  })
+  # Get variable name
+  variable_name <- names(x_variable_choices)[which(x_variable_choices == selected_variable)]
+  
+  if (variable_name %in% c("hypertension", "heart_disease")) {
+    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
+      geom_bar(position = "fill") +
+      labs(title = paste("Distribution of", variable_name),
+           fill = "STROKE", y = "Ratio") +
+      scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
+  } else {
+    # For other categorical variables
+    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
+      geom_bar(position = "fill") +
+      labs(title = paste("Distribution of", variable_name),
+           fill = "STROKE", y = "Ratio")
+  }
+  
+  # Convert ggplot to an interactive plotly object and store it in the list
+  plots[[variable_name]] <- ggplotly(p)
 }
 
-# Run the application
-shinyApp(ui = ui, server = server)
+# Display all plots
+for (plot in plots) {
+  print(plot)  # You can use print to display each plot one after the other
+}
 ```
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
@@ -343,91 +337,67 @@ summary_table <- as.data.frame.matrix(summary_table)
 knitr::kable(summary_table, caption = "Summary of numerical Variables", row.names = FALSE)
 ```
 
-`age` and `avg_glucose_level` have very different summary statistics. The median age in the balanced dataset increased by 14 years to 59 years, up from 45 years in the original dataset. The average glucose level is 93,51 mg/dL, with only s slight increase from 91,89 mg/dL.
+`age` and `avg_glucose_level` have very different summary statistics. The median age in the balanced dataset increased by 14 years to 59 years, up from 45 years in the original dataset. The average glucose level is 93,51 mg/dL, with only slight increase from 91,89 mg/dL.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-# Histogram of numerical variables grouped by stroke variable
-# Define the UI
-ui <- fluidPage(
-  titlePanel("Numerical variables grouped by stroke variable"),
-  sidebarLayout(
-    sidebarPanel(
-      # Dropdown for selecting variable
-      selectInput("variable", "Select Variable:", 
-                  choices = c("Age" = "age", "Average Glucose Level" = "avg_glucose_level")),
-      
-      # Conditional panel to show the bin width slider only if "Show Standardized Data" is unchecked
-      conditionalPanel(
-        condition = "input.standardize == false",
-        sliderInput("binwidth", "Bin Width:", min = 1, max = 10, value = 5)
-      ),
-      
-      # Checkbox for standardized data
-      checkboxInput("standardize", "Show Standardized Data", value = FALSE)
-    ),
-    mainPanel(
-      # Display the interactive plotly histogram
-      plotlyOutput("histogramPlot")
-    )
-  )
-)
+library(ggplot2)
+library(plotly)
 
-# Define the server logic
-server <- function(input, output, session) {
+# Define choices for the variable selection
+variable_choices <- c("Age" = "age", "Average Glucose Level" = "avg_glucose_level")
+
+# Initialize an empty list to store plots
+plots <- list()
+
+# Loop through each variable and create a histogram
+for (selected_variable in variable_choices) {
   
-  observe({
-    # Change bin width to 1 if standardized data is checked
-    if (input$standardize) {
-      updateSliderInput(session, "binwidth", value = 1)
-    } else {
-      updateSliderInput(session, "binwidth", value = 5)
-    }
-  })
+  # Retrieve the current selected variable and stroke data
+  original_data <- balanced_stroke_tb[[selected_variable]]
+  stroke_data <- balanced_stroke_tb$stroke
   
-  output$histogramPlot <- renderPlotly({
-    # Retrieve the selected variable and stroke data
-    original_data <- balanced_stroke_tb[[input$variable]]
-    stroke_data <- balanced_stroke_tb$stroke
-    
-    # Calculate mean and standard deviation for original data
-    mean_val <- mean(original_data)
-    sd_val <- sd(original_data)
-    
-    # Standardize the data if checkbox is selected
-    if (input$standardize) {
-      data <- scale(original_data)
-      x_label <- paste("Standardized", input$variable)
-      # Mean and SD lines at 0 and ±1 for standardized data
-      mean_line <- 0
-      sd_lines <- c(-1, 1)
-    } else {
-      data <- original_data
-      x_label <- input$variable
-      # Use calculated mean and SD for original data
-      mean_line <- mean_val
-      sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
-    }
-    
-    # Combine data and stroke status into a data frame
-    plot_data <- data.frame(data = data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
-    
-    # Generate the ggplot stacked histogram with mean and SD lines
-    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
-      geom_histogram(binwidth = input$binwidth, color = "white", position = "stack") +
-      labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency", fill = "Stroke Status") +
-      geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", linewidth = 1) +
-      geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", linewidth = 0.8) +
-      geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", linewidth = 0.8)
-    
-    # Convert ggplot to an interactive plotly object
-    ggplotly(p)
-  })
+  # Calculate mean and standard deviation
+  mean_val <- mean(original_data, na.rm = TRUE)  # Handle NA values
+  sd_val <- sd(original_data, na.rm = TRUE)      # Handle NA values
+
+  # Standardization logic (modify if you want to standardize some histograms)
+  standardize <- FALSE  # Change to TRUE if standardized data is needed
+  binwidth <- 5  # Set a default bin width
+
+  # Standardize the data if needed
+  if (standardize) {
+    data <- scale(original_data)
+    x_label <- paste("Standardized", selected_variable)
+    mean_line <- 0
+    sd_lines <- c(-1, 1)
+  } else {
+    data <- original_data
+    x_label <- selected_variable
+    mean_line <- mean_val
+    sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
+  }
+
+  # Combine data and stroke status into a data frame
+  plot_data <- data.frame(data = data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+
+  # Generate the ggplot stacked histogram with mean and SD lines
+  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+    labs(title = paste("Distribution of", x_label), x = x_label, y = "Frequency", fill = "Stroke Status") +
+    geom_vline(aes(xintercept = mean_line), color = "blue", linetype = "dashed", linewidth = 1) +
+    geom_vline(aes(xintercept = sd_lines[1]), color = "red", linetype = "dotted", linewidth = 0.8) +
+    geom_vline(aes(xintercept = sd_lines[2]), color = "red", linetype = "dotted", linewidth = 0.8)
+
+  # Convert ggplot to an interactive plotly object and store it in the list
+  plots[[selected_variable]] <- ggplotly(p)
 }
 
-# Run the application
-shinyApp(ui = ui, server = server)
+# Display all plots
+for (plot in plots) {
+  print(plot)  # Print each plot one after the other
+}
 ```
 
 Now incorporating the balanced dataset, the univariate analysis of categorical variables such as `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` will be re-examined to observe differences. These variables previously showed notable disparities in the proportions of stroke cases across their levels in the original dataset, indicating their potential as predictors of stroke risk. Visualizing these variables with the balanced dataset will help identify any shifts in patterns and strengthen their relevance for further exploration and modeling.
@@ -437,101 +407,84 @@ Now incorporating the balanced dataset, the univariate analysis of categorical v
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# Barchart of categorical variables grouped by stroke variable
+library(ggplot2)
+library(plotly)
+library(dplyr)
 
-# Define the UI
-ui <- fluidPage(
-  titlePanel("Categorical Variables Grouped by Stroke Variable"),
-  sidebarLayout(
-    sidebarPanel(
-      # Dropdown for selecting the variable for the X-axis
-      selectInput("x_variable", "Select Variable for X-Axis:",
-                  choices = c("Ever Married" = "ever_married",
-                              "Work Type" = "work_type", 
-                              "Smoking Status" = "smoking_status",
-                              "Hypertension" = "hypertension", 
-                              "Heart Disease" = "heart_disease"))
-    ),
-    mainPanel(
-      # Display the interactive plotly histogram
-      plotlyOutput("histogramPlot")
-    )
-  )
-)
+# Define the choices for the x-axis variables
+x_variable_choices <- c("Ever Married" = "ever_married",
+                         "Work Type" = "work_type", 
+                         "Smoking Status" = "smoking_status",
+                         "Hypertension" = "hypertension", 
+                         "Heart Disease" = "heart_disease")
 
-# Define the server logic
-server <- function(input, output) {
+# Initialize an empty list to store plots
+plots <- list()
+
+# Create a filtered data frame based on the initial data
+filtered_data <- balanced_stroke_tb
+
+# Loop through each variable to create a bar chart
+for (selected_variable in x_variable_choices) {
   
-  output$histogramPlot <- renderPlotly({
-    
-    # Create a reactive data frame that filters "Other" for gender
-    filtered_data <- balanced_stroke_tb
-    if (input$x_variable == "gender") {
-      filtered_data <- filtered_data %>% filter(gender != "Other")
-    }
-    
-    # Check if selected variable is Hypertension or Heart Disease
-    if (input$x_variable %in% c("hypertension", "heart_disease")) {
-      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
-        geom_bar(position = "fill") +
-        labs(fill = "STROKE", y = "Ratio") +
-        scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
-    } else {
-      # For other categorical variables
-      p <- ggplot(filtered_data, aes_string(x = input$x_variable, fill = "as.factor(stroke)")) +
-        geom_bar(position = "fill") +
-        labs(fill = "STROKE", y = "Ratio")
-    }
-    
-    # Convert ggplot to an interactive plotly object
-    ggplotly(p)
-  })
+  # Check if selected variable is gender and filter accordingly (assuming you also have gender in your dataset)
+  if (selected_variable == "gender") {
+    filtered_data <- filtered_data %>% filter(gender != "Other")
+  }
+  
+  # Generate the bar chart based on the selected variable
+  if (selected_variable %in% c("hypertension", "heart_disease")) {
+    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
+      geom_bar(position = "fill") +
+      labs(title = paste("Distribution of", selected_variable), 
+           fill = "STROKE", y = "Ratio") +
+      scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
+  } else {
+    # For other categorical variables
+    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
+      geom_bar(position = "fill") +
+      labs(title = paste("Distribution of", selected_variable), 
+           fill = "STROKE", y = "Ratio")
+  }
+  
+  # Convert ggplot to an interactive plotly object and store it in the list
+  plots[[selected_variable]] <- ggplotly(p)
 }
 
-# Run the application
-shinyApp(ui = ui, server = server)
+# Display all plots
+for (plot in plots) {
+  print(plot)  # Print each plot one after the other
+}
 ```
 
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-# Define numerical variables (adjust if there are more)
+library(plotly)
+
+# Define numerical variables
 numerical_variables <- c("age", "avg_glucose_level", "bmi")
 
-# Shiny app with separate display of the correlation coefficient
-shinyApp(
-  ui = fluidPage(
-    selectInput("selected_variable", "Choose a Variable:", choices = numerical_variables),
-    plotlyOutput("violin_plot"),
-    htmlOutput("correlation_text")  # Separate output for the correlation coefficient
-  ),
-  server = function(input, output) {
-    
-    output$violin_plot <- renderPlotly({
-      selected_variable <- input$selected_variable
-      
-      # Generate the violin plot
-      plot <- plot_ly(outlier_stroke_tb, x = ~factor(stroke), y = ~as.numeric(balanced_stroke_tb[[selected_variable]]), type = "violin",
-                      box = list(visible = TRUE),
-                      meanline = list(visible = TRUE)) %>%
-        layout(
-          title = paste("Violin Plot of", selected_variable, "by Stroke"),
-          xaxis = list(title = "Stroke"),
-          yaxis = list(title = selected_variable)
-        )
-      
-      plot  # Display the plot
-    })
-    
-    # Render the correlation text below the plot
-    output$correlation_text <- renderUI({
-      selected_variable <- input$selected_variable
-      correlation <- cor(as.numeric(outlier_stroke_tb[[selected_variable]]), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
-      HTML(paste("Correlation Coefficient with Stroke:", round(correlation, 2)))
-    })
-  }
-)
+# Choose a variable (you can replace this with a specific variable)
+selected_variable <- numerical_variables[1]  # Modify as needed
+
+# Generate the violin plot
+plot <- plot_ly(outlier_stroke_tb, x = ~factor(stroke), y = ~as.numeric(balanced_stroke_tb[[selected_variable]]), type = "violin",
+                 box = list(visible = TRUE),
+                 meanline = list(visible = TRUE)) %>%
+  layout(
+    title = paste("Violin Plot of", selected_variable, "by Stroke"),
+    xaxis = list(title = "Stroke"),
+    yaxis = list(title = selected_variable)
+  )
+
+# Display the plot
+plot
+
+# Calculate and display the correlation coefficient
+correlation <- cor(as.numeric(outlier_stroke_tb[[selected_variable]]), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+cat(sprintf("Correlation Coefficient with Stroke: %.2f\n", correlation))
 ```
 
 ## Stratified Dataset Analysis
@@ -540,7 +493,7 @@ In our previous EDA we observed that `age` is the strongest predictor for `strok
 
 Looking at the violin plot for individuals that have experienced a stroke, the average age  is 67.73 years. We have arbitrarily chosen to divide the dataset into two age groups at age 60 for several reasons. This age threshold may clinically be significant because we know that the risk of stroke increases notably after a certain age, allowing us to focus our analysis more effectively on the populations most affected. Additionally, individuals over 60 may exhibit different biological changes that impact stroke risk factors.
 
-#### Add proof that 60 is a great choice from the internet #####
+##### Add proof that 60 is a great choice from the internet #####
 
 With this sampling method, we hope to increase our model's generalizability and robustness in the section.
 
@@ -564,7 +517,7 @@ We perform an Exploratory Data Analysis on two distinct age groups: individuals 
 
 To begin our analysis, we focus first on the group of individuals under 60 years old. 
 
-#### Descriptive Statistics for under_60 
+#### Descriptive Statistics for individuals below 60 
 
 ```{r, message=FALSE}
 #| code-fold: true
@@ -629,9 +582,9 @@ summary_table_under_60 <- bind_rows(
 knitr::kable(summary_table_under_60, caption = "Summary of Categorical Variables for Individuals Under 60 Years Old with Proportions", row.names = FALSE)
 ```
 
-## Univariate Analysis for under_60
+## Univariate Analysis for individuals below 60
 
-### Numerical variables for under_60
+### Numerical variables for individuals below 60
 
 Same as for the whole group EDA, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
@@ -691,7 +644,7 @@ combined_histograms
 ```
 
 
-##### Violin plots under 60
+##### Violin plots for individuals below 60
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -740,7 +693,7 @@ Based on the summary table for numerical variables and the histogram, we can obs
 
 For completeness we added a violin Plot of the numerical variables with correlation coefficients respective to `stroke` displayed below the plot.
 
-### Categorical variables for under_60 
+### Categorical variables for individuals below 60
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -781,7 +734,7 @@ for (var in variables_to_summarize) {
 
 Now that we completed the EDA of the group aged below 60, let's check for the group aged of 60 and over.
 
-#### Descriptive Statistics for 60_and_over
+#### Descriptive Statistics for individuals of 60 and over
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -845,9 +798,9 @@ summary_table_over_60 <- bind_rows(
 # Display the combined table with kable
 knitr::kable(summary_table_over_60, caption = "Summary of Categorical Variables for Individuals Over 60 Years Old with Proportions", row.names = FALSE)
 ```
-## Univariate Analysis for 60_and_over
+## Univariate Analysis for individuals of 60 and over
 
-### Numerical variables for 60_and_over
+### Numerical variables for individuals of 60 and over
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -904,7 +857,7 @@ combined_histograms
 ```
 
 
-####violin plots over 60 
+####Violin plots for individuals of 60 and over 
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -921,7 +874,7 @@ create_violin_plot <- function(data, variable, stroke_variable) {
                   box = list(visible = TRUE),
                   meanline = list(visible = TRUE)) %>%
     layout(
-      title = paste("Violin Plot of", variable, "by Stroke (Individuals Over 60)"),
+      title = paste("Violin Plot of", variable, "by Stroke (Individuals of 60 and over)"),
       xaxis = list(title = "Stroke"),
       yaxis = list(title = variable)
     )
@@ -929,7 +882,7 @@ create_violin_plot <- function(data, variable, stroke_variable) {
   plot
 }
 
-# Generate individual plots for individuals over 60
+# Generate individual plots for individuals of 60 and over
 plot_age <- create_violin_plot(over_60_data, variable = "age", stroke_variable = "stroke")
 plot_glucose <- create_violin_plot(over_60_data, variable = "avg_glucose_level", stroke_variable = "stroke")
 plot_bmi <- create_violin_plot(over_60_data, variable = "bmi", stroke_variable = "stroke")
@@ -939,13 +892,13 @@ combined_plot <- subplot(
   plot_age, plot_glucose, plot_bmi,
   nrows = 1, titleX = TRUE, titleY = TRUE
 ) %>%
-  layout(title = "Violin Plots of Numerical Variables by Stroke (Individuals Over 60 Years)")
+  layout(title = "Violin Plots of Numerical Variables by Stroke (Individuals Of 60 Years and Over)")
 
 # Display the combined plot
 combined_plot
 ```
 
-### Categorical variables for 60_and_over
+### Categorical variables for individuals of 60 and over
 
 ```{r, message = FALSE}
 #| code-fold: true
