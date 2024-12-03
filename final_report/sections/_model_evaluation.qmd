@@ -27,7 +27,8 @@ In this final section, we analyze our models performance on unseen data and comp
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-logistic_model_2 <- readRDS("../../data/models/logistic_model_1.rds")
+#| 
+logistic_model_1 <- readRDS("../../data/models/logistic_model_1.rds")
 test_unbalanced <- read.csv("../../data/datasets/test_sets/test_unbalanced.csv")
 ```
 
