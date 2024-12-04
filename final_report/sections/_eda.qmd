@@ -84,7 +84,7 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 
 ## Univariate Analysis
 
-#### Numerical variables
+### Numerical variables
 
 First, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
@@ -151,10 +151,11 @@ create_violin_plot <- function(data, variable, stroke_variable) {
   # Ensure the stroke variable is a factor
   data[[stroke_variable]] <- as.factor(data[[stroke_variable]])
   
-  # Generate the violin plot
+  # Generate the violin plot with a name for the trace
   plot <- plot_ly(data, x = ~get(stroke_variable), y = ~get(variable), type = "violin",
                   box = list(visible = TRUE),
-                  meanline = list(visible = TRUE)) %>%
+                  meanline = list(visible = TRUE),
+                  name = variable) %>%  # Add this line to set the name
     layout(
       title = paste("Violin Plot of", variable, "by Stroke"),
       xaxis = list(title = "Stroke"),
@@ -179,30 +180,48 @@ combined_plot <- subplot(
 # Display the combined plot
 combined_plot
 ```
-The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.25). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
-
-#### Categorical variables
-
-The second part of our EDA examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
-
+The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.24). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
+library(knitr)
+
+# Convert columns to numeric if they are not already
+outlier_stroke_tb$age <- as.numeric(as.character(outlier_stroke_tb$age))
+outlier_stroke_tb$avg_glucose_level <- as.numeric(as.character(outlier_stroke_tb$avg_glucose_level))
+outlier_stroke_tb$bmi <- as.numeric(as.character(outlier_stroke_tb$bmi))
+outlier_stroke_tb$stroke <- as.numeric(as.character(outlier_stroke_tb$stroke))
+
+# Calculate the correlation coefficients
+correlation_matrix <- cor(outlier_stroke_tb[, c("age", "avg_glucose_level", "bmi", "stroke")], use = "complete.obs")
+
+# Create a kable table
+kable(correlation_matrix, digits = 2, caption = "Correlation Coefficients between Variables")
+```
+
+
+### Categorical variables
+
+The second part of our EDA examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
+
+```{r, message=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+
 library(ggplot2)
 library(plotly)
 library(dplyr)
 
-# Define choices for the variable selection
-x_variable_choices <- c("Gender" = "gender", 
-                        "Ever Married" = "ever_married",
+# Define choices for the variable selection, excluding Gender and Residence Type
+x_variable_choices <- c("Ever Married" = "ever_married",
                         "Work Type" = "work_type", 
-                        "Residence Type" = "Residence_type", 
                         "Smoking Status" = "smoking_status",
                         "Hypertension" = "hypertension", 
                         "Heart Disease" = "heart_disease")
 
 # Create a filtered data frame based on all selected variables
-filtered_data <- preprocessed_stroke_tb
+filtered_data <- outlier_stroke_tb
 # Remove "Other" for the gender variable
 filtered_data <- filtered_data %>% filter(!(gender == "Other"))  # Simply check for 'Other' in gender
 
@@ -237,6 +256,7 @@ for (selected_variable in x_variable_choices) {
 for (plot in plots) {
   print(plot)  # You can use print to display each plot one after the other
 }
+
 ```
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
@@ -247,7 +267,7 @@ Relevant differences in the proportions of stroke cases can be observed across t
 -   `work_type`: The proportion of stroke cases varies across work types, with private sector employees and self-employed individuals exhibiting higher proportions of stroke cases than individuals in other work categories.
 -   `heart disease`: Individuals with heart disease have a higher proportion of stroke cases compared to those without heart disease.
 
-In contrast, the following variables appear to be not relevant, as there are no differences in the proportions of stroke cases across their levels:
+In contrast, the following variables appear to be not relevant, as there are no differences in the proportions of stroke cases across their levels (see Appendix):
 
 -   `gender`
 
@@ -263,7 +283,7 @@ In the bivariate analysis we examined correlations between our features. We used
 #| code-fold: true
 #| code-summary: "Click to show code"
 # Select the numeric columns from your data
-numeric_data <- preprocessed_stroke_tb[, c("age", "avg_glucose_level", "bmi")]
+numeric_data <- outlier_stroke_tb[, c("age", "avg_glucose_level", "bmi")]
 
 # Calculate the correlation matrix
 correlation_matrix <- cor(numeric_data, use = "complete.obs")
@@ -292,34 +312,48 @@ Our numerical features don't seem to be strongly correlated with each other. The
 
 ## Balanced Dataset Analysis
 
-### Proportions of the Target Variable (Stroke)
+## Proportions of the Target Variable (Stroke)
 We would like to compare the original dataset with the balanced dataset.
 First, we expect plots showing the distribution of the target variable to appear more balanced in the oversampled datase compared to the original dataset.
 
-```{r}
-# Bar chart for the original dataset (preprocessed_stroke_tb)
-# Load necessary library
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Bar chart for the original dataset (outlier_stroke_tb)
+# Load necessary libraries
 library(ggplot2)
+library(plotly)
 
 # Bar chart for the original dataset
-ggplot(preprocessed_stroke_tb, aes(x = factor(stroke))) +
+p <- ggplot(outlier_stroke_tb, aes(x = factor(stroke))) +
   geom_bar() +
   labs(title = "Stroke Distribution in Original Dataset",
        x = "Stroke (0 = No Stroke, 1 = Stroke)",
        y = "Count") +
   theme_minimal()
 
+# Convert ggplot to an interactive plotly object
+ggplotly(p)
 ```
 
-```{r}
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 # Balanced dataset
+# Load necessary libraries
+library(ggplot2)
+library(plotly)
+
 # Bar chart for the balanced dataset
-ggplot(balanced_stroke_tb, aes(x = factor(stroke))) +
+p <- ggplot(balanced_stroke_tb, aes(x = factor(stroke))) +
   geom_bar() +
   labs(title = "Stroke Distribution in Balanced Dataset",
        x = "Stroke (0 = No Stroke, 1 = Stroke)",
        y = "Count") +
   theme_minimal()
+
+# Convert ggplot to an interactive plotly object
+ggplotly(p)
 ```
 
 Indeed, the distribution of the target variable `stroke` appears  balanced in the oversampled dataset compared to the original dataset. This is a positive outcome, as a balanced dataset can help improve the performance of machine learning models by reducing bias towards the majority class.However, lets check how the predictor variables have been affected by the oversampling.

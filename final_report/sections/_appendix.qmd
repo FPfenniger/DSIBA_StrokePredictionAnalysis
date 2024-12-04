@@ -3,24 +3,85 @@ title: "_Appendix"
 format: html
 editor: visual
 ---
+# Appendix
 
-## Quarto
+## From EDA section 
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+### Distribution of variables `gender` and `Residence_type` 
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(ggplot2)
+library(plotly)
+library(dplyr)
 
-## Running Code
+# Define choices for the variable selection, including only Gender and Residence Type
+x_variable_choices <- c("Gender" = "gender", 
+                        "Residence Type" = "Residence_type")
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+# Create a filtered data frame based on all selected variables
+filtered_data <- outlier_stroke_tb
+# Remove "Other" for the gender variable
+filtered_data <- filtered_data %>% filter(!(gender == "Other"))  # Simply check for 'Other' in gender
 
-```{r}
-1 + 1
+# Initialize an empty list to store plots
+plots <- list()
+
+# Loop through each categorical variable and create a bar chart
+for (selected_variable in x_variable_choices) {
+  
+  # Get variable name
+  variable_name <- names(x_variable_choices)[which(x_variable_choices == selected_variable)]
+  
+  # For categorical variables such as Gender and Residence Type
+  p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
+    geom_bar(position = "fill") +
+    labs(title = paste("Distribution of", variable_name),
+         fill = "STROKE", y = "Ratio")
+  
+  # Convert ggplot to an interactive plotly object and store it in the list
+  plots[[variable_name]] <- ggplotly(p)
+}
+
+# Display all plots
+for (plot in plots) {
+  print(plot)  # You can use print to display each plot one after the other
+}
 ```
 
-You can add options to executable code like this
+### Histogram for variable `bmi` from balanced dataset
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(ggplot2)
+library(plotly)
 
-```{r}
-#| echo: false
-2 * 2
+# Set the variable to "BMI"
+selected_variable <- "bmi"  # Make sure "bmi" is the name of the column in your dataset
+
+# Retrieve the current selected variable and stroke data
+original_data <- balanced_stroke_tb[[selected_variable]]
+stroke_data <- balanced_stroke_tb$stroke
+
+# Calculate mean and standard deviation
+mean_val <- mean(original_data, na.rm = TRUE)  # Handle NA values
+sd_val <- sd(original_data, na.rm = TRUE)      # Handle NA values
+
+# Set a default bin width
+binwidth <- 1  # You can adjust the bin width based on your data distribution
+
+# Combine data and stroke status into a data frame
+plot_data <- data.frame(data = original_data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+
+# Generate the ggplot stacked histogram with mean and SD lines
+p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+  geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+  labs(title = paste("Distribution of", selected_variable), x = selected_variable, y = "Frequency", fill = "Stroke Status") +
+  geom_vline(xintercept = mean_val, color = "blue", linetype = "dashed", linewidth = 1) +
+  geom_vline(xintercept = mean_val - sd_val, color = "red", linetype = "dotted", linewidth = 0.8) +
+  geom_vline(xintercept = mean_val + sd_val, color = "red", linetype = "dotted", linewidth = 0.8)
+
+# Convert ggplot to an interactive plotly object
+ggplotly(p)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
