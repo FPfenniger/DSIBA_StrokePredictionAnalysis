@@ -40,7 +40,8 @@ Key Question:
 
 What factors best predict stroke, and how can we intervene?
 
-## Stroke Prediction Dataset Overview
+## Data
+### Stroke Prediction Dataset Overview
 
 Data Source
 
@@ -56,13 +57,11 @@ Key Variables
 	•	Health Metrics: hypertension, heart_disease, avg_glucose_level, bmi
 	•	Lifestyle: smoking_status, work_type, ever_married
 
-Additional Info
+### Data Preprocessing
 
 	•	Dataset Owner: Federico Soriano Palacios
 	•	Last Updated: 4 years ago
 	•	Preprocessing Note: bmi converted to numeric.
-
-## Data Preprocessing
 
 	1.	Data Overview:
 	•	Dataset is clean with no duplicate rows.
@@ -89,7 +88,9 @@ When you click the **Render** button a presentation will be generated that inclu
 1 + 1
 ```
 
-## Predictive model
+## Findings and Results
+
+### Predictive model
 
 ## Model evaluation
 
