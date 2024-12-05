@@ -11,7 +11,6 @@ library(caret)
 library(tidyverse)
 library(vcd)
 library(knitr)
-library(fastDummies)
 library(janitor)
 library(caret)  
 library(MLmetrics)  
@@ -39,70 +38,85 @@ variables into dummy variables to utilize them in our predictive model. To avoid
 # Initialize the dataset
 encoded_stroke_tb <- outlier_stroke_tb
 
-# Encode binary categorical variables
-encoded_stroke_tb$ever_married <- ifelse(encoded_stroke_tb$ever_married == "Yes", 1, 0)
-encoded_stroke_tb$Residence_type <- ifelse(encoded_stroke_tb$Residence_type == "Urban", 1, 0)
-encoded_stroke_tb$gender <- ifelse(encoded_stroke_tb$gender == "Female", 1, 0)
+# Encode binary variables
+encoded_stroke_tb$gender <- factor(
+  ifelse(encoded_stroke_tb$gender == "Female", "1", 
+         ifelse(outlier_stroke_tb$gender == "Male", "0", NA)), 
+  levels = c("0", "1")
+)
 
-# Encode smoking_status and work_type using model.matrix
+encoded_stroke_tb$ever_married <- factor(
+  ifelse(encoded_stroke_tb$ever_married == "Yes", "1", 
+         ifelse(outlier_stroke_tb$ever_married == "No", "0", NA)), 
+  levels = c("0", "1")
+)
 
-# Smoking_status
-smoking_status_matrix <- model.matrix(~ smoking_status - 1, data = encoded_stroke_tb)
+encoded_stroke_tb$Residence_type <- factor(
+  ifelse(encoded_stroke_tb$Residence_type == "Urban", "1", 
+         ifelse(outlier_stroke_tb$Residence_type == "Rural", "0", NA)), 
+  levels = c("0", "1")
+)
+
+kable(encoded_stroke_tb)
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# smoking_status
+smoking_status_matrix <- model.matrix(~ smoking_status - 1, data = outlier_stroke_tb)
 colnames(smoking_status_matrix) <- gsub("smoking_status", "smoking_status", colnames(smoking_status_matrix))
-# Exclude the reference level "never smoked"
+# Exclude reference level "never smoked"
 smoking_status_matrix <- smoking_status_matrix[, -grep("never smoked", colnames(smoking_status_matrix))]
 
-# Work_type
-work_type_matrix <- model.matrix(~ work_type - 1, data = encoded_stroke_tb)
+# work_type
+work_type_matrix <- model.matrix(~ work_type - 1, data = outlier_stroke_tb)
 colnames(work_type_matrix) <- gsub("work_type", "work_type", colnames(work_type_matrix))
-# Exclude the reference level "Private"
+# Exclude reference level "Private"
 work_type_matrix <- work_type_matrix[, -grep("Private", colnames(work_type_matrix))]
 
-# Bind the matrices to the dataset and remove the original columns
+
+
+
+# Bind matrices to dataset
 encoded_stroke_tb <- cbind(
-  encoded_stroke_tb,
+  encoded_stroke_tb[, !(names(outlier_stroke_tb) %in% c("smoking_status", "work_type"))],
   smoking_status_matrix,
   work_type_matrix
 )
+kable(encoded_stroke_tb)
 
-# Remove the original categorical variables
-encoded_stroke_tb$smoking_status <- NULL
-encoded_stroke_tb$work_type <- NULL
-
-# Clean column names
-colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
-encoded_stroke_tb <- clean_names(encoded_stroke_tb)
-
-kable(encoded_stroke_tb) 
 ```
-We set the reference level for `smoking_status` to "never smoked" and for `work_type` to "Private". This way, we ensure that the model can interpret the dummy variables correctly.To be sure that our model will recognize the binary variables as such, we convert them to factors.
 
-```{r}
+```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
- 
-# Ensure proper factor levels for categorical variables
-categorical_vars <- c("gender", "ever_married", "residence_type", "smoking_statusformerly_smoked", 
-                      "smoking_statussmokes", 
-                      "hypertension", "heart_disease", "work_typechildren", 
-                      "work_type_govt_job", 
-                      "work_type_self_employed", "stroke")
+# Ensure binary variables are factors with correct levels
+binary_vars <- c("gender", "hypertension", "heart_disease", "ever_married", "Residence_type", "work_typechildren", "work_typeGovt_job", "work_typeSelf-employed", "stroke", "smoking_statusformerly smoked", "smoking_statussmokes")
 
-# Explicitly convert these columns to factors, and ensure their levels are correct
-encoded_stroke_tb[categorical_vars] <- lapply(encoded_stroke_tb[categorical_vars], function(col) {
-  if (is.numeric(col)) { # If column is numeric, convert to factor first
-    col <- factor(col, levels = unique(col))
-  }
-  col
+encoded_stroke_tb[binary_vars] <- lapply(encoded_stroke_tb[binary_vars], function(col) {
+  factor(col, levels = c("0", "1"))
 })
 
+# Validate the encoding
+lapply(encoded_stroke_tb[binary_vars], levels)
 
-str(encoded_stroke_tb)
+# Display the final dataset structure
+kable(encoded_stroke_tb)
 
+```
+We set the reference level for `smoking_status` to "never smoked" and for `work_type` to "Private". This way, we ensure that the model can interpret the dummy variables correctly. To be sure that our model will recognize the binary variables as such, we convert them to factors and set the same levels for every categorical variable.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 # Save the updated dataset to CSV
 write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
 
 ```
+
+
 ### Multicollinearity
 
 To examine associations and multicollinearity between the categorical
@@ -117,11 +131,7 @@ zero counts in the contingency table.
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-cat_variables = c("gender", "ever_married", "residence_type", "smoking_statusformerly_smoked", 
-                      "smoking_statussmokes", 
-                      "hypertension", "heart_disease", "work_typechildren", 
-                      "work_type_govt_job",  
-                      "work_type_self_employed")
+cat_variables = c("gender", "hypertension", "heart_disease", "ever_married", "Residence_type", "work_typechildren", "work_typeGovt_job", "work_typeSelf-employed", "smoking_statusformerly smoked", "smoking_statussmokes")
 
 for (index1 in 1:(length(cat_variables) - 1)) {
   var1 <- cat_variables[index1]
@@ -222,7 +232,7 @@ to retain all available data, which would otherwise be reduced through
 downsampling. By upsampling, we enhance the representation of stroke
 cases, helping the model learn more effectively and improve both
 prediction accuracy and recall, particularly for the minority class
-(here when strokes occur).
+(here when strokes occur).Because the upsampling in the low-risk age group is rather extreme (from 1.5% to 50% stroke cases), we will use the upsampled dataset only for training and use the original dataset for the evaluation. We will therefore address the balancing and scaling part later on, in the specific model part of the low-risk age group.
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -232,12 +242,6 @@ prediction accuracy and recall, particularly for the minority class
 balanced_stroke_tb <- upSample(
   x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"], 
   y = encoded_stroke_tb$stroke, 
-  yname = "stroke"
-)
-
-low_risk_age_data <- upSample(
-  x = low_risk_age_tb[, names(low_risk_age_tb) != "stroke"], 
-  y = low_risk_age_tb$stroke, 
   yname = "stroke"
 )
 
@@ -254,12 +258,11 @@ str(balanced_stroke_tb)
 
 # Check the distribution to confirm balancing
 table(balanced_stroke_tb$stroke)
-table(low_risk_age_data$stroke)
 
 # Save the dataset
 write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
 ```
-Because the upsampling in the low-risk age group is rather extreme (from 1.5% to 50% stroke cases), we will use the upsampled dataset only for training and use the original dataset for the evaluation. --> implementation
+
 
 ### Scaling
 
@@ -292,9 +295,6 @@ scaled_stroke_tb <- balanced_stroke_tb %>%
 scaled_unbalanced_stroke_tb <- encoded_stroke_tb %>%
   mutate(across(where(is.double), ~ standardize(.)))
 
-scaled_low_risk_age_tb <- low_risk_age_data %>%
-  mutate(across(where(is.double), ~ standardize(.)))
-
 scaled_high_risk_age_tb <- high_risk_age_data %>%
   mutate(across(where(is.double), ~ standardize(.)))
 
@@ -304,7 +304,6 @@ kable(scaled_stroke_tb)
 # Save the scaled datasets
 write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
 write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
-write.csv(scaled_low_risk_age_tb, "../../data/datasets/scaled_low_risk_age_tb.csv", row.names = FALSE)
 write.csv(scaled_high_risk_age_tb, "../../data/datasets/scaled_high_risk_age_tb.csv", row.names = FALSE)
 ```
 
@@ -322,6 +321,71 @@ model.
 In order to evaluate the performance of our model, we split the original
 dataset into a training and a test set. We use 80% of the data for
 training and 20% for testing.
+```{r}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Load the dataset
+unbalanced_original_data <- scaled_unbalanced_stroke_tb
+
+# Examine the structure of the original dataset
+str(unbalanced_original_data)
+
+# Correct: Explicitly define binary and categorical variables for consistency
+binary_vars <- c("gender", "hypertension", "heart_disease", "ever_married", 
+                 "Residence_type", "work_typechildren", "work_typeGovt_job", 
+                 "work_typeSelf-employed", "smoking_statusformerly_smoked", 
+                 "smoking_statussmokes", "stroke")
+
+cat_variables <- c(binary_vars)  # If more categorical variables exist, include them here
+
+# Step 1: Ensure valid factor levels for all binary and categorical variables
+unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Step 2: Ensure the target variable "stroke" has meaningful labels
+unbalanced_original_data$stroke <- factor(
+  unbalanced_original_data$stroke,
+  levels = c("0", "1"),         # Original binary levels
+  labels = c("No", "Yes")       # Consistent labels for classification
+)
+
+# Validate levels after adjustments
+lapply(unbalanced_original_data[cat_variables], levels)
+
+# Step 3: Split into training (80%) and testing (20%) sets
+set.seed(42)  # For reproducibility
+trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_unbalanced <- unbalanced_original_data[trainIndex, ]
+test_unbalanced <- unbalanced_original_data[-trainIndex, ]
+
+# Step 4: Validate the structure of training and test datasets
+str(train_unbalanced)
+str(test_unbalanced)
+
+# Step 5: Ensure factor levels are consistent across training and test sets
+train_unbalanced[cat_variables] <- lapply(train_unbalanced[cat_variables], function(col) {
+  factor(col, levels = c("0", "1"))  # Explicitly set levels
+})
+
+test_unbalanced[cat_variables] <- lapply(test_unbalanced[cat_variables], function(col) {
+  factor(col, levels = c("0", "1"))  # Explicitly set levels
+})
+
+# Recheck levels to confirm consistency
+lapply(train_unbalanced[cat_variables], levels)
+lapply(test_unbalanced[cat_variables], levels)
+
+# Step 6: Check for NAs in both datasets
+colSums(is.na(train_unbalanced))
+colSums(is.na(test_unbalanced))
+
+```
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -330,8 +394,10 @@ training and 20% for testing.
 # Load the dataset
 unbalanced_original_data <- scaled_unbalanced_stroke_tb
 
+str(unbalanced_original_data)
+
 # Ensure valid names for all levels in categorical variables
-unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
+unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[binary_vars], function(col) {
   levels(col) <- make.names(levels(col))  # Make all factor levels valid R names
   return(col)
 })
@@ -350,6 +416,9 @@ trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8,
 
 train_unbalanced <- unbalanced_original_data[trainIndex, ]
 test_unbalanced <- unbalanced_original_data[-trainIndex, ]
+
+str(train_unbalanced)
+str(test_unbalanced)
 ```
 
 ### Model
@@ -538,7 +607,7 @@ print(conf_matrix_train)
 The balanced baseline model shows substantial improvement in handling the minority class compared to the original baseline. With an overall accuracy of 77.41%, the model strikes a better balance between the positive and negative classes. Recall for the positive class (Yes) is strong at 81.37%, ensuring that most true positives are correctly identified. The F1-Score of 78.27% reflects a good balance between precision (75.39%) and recall. However, specificity remains relatively lower at 73.44%, indicating some false positives. Overall, the model demonstrates improved performance for both classes, but there is still room for enhancing specificity and further reducing false positives.
 
 ## Low-Risk Age Model
-In this section , we build our first stratified model for the low-risk age group.
+In this section , we build our first stratified model for the low-risk age group. Here we first split the original dataset into test and training set and perform then the previously mentionned preprocessing steps for the training set. 
 
 ### Train-test split
 
@@ -548,36 +617,59 @@ In this section , we build our first stratified model for the low-risk age group
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# Load the dataset
-low_risk_age_data <- scaled_low_risk_age_tb
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(low_risk_age_tb$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
 
-# Ensure valid names for all levels in categorical variables
-low_risk_age_data[cat_variables] <- lapply(low_risk_age_data[cat_variables], function(col) {
-  levels(col) <- make.names(levels(col))  # Make all factor levels valid R names
-  return(col)
-})
+train_low_risk <- low_risk_age_tb[trainIndex, ]
+test_low_risk <- low_risk_age_tb[-trainIndex, ]
+
+# Balance the training set 
+train_low_risk <- upSample(
+  x = train_low_risk[, names(train_low_risk) != "stroke"], 
+  y = train_low_risk$stroke, 
+  yname = "stroke"
+) 
+
+# Scale both training and test set
+train_low_risk <- train_low_risk %>%
+  mutate(across(where(is.double), ~ standardize(.)))
+
+test_low_risk <- test_low_risk %>%
+  mutate(across(where(is.double), ~ standardize(.)))
 
 # Ensure the target variable "stroke" has valid levels
-low_risk_age_data$stroke <- factor(
-  low_risk_age_data$stroke,
+train_low_risk$stroke <- factor(
+  train_low_risk$stroke,
   levels = c(0, 1),         # Original levels
   labels = c("No", "Yes")   # Valid names for levels
 )
 
-# Split into training (80%) and testing (20%) sets
-set.seed(42)  
-trainIndex <- createDataPartition(low_risk_age_data$stroke, p = 0.8, 
-                                  list = FALSE, times = 1)
+# Ensure the target variable "stroke" has valid levels
+test_low_risk$stroke <- factor(
+  test_low_risk$stroke,
+  levels = c(0, 1),         # Original levels
+  labels = c("No", "Yes")   # Valid names for levels
+)
 
-train_low_risk <- low_risk_age_data[trainIndex, ]
-test_low_risk <- low_risk_age_data[-trainIndex, ]
+# Ensure consistency across both training and test set
+for (col in cat_variables) {
+  test_low_risk[[col]] <- factor(test_low_risk[[col]], levels = levels(train_low_risk[[col]]))
+}
+
 ```
 
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-low_risk_age_data[categorical_variables] <- lapply(low_risk_age_data[categorical_variables], function(col) {
+train_low_risk[cat_variables] <- lapply(train_low_risk[cat_variables], function(col) {
+  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
+  return(col)
+})
+
+test_low_risk[cat_variables] <- lapply(test_low_risk[cat_variables], function(col) {
   levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
   return(col)
 })
