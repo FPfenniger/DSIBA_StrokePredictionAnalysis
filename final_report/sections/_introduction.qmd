@@ -43,6 +43,7 @@ library(kableExtra)
 library(dplyr)
 # Read the dataset
 stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
+str(stroke_tb)
 
 # Convert to a tibble
 stroke_tb_tibble <- as_tibble(stroke_tb)
