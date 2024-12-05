@@ -148,7 +148,7 @@ Based on the summary table for numerical variables and the histogram, we can obs
 -   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
 -   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
 
-For completeness we added a violin Plot of the numerical variables with correlation coefficients respective to `stroke` displayed below the plot.
+For completeness we added some violin plots of the numerical variables.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -188,7 +188,9 @@ combined_plot <- subplot(
 # Display the combined plot
 combined_plot
 ```
-The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.24). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
+The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. 
+
+The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.24). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -521,6 +523,53 @@ for (plot in plots) {
 }
 ```
 
+- `ever_married`: Looking at the balanced barplots for the categorical variables, around 58% of individuals that have ever been married had experienced a stroke, while only around 25% for those who have never been. 
+
+- `work_type`: Around 6% of individuals with a work type `children` have experienced a stroke. As the data source of the dataset does not states clearly that work type `children` means that the individual is a child, we cannot confirm that it makes sense because children experience less stroke. For the tree other categories, the proportion of individuals that have experienced a stroke is between 50% to 65%. 
+
+- `smoking_status`: The tree categories of this variable show proportions of stroke between 40% to 65%, which suggest that the dataset is balanced as we want.  
+
+- `hypertension`: Around 75% of individuals who have hypertension experienced a stroke, while only around 45% for those who don't have hypertension.
+
+- `heart_disease`: Around 80% of individuals who have a heart disease had a stroke. While around 45% for those who don't. 
+
+For the variables `hypertension` and `heart_disease`, this noticeable difference is explained by the disproportion of individuals not having hypertension (around 82.2%) and not having a heart_disease (around 87.86%).
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Load necessary libraries
+library(dplyr)
+library(knitr)
+
+# Calculate the proportion of individuals with hypertension
+hypertension_proportion <- initial_balanced_stroke_tb %>%
+  group_by(hypertension) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(proportion = count / sum(count)) %>%
+  mutate(Condition = paste("Hypertension:", hypertension)) %>%
+  select(Condition, Count = count, Proportion = proportion)
+
+# Calculate the proportion of individuals with heart disease
+heart_disease_proportion <- initial_balanced_stroke_tb %>%
+  group_by(heart_disease) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  mutate(proportion = count / sum(count)) %>%
+  mutate(Condition = paste("Heart Disease:", heart_disease)) %>%
+  select(Condition, Count = count, Proportion = proportion)
+
+# Combine both results into one data frame
+results <- bind_rows(
+  hypertension_proportion,
+  heart_disease_proportion
+)
+
+# Display the results using kable
+kable(results, format = "markdown", col.names = c("Condition", "Count", "Proportion"))
+```
+
+To go deeper in the analysis of the numerical variables of the balanced dataset, we create their violinplots. This will allow us to observe the distribution of the data for each variable in relation to the target variable `stroke`
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -561,6 +610,10 @@ combined_plot <- subplot(
 # Display the combined plot
 combined_plot
 ```
+
+As for the violin plots of the initial datasets, stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The proportions of stroke cases vary significantly across the different value ranges of age and avg_glucose_level.
+
+
 
 
 ```{r, message = FALSE}
