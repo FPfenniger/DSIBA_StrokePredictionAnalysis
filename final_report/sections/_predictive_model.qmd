@@ -16,10 +16,8 @@ library(caret)
 library(MLmetrics)  
 ```
 
-# Predictive Model
-
-## Final Data Preparations
-
+# Final Data Preparations
+ 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -29,7 +27,12 @@ outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
 ### Feature Encoding
 
 For the categorical feature encoding, we convert our categorical
-variables into dummy variables to utilize them in our predictive model. To avoid the dummy variable trap, we drop the first level of each categorical variable. We start by encoding binary variables as 0 and 1, and then create dummy variables for the remaining categorical variables. We use the `model.matrix` function to create dummy variables and drop the first level to set a reference. 
+variables into dummy variables to utilize them in our predictive model.
+To avoid the dummy variable trap, we drop the first level of each
+categorical variable. We start by encoding binary variables as 0 and 1,
+and then create dummy variables for the remaining categorical variables.
+We use the `model.matrix` function to create dummy variables and drop
+the first level to set a reference.
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -99,23 +102,21 @@ encoded_stroke_tb[binary_vars] <- lapply(encoded_stroke_tb[binary_vars], functio
   factor(col, levels = c("0", "1"))
 })
 
-# Validate the encoding
-lapply(encoded_stroke_tb[binary_vars], levels)
+# Apply make.names() to column names
+colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
 
 # Display the final dataset structure
 kable(encoded_stroke_tb)
 
-```
-We set the reference level for `smoking_status` to "never smoked" and for `work_type` to "Private". This way, we ensure that the model can interpret the dummy variables correctly. To be sure that our model will recognize the binary variables as such, we convert them to factors and set the same levels for every categorical variable.
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
 # Save the updated dataset to CSV
 write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
-
 ```
 
+We set the reference level for `smoking_status` to "never smoked" and
+for `work_type` to "Private". This way, we ensure that the model can
+interpret the dummy variables correctly. To be sure that our model will
+recognize the binary variables as such, we convert them to factors and
+set the same levels for every categorical variable.
 
 ### Multicollinearity
 
@@ -124,14 +125,14 @@ variables, we use a chi-squared test. The chi-squared test is a
 statistical test used to determine whether there is a significant
 association between two categorical variables. To determine the
 importance of the test result we additionally computed the Cramér's V
-for effect size (threshold applied here 0.3). Additionally, we apply the Fisher's Exact Test if there are
-zero counts in the contingency table.
+for effect size (threshold applied here 0.3). Additionally, we apply the
+Fisher's Exact Test if there are zero counts in the contingency table.
 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-cat_variables = c("gender", "hypertension", "heart_disease", "ever_married", "Residence_type", "work_typechildren", "work_typeGovt_job", "work_typeSelf-employed", "smoking_statusformerly smoked", "smoking_statussmokes")
+cat_variables = c("gender", "hypertension", "heart_disease", "ever_married", "Residence_type", "work_typechildren", "work_typeGovt_job", "work_typeSelf.employed", "smoking_statusformerly.smoked", "smoking_statussmokes")
 
 for (index1 in 1:(length(cat_variables) - 1)) {
   var1 <- cat_variables[index1]
@@ -162,11 +163,11 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 ```
 
 The only relationship, which seems to be problematic in terms of
-multicollinearity seems to be between `ever_married` and `work_typechildren`.
-For the prediction model, we will therefore exclude one of the two
-features. Another possibility is to further explore their relationship
-with the VIF(Variation Inflation Factor), which will help us with the
-decision to either keep both variables or drop one of them.
+multicollinearity seems to be between `ever_married` and
+`work_typechildren`. For the prediction model, we will therefore exclude
+one of the two features. Another possibility is to further explore their
+relationship with the VIF(Variation Inflation Factor), which will help
+us with the decision to either keep both variables or drop one of them.
 
 As all other effect sizes appear to be smaller than 0.3, we can safely
 conclude that all other categorical features are sufficiently
@@ -191,7 +192,10 @@ ensure the model learns from stroke cases as well, improving its ability
 to detect strokes and offering a more balanced and meaningful predictive
 performance.
 
-Let's start by creating the two stratified datasets, where we take the age of 60 to split our sample in two groups. As seen in our EDA, individuals aged over 60 have a significantly higher risk of stroke. 
+Let's start by creating the two stratified datasets, where we take the
+age of 60 to split our sample in two groups. As seen in our EDA,
+individuals aged over 60 have a significantly higher risk of stroke.
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show the code"
@@ -204,6 +208,7 @@ high_risk_age_tb <- encoded_stroke_tb %>%
 ```
 
 Let's look at stroke occurrences in our three datasets:
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show the code"
@@ -232,7 +237,11 @@ to retain all available data, which would otherwise be reduced through
 downsampling. By upsampling, we enhance the representation of stroke
 cases, helping the model learn more effectively and improve both
 prediction accuracy and recall, particularly for the minority class
-(here when strokes occur).Because the upsampling in the low-risk age group is rather extreme (from 1.5% to 50% stroke cases), we will use the upsampled dataset only for training and use the original dataset for the evaluation. We will therefore address the balancing and scaling part later on, in the specific model part of the low-risk age group.
+(here when strokes occur).Because the upsampling in the low-risk age
+group is rather extreme (from 1.5% to 50% stroke cases), we will use the
+upsampled dataset only for training and use the original dataset for the
+evaluation. We will therefore address the balancing and scaling part
+later on, in the specific model part of the low-risk age group.
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -263,21 +272,23 @@ table(balanced_stroke_tb$stroke)
 write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
 ```
 
-
 ### Scaling
 
-Finally, as classification algorithms are often sensitive to feature scales, we standardize all continuous features in the dataset to prevent perturbations and improve model performance. Standardization rescales features to have a mean of 0 and a standard deviation of 1. The mathematical formula for standardization is as follows:
+Finally, as classification algorithms are often sensitive to feature
+scales, we standardize all continuous features in the dataset to prevent
+perturbations and improve model performance. Standardization rescales
+features to have a mean of 0 and a standard deviation of 1. The
+mathematical formula for standardization is as follows:
 
 $$
 z = \frac{x - \mu}{\sigma}
 $$
 
-Where:
--   z is the standardized value,
--   x is the original feature value, 
--   ( \mu ) is the mean of the feature,
--   ( \sigma ) is the standard deviation of the feature.
-
+Where: 
+- z is the standardized value, 
+- x is the original feature value, 
+- mu is the mean of the feature, 
+- sigma is the standard deviation of the feature.
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -306,6 +317,53 @@ write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.name
 write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
 write.csv(scaled_high_risk_age_tb, "../../data/datasets/scaled_high_risk_age_tb.csv", row.names = FALSE)
 ```
+# Modelling
+
+We divide our analysis into four different datasets and predictive
+models: the original dataset, the balanced original dataset, the
+low-risk age group, and the high-risk age group. We will train a
+logistic regression model for each dataset, before evaluating them on
+the test set. We will then compare the performance of the models and discuss potential strengths and weaknesses.
+
+## Metrics and Terms
+First of all we introduce the metrics we will be using to evaluate our models. 
+
+- Confusion matrix
+The confusion matrix compares the actual values of the target variable with the predicted values and serves as a basis for our evaluation. It is a 2x2 matrix that contains the following values: True Positives (predicting correctly a stroke), True Negatives (predicting correctly no stroke occurrence), False Positives (predicting a stroke when there is none) and False Negatives (predicting no stroke when there is one). The confusion matrix is used to calculate the following metrics:
+
+- Precision
+Precision is the ratio of correctly predicted positive observations to the total predicted positive observations. The formula for precision is given by:
+
+$$
+Precision = \frac{TP}{TP + FP}
+$$
+- Recall
+Recall is the ratio of correctly predicted positive observations to the all observations in actual class. In our case and general in healthcare research, recall should be prioritized as undetected strokes are generally more fatal than false alarms. The formula for recall is given by: 
+
+$$
+Recall = \frac{TP}{TP + FN}
+$$
+- F1 Score
+The F1 score is the harmonic mean of Precision and Recall and often used in unbalanced dataset like ours as it considers false positives and false negatives. The formula for F1 score ranges from 0 to 1 and is given by:
+$$
+F1 = 2×\frac{Precision × Recall}{Precision + Recall}
+$$
+- Specificity
+Specificity is the ratio of correctly predicted negative observations to the total actual negative observations. The formula for specificity is given by:
+$$
+Specificity = \frac{TN}{TN + FP}
+$$
+- Accuracy
+Accuracy is the ratio of correctly predicted observations to the total observations. The formula for accuracy is given by:
+$$
+Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
+$$
+
+- ROC Curve and AUC
+The *receiver operating characteristic* curve is a graphical representation of the true positive rate (recall) against the false positive rate (specificity). Concretley, It shows the tradeoff between sensitivity and specificity. The area under the curve (AUC) is a measure of how well the model can distinguish between classes. An AUC of 1 indicates a perfect model, while an AUC of 0.5 indicates a model that performs no better than random chance.
+
+- Odds ratio
+The odds ratio is the exponentiated coefficient of a logistic regression model. It represents the change in odds of the target variable for a one-unit change in the predictor variable. An odds ratio greater than 1 indicates a positive relationship between the predictor and the target variable, while an odds ratio less than 1 indicates a negative relationship.
 
 ## Baseline Model
 
@@ -313,79 +371,14 @@ We divide our analysis into four different datasets and predictive
 models: the original dataset, the balanced original dataset, the
 low-risk age group, and the high-risk age group. We will train a
 logistic regression model for each dataset, before evaluating them on
-the test sets in the next chapter and comparing them to the baseline
-model.
+the test set. We will then compare the performance of the models and discuss potential strengths and weaknesses.
 
+First we introduce all 
 ### Train-test split
 
 In order to evaluate the performance of our model, we split the original
 dataset into a training and a test set. We use 80% of the data for
 training and 20% for testing.
-```{r}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Load the dataset
-unbalanced_original_data <- scaled_unbalanced_stroke_tb
-
-# Examine the structure of the original dataset
-str(unbalanced_original_data)
-
-# Correct: Explicitly define binary and categorical variables for consistency
-binary_vars <- c("gender", "hypertension", "heart_disease", "ever_married", 
-                 "Residence_type", "work_typechildren", "work_typeGovt_job", 
-                 "work_typeSelf-employed", "smoking_statusformerly_smoked", 
-                 "smoking_statussmokes", "stroke")
-
-cat_variables <- c(binary_vars)  # If more categorical variables exist, include them here
-
-# Step 1: Ensure valid factor levels for all binary and categorical variables
-unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
-  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
-  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
-  return(col)
-})
-
-# Step 2: Ensure the target variable "stroke" has meaningful labels
-unbalanced_original_data$stroke <- factor(
-  unbalanced_original_data$stroke,
-  levels = c("0", "1"),         # Original binary levels
-  labels = c("No", "Yes")       # Consistent labels for classification
-)
-
-# Validate levels after adjustments
-lapply(unbalanced_original_data[cat_variables], levels)
-
-# Step 3: Split into training (80%) and testing (20%) sets
-set.seed(42)  # For reproducibility
-trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
-                                  list = FALSE, times = 1)
-
-train_unbalanced <- unbalanced_original_data[trainIndex, ]
-test_unbalanced <- unbalanced_original_data[-trainIndex, ]
-
-# Step 4: Validate the structure of training and test datasets
-str(train_unbalanced)
-str(test_unbalanced)
-
-# Step 5: Ensure factor levels are consistent across training and test sets
-train_unbalanced[cat_variables] <- lapply(train_unbalanced[cat_variables], function(col) {
-  factor(col, levels = c("0", "1"))  # Explicitly set levels
-})
-
-test_unbalanced[cat_variables] <- lapply(test_unbalanced[cat_variables], function(col) {
-  factor(col, levels = c("0", "1"))  # Explicitly set levels
-})
-
-# Recheck levels to confirm consistency
-lapply(train_unbalanced[cat_variables], levels)
-lapply(test_unbalanced[cat_variables], levels)
-
-# Step 6: Check for NAs in both datasets
-colSums(is.na(train_unbalanced))
-colSums(is.na(test_unbalanced))
-
-```
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -394,19 +387,24 @@ colSums(is.na(test_unbalanced))
 # Load the dataset
 unbalanced_original_data <- scaled_unbalanced_stroke_tb
 
-str(unbalanced_original_data)
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typechildren", 
+                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
 
-# Ensure valid names for all levels in categorical variables
-unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[binary_vars], function(col) {
-  levels(col) <- make.names(levels(col))  # Make all factor levels valid R names
+# Explicitly set factor levels to "0" and "1"
+unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
   return(col)
 })
 
 # Ensure the target variable "stroke" has valid levels
 unbalanced_original_data$stroke <- factor(
   unbalanced_original_data$stroke,
-  levels = c(0, 1),         # Original levels
-  labels = c("No", "Yes")   # Valid names for levels
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
 )
 
 # Split into training (80%) and testing (20%) sets
@@ -417,13 +415,15 @@ trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8,
 train_unbalanced <- unbalanced_original_data[trainIndex, ]
 test_unbalanced <- unbalanced_original_data[-trainIndex, ]
 
-str(train_unbalanced)
-str(test_unbalanced)
+colnames(test_unbalanced) <- make.names(colnames(test_unbalanced))  # Make all column names valid
+colnames(test_unbalanced) <- colnames(train_unbalanced)  # Align with the training dataset
 ```
 
 ### Model
 
-With the `caret` package, we specify our first logistic model by specifying (method= "glm") and (family = "binomial") to train a logistic regression model.
+With the `caret` package, we specify our first logistic model by
+specifying (method= "glm") and (family = "binomial") to train a logistic
+regression model.
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -455,6 +455,7 @@ logistic_model_1 <- train(
   metric = "ROC"
 )
 ```
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -490,10 +491,150 @@ print(classification_report_train)
 print(conf_matrix_train)
 
 ```
-The baseline model demonstrates a high overall accuracy of 95.08%, but this is misleading due to its inability to effectively predict the minority class (Yes). While specificity is nearly perfect at 99.97%, indicating strong performance for the majority class (No), the model struggles with recall for the positive class, identifying only 0.5% of true positives. This results in a very low F1-score of 0.99%, reflecting poor balance between precision and recall. These results highlight the model's significant bias toward the majority class, making it inadequate for practical use in detecting strokes. Addressing class imbalance and refining the modeling approach are crucial next steps to improve performance.
+
+The baseline model demonstrates a high overall accuracy of 95.08%, but
+this is misleading due to its inability to effectively predict the
+minority class (Yes). While specificity is nearly perfect at 99.97%,
+indicating strong performance for the majority class (No), the model
+struggles with recall for the positive class, identifying only 0.5% of
+true positives. This results in a very low F1-score of 0.99%, reflecting
+poor balance between precision and recall. These results highlight the
+model's significant bias toward the majority class, making it inadequate
+for practical use in detecting strokes.
+
+### Evaluation and Discussion
+
+We start by evaluating the model on the test.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_1, newdata = test_unbalanced, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_unbalanced$stroke <- factor(test_unbalanced$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_unbalanced$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_unbalanced$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_unbalanced$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_unbalanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Step 1: Mapping function for comprehensive variable names
+rename_variables <- function(variable) {
+  case_when(
+    variable == "age" ~ "Age",
+    variable == "work_typechildren1" ~ "Work Type: Children",
+    variable == "work_typeSelf.employed1" ~ "Work Type: Self-Employed",
+    variable == "hypertension1" ~ "Hypertension",
+    variable == "smoking_statussmokes1" ~ "Smoking Status: Smokes",
+    variable == "work_typeGovt_job1" ~ "Work Type: Government Job",
+    variable == "heart_disease1" ~ "Heart Disease",
+    variable == "avg_glucose_level" ~ "Average Glucose Level",
+    variable == "ever_married1" ~ "Ever Married",
+    variable == "smoking_statusformerly.smoked1" ~ "Smoking Status: Formerly Smoked",
+    variable == "gender1" ~ "Gender: Female",
+    variable == "Residence_type1" ~ "Residence Type: Urban",
+    TRUE ~ variable
+  )
+}
+
+
+# Step 2: Define a function to generate the importance table for a specific model
+generate_importance_table <- function(model, model_name = "Logistic Model") {
+  # Extract coefficients
+  coefficients <- summary(model)$coefficients
+  
+  # Create the variable importance table
+  variable_importance <- as.data.frame(coefficients) %>%
+    rownames_to_column("Predictor") %>%             # Convert row names to a column
+    mutate(
+      Predictor = rename_variables(Predictor),      # Rename variables
+      `Odds Ratio` = exp(Estimate)                 # Calculate Odds Ratios
+    ) %>%
+    select(Predictor, Estimate, `Odds Ratio`, `Pr(>|z|)`) %>%  # Keep relevant columns
+    rename(
+      Coefficient = Estimate,                      # Rename Estimate to Coefficient
+      `P-value` = `Pr(>|z|)`                       # Rename P-value column
+    ) %>%
+    filter(Predictor != "(Intercept)") %>%           # Exclude the intercept
+    arrange(desc(`Odds Ratio`))                # Sort by absolute value of coefficients
+  
+  # Display the table with a dynamic caption
+  kable(variable_importance, caption = paste(model_name, "- Predictor Importance with Odds Ratios")) %>%
+    kable_styling(full_width = FALSE, position = "center")
+}
+generate_importance_table(logistic_model_1, "Logistic Model 1")
+```
 
 ## Balanced Baseline Model
-We repeat the same process for our balanced baseline model. 
+
+We repeat the same process for our balanced baseline model.
 
 ### Train-test split
 
@@ -504,17 +645,24 @@ We repeat the same process for our balanced baseline model.
 # Load the dataset
 balanced_original_data <- scaled_stroke_tb
 
-# Ensure valid names for all levels in categorical variables
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typechildren", 
+                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
 balanced_original_data[cat_variables] <- lapply(balanced_original_data[cat_variables], function(col) {
-  levels(col) <- make.names(levels(col))  # Make all factor levels valid R names
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
   return(col)
 })
 
 # Ensure the target variable "stroke" has valid levels
 balanced_original_data$stroke <- factor(
   balanced_original_data$stroke,
-  levels = c(0, 1),         # Original levels
-  labels = c("No", "Yes")   # Valid names for levels
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
 )
 
 # Split into training (80%) and testing (20%) sets
@@ -524,17 +672,6 @@ trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8,
 
 train_balanced <- balanced_original_data[trainIndex, ]
 test_balanced <- balanced_original_data[-trainIndex, ]
-```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Ensure valid names for all levels
-balanced_original_data[cat_variables] <- lapply(balanced_original_data[cat_variables], function(col) {
-  levels(col) <- make.names(levels(col)) 
-  return(col)
-})
 ```
 
 ### Model
@@ -602,20 +739,136 @@ print(classification_report_train)
 
 # Print the Confusion Matrix for Context
 print(conf_matrix_train)
-
 ```
-The balanced baseline model shows substantial improvement in handling the minority class compared to the original baseline. With an overall accuracy of 77.41%, the model strikes a better balance between the positive and negative classes. Recall for the positive class (Yes) is strong at 81.37%, ensuring that most true positives are correctly identified. The F1-Score of 78.27% reflects a good balance between precision (75.39%) and recall. However, specificity remains relatively lower at 73.44%, indicating some false positives. Overall, the model demonstrates improved performance for both classes, but there is still room for enhancing specificity and further reducing false positives.
+
+The balanced baseline model shows substantial improvement in handling
+the minority class compared to the original baseline. With an overall
+accuracy of 77.45%, the model strikes a better balance between the
+positive and negative classes. Recall for the positive class is strong
+at 81.35%, ensuring that most true positives are correctly identified.
+The F1-Score of 78.29% reflects a good balance between precision and
+recall. However, specificity remains relatively lower at 73.5%,
+indicating some false positives. Overall, the model demonstrates
+improved performance for both classes, but there is still room for
+enhancing specificity and further reducing false positives.
+
+### Evaluation and Discussion
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_2, newdata = test_balanced, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_balanced$stroke <- factor(test_balanced$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_balanced$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_balanced$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_balanced$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_balanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+generate_importance_table(logistic_model_2, "Logistic Model 2")
+```
 
 ## Low-Risk Age Model
-In this section , we build our first stratified model for the low-risk age group. Here we first split the original dataset into test and training set and perform then the previously mentionned preprocessing steps for the training set. 
+
+In this section , we build our first stratified model for the low-risk
+age group. Here we first split the original dataset into test and
+training set and perform then the previously mentionned preprocessing
+steps for the training set.
 
 ### Train-test split
 
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-#| code-fold: true
-#| code-summary: "Click to show code"
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typechildren", 
+                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+low_risk_age_tb[cat_variables] <- lapply(low_risk_age_tb[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+low_risk_age_tb$stroke <- factor(
+  low_risk_age_tb$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
 
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
@@ -638,41 +891,6 @@ train_low_risk <- train_low_risk %>%
 
 test_low_risk <- test_low_risk %>%
   mutate(across(where(is.double), ~ standardize(.)))
-
-# Ensure the target variable "stroke" has valid levels
-train_low_risk$stroke <- factor(
-  train_low_risk$stroke,
-  levels = c(0, 1),         # Original levels
-  labels = c("No", "Yes")   # Valid names for levels
-)
-
-# Ensure the target variable "stroke" has valid levels
-test_low_risk$stroke <- factor(
-  test_low_risk$stroke,
-  levels = c(0, 1),         # Original levels
-  labels = c("No", "Yes")   # Valid names for levels
-)
-
-# Ensure consistency across both training and test set
-for (col in cat_variables) {
-  test_low_risk[[col]] <- factor(test_low_risk[[col]], levels = levels(train_low_risk[[col]]))
-}
-
-```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-train_low_risk[cat_variables] <- lapply(train_low_risk[cat_variables], function(col) {
-  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
-  return(col)
-})
-
-test_low_risk[cat_variables] <- lapply(test_low_risk[cat_variables], function(col) {
-  levels(col) <- make.names(levels(col))  # Ensure valid names for all levels
-  return(col)
-})
 ```
 
 ### Model
@@ -742,7 +960,96 @@ print(classification_report_train)
 print(conf_matrix_train)
 
 ```
-The stratified model for the lower age group performs well, achieving an overall accuracy of 77.70%. The recall for the positive class (Yes) is strong at 82.79%, ensuring that most true positives are correctly identified, which is crucial in identifying strokes. The precision of 75.15% indicates that around three-quarters of the predicted positive cases are correct, demonstrating good reliability in its predictions. The F1-Score of 78.78% confirms the model balances precision and recall effectively. Specificity is somewhat lower at 72.62%, suggesting some false positives, but this trade-off may be acceptable given the high recall. Overall, the model performs effectively in this stratified group, though improving specificity could further enhance its reliability.
+
+The stratified model for the lower age group performs well, achieving an
+overall accuracy of 77.70%. The recall for the positive class (Yes) is
+strong at 82.79%, ensuring that most true positives are correctly
+identified, which is crucial in identifying strokes. The precision of
+75.15% indicates that around three-quarters of the predicted positive
+cases are correct, demonstrating good reliability in its predictions.
+The F1-Score of 78.78% confirms the model balances precision and recall
+effectively. Specificity is somewhat lower at 72.62%, suggesting some
+false positives, but this trade-off may be acceptable given the high
+recall. Overall, the model performs effectively in this stratified
+group, though improving specificity could further enhance its
+reliability.
+
+### Evaluation and Discussion
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_3, newdata = test_low_risk, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_low_risk$stroke <- factor(test_low_risk$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_low_risk$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_low_risk$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_low_risk$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_low_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
 
 ## High-Risk Age Model
 
@@ -756,17 +1063,24 @@ The stratified model for the lower age group performs well, achieving an overall
 # Load the dataset
 high_risk_age_data <- scaled_high_risk_age_tb
 
-# Ensure valid names for all levels in categorical variables
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typechildren", 
+                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
 high_risk_age_data[cat_variables] <- lapply(high_risk_age_data[cat_variables], function(col) {
-  levels(col) <- make.names(levels(col))  # Make all factor levels valid R names
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
   return(col)
 })
 
 # Ensure the target variable "stroke" has valid levels
 high_risk_age_data$stroke <- factor(
   high_risk_age_data$stroke,
-  levels = c(0, 1),         # Original levels
-  labels = c("No", "Yes")   # Valid names for levels
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
 )
 
 # Split into training (80%) and testing (20%) sets
@@ -846,28 +1160,97 @@ print(conf_matrix_train)
 
 ```
 
-The stratified model for the high-risk age group shows moderate performance, with an overall accuracy of 63.70%. Recall for the positive class (Yes) is 66.11%, indicating the model captures a fair portion of true positives but leaves room for improvement. Precision is 63.07%, meaning that about 63% of predicted positive cases are correct. The F1-Score of 64.56% reflects a reasonable balance between precision and recall, though not particularly strong. Specificity is low at 61.30%, indicating the model struggles with correctly identifying negative cases, leading to a higher false-positive rate. Overall, while the model captures positive cases moderately well, its low specificity and overall accuracy suggest there is significant room for improvement, especially in distinguishing between the two classes.
+The stratified model for the high-risk age group shows moderate
+performance, with an overall accuracy of 63.70%. Recall for the positive
+class (Yes) is 66.11%, indicating the model captures a fair portion of
+true positives but leaves room for improvement. Precision is 63.07%,
+meaning that about 63% of predicted positive cases are correct. The
+F1-Score of 64.56% reflects a reasonable balance between precision and
+recall, though not particularly strong. Specificity is low at 61.30%,
+indicating the model struggles with correctly identifying negative
+cases, leading to a higher false-positive rate. Overall, while the model
+captures positive cases moderately well, its low specificity and overall
+accuracy suggest there is significant room for improvement, especially
+in distinguishing between the two classes.
 
-Finally, we save all our datasets and trained models to evaluate them in the next chapter on the corresponding test sets. 
+### Evaluation and Discussion
 
-```{r, warning=FALSE}
+```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# save all models
-saveRDS(logistic_model_1, "../../data/models/logistic_model_1.rds")
-saveRDS(logistic_model_2, "../../data/models/logistic_model_2.rds")
-saveRDS(logistic_model_3, "../../data/models/logistic_model_3.rds")
-saveRDS(logistic_model_4, "../../data/models/logistic_model_4.rds")
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_4, newdata = test_high_risk, type = "prob")
 
-# save all training and test sets
-write.csv(train_unbalanced, "../../data/datasets/training_sets/train_unbalanced.csv", row.names = FALSE)
-write.csv(test_unbalanced, "../../data/datasets/test_sets/test_unbalanced.csv", row.names = FALSE)
-write.csv(train_balanced, "../../data/datasets/training_sets/train_balanced.csv", row.names = FALSE)
-write.csv(test_balanced, "../../data/datasets/test_sets/test_balanced.csv", row.names = FALSE)
-write.csv(train_low_risk, "../../data/datasets/training_sets/train_low_risk.csv", row.names = FALSE)
-write.csv(test_low_risk, "../../data/datasets/test_sets/test_low_risk.csv", row.names = FALSE)
-write.csv(train_high_risk, "../../data/datasets/training_sets/train_high_risk.csv", row.names = FALSE)
-write.csv(test_high_risk, "../../data/datasets/test_sets/test_high_risk.csv", row.names = FALSE)
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_high_risk$stroke <- factor(test_high_risk$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_high_risk$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+  
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_high_risk$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_high_risk$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+    Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
 ```
 
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_high_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+generate_importance_table(logistic_model_4, "Logistic Model 4")
+```

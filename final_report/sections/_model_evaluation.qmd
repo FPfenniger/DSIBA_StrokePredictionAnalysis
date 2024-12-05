@@ -52,29 +52,36 @@ The odds ratio is the exponentiated coefficient of a logistic regression model. 
 
 ## Baseline Model
 We start with our baseline model, which is a logistic regression model trained on the unbalanced dataset. We load the model and the test set, make predictions, and evaluate the model's performance using the metrics mentioned above.
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
 logistic_model_1 <- readRDS("../../data/models/logistic_model_1.rds")
 test_unbalanced <- read.csv("../../data/datasets/test_sets/test_unbalanced.csv")
+str(test_unbalanced)
 ```
-
 ```{r}
-factor_columns <- c("gender", "hypertension", "heart_disease", "ever_married", 
-                    "residence_type", "smoking_statusformerly_smoked", 
-                    "smoking_statussmokes", "work_typechildren", 
-                    "work_type_govt_job", "work_type_self_employed")
+## Correct factor levels for binary variables
+binary_vars <- c(
+  "gender", "hypertension", "heart_disease", "ever_married",
+  "Residence_type", "smoking_statusformerly_smoked", "smoking_statussmokes",
+  "work_typechildren", "work_typeGovt_job", "work_typeSelf_employed", "stroke"
+)
 
-test_unbalanced[factor_columns] <- lapply(test_unbalanced[factor_columns], function(col) {
-  factor(col, levels = c("X0", "X1"))  # Replace with actual levels from training
+test_unbalanced[binary_vars] <- lapply(test_unbalanced[binary_vars], function(col) {
+  # Drop any existing factor levels and redefine levels explicitly
+  factor(as.character(col), levels = c("0", "1"), labels = c("0", "1"))
 })
 
-lapply(test_unbalanced[, factor_columns], levels)  # Check levels in test set
-# Replace `factor_columns` with the list of categorical variables.
+# Ensure the target variable (stroke) is labeled as "No" and "Yes"
+test_unbalanced$stroke <- factor(as.character(test_unbalanced$stroke), levels = c("No", "Yes"))
 
+# Verify structure after reformatting
+str(test_unbalanced)
 
 ```
+
 
 Let's start with the 
 ```{r, message = FALSE}
@@ -84,11 +91,6 @@ Let's start with the
 # Predict probabilities and classes on the test set
 test_predictions_prob <- predict(logistic_model_1, newdata = test_unbalanced, type = "prob")
 test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
-
-
-# Convert predictions to factors to match the test set
-test_unbalanced$stroke <- factor(test_unbalanced$stroke, levels = c("No", "Yes"))
-test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
 
 # Generate Confusion Matrix Table
 conf_matrix_test <- confusionMatrix(test_predictions_class, test_unbalanced$stroke, positive = "Yes")
