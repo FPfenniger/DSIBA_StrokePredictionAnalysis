@@ -14,6 +14,8 @@ library(knitr)
 library(janitor)
 library(caret)  
 library(MLmetrics)  
+library(pROC)
+library(kableExtra)
 ```
 
 # Final Data Preparations
@@ -1254,3 +1256,4 @@ ggplot(data = data.frame(
 #| code-summary: "Click to show code"
 generate_importance_table(logistic_model_4, "Logistic Model 4")
 ```
+

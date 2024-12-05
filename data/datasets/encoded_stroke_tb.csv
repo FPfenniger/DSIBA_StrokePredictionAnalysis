@@ -1,4 +1,4 @@
-"gender","age","hypertension","heart_disease","ever_married","Residence_type","avg_glucose_level","bmi","stroke","smoking_statusformerly smoked","smoking_statussmokes","work_typechildren","work_typeGovt_job","work_typeSelf-employed"
+"gender","age","hypertension","heart_disease","ever_married","Residence_type","avg_glucose_level","bmi","stroke","smoking_statusformerly.smoked","smoking_statussmokes","work_typechildren","work_typeGovt_job","work_typeSelf.employed"
 "0",67,"0","1","1","1",228.69,36.6,"1","1","0","0","0","0"
 "1",61,"0","0","1","0",202.21,28.1,"1","0","0","0","0","1"
 "0",80,"0","1","1","0",105.92,32.5,"1","0","0","0","0","0"
