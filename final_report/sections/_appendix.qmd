@@ -7,7 +7,8 @@ editor: visual
 
 ## From EDA section 
 
-### Distribution of variables `gender` and `Residence_type` 
+### Proportion of `Stroke` by variables `gender` and `Residence_type`  
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -36,9 +37,10 @@ for (selected_variable in x_variable_choices) {
   # For categorical variables such as Gender and Residence Type
   p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
     geom_bar(position = "fill") +
-    labs(title = paste("Distribution of", variable_name),
-         fill = "STROKE", y = "Ratio")
-  
+    labs(title = paste("Proportion of Stroke by", variable_name),
+         fill = "STROKE", y = "Ratio") +
+    scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e"))  # Custom colors
+
   # Convert ggplot to an interactive plotly object and store it in the list
   plots[[variable_name]] <- ggplotly(p)
 }
@@ -85,3 +87,77 @@ p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
 ggplotly(p)
 ```
 
+### Proportion of `Stroke` by variables `gender` and `Residence_Type` for individuals below 60 years old 
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(plotly)
+library(ggplot2)
+library(dplyr)
+
+# Updated list of categorical variables for the analysis
+variables_to_summarize <- c("gender", "Residence_type")
+
+# Function to create a bar chart based on the selected variable
+create_bar_chart <- function(data, variable) {
+  # Create a reactive data frame that filters "Other" for gender
+  filtered_data <- data
+  if (variable == "gender") {
+    filtered_data <- filtered_data %>% filter(gender != "Other")
+  }
+  
+  # Generate the bar plot
+  p <- ggplot(filtered_data, aes_string(x = variable, fill = "as.factor(stroke)")) +
+    geom_bar(position = "fill") +
+    labs(fill = "STROKE", y = "Proportion", title = paste("Proportion of Stroke by", variable, "for under 60")) +
+    theme_minimal() +
+    scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) # Custom colors
+
+  # Convert ggplot to an interactive plotly object
+  ggplotly(p)
+}
+
+# Generating and displaying individual plots
+for (var in variables_to_summarize) {
+  bar_plot <- create_bar_chart(under_60_data, var)
+  print(bar_plot)
+}
+```
+
+### Proportion of `Stroke` by `gender`, `Residence_type`, `smoking_status`, `work_type`  for individuals of 60 and over years old 
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(plotly)
+library(ggplot2)
+library(dplyr)
+
+# Updated list of categorical variables for the analysis (only the removed variables)
+variables_to_summarize <- c("gender", "Residence_type", "smoking_status", "work_type")
+
+# Function to create a bar chart based on the selected variable
+create_bar_chart <- function(data, variable) {
+  # Create a filtered data frame that excludes "Other" for gender
+  filtered_data <- data
+  if (variable == "gender") {
+    filtered_data <- filtered_data %>% filter(gender != "Other")
+  }
+  
+  # Generate the bar plot
+  p <- ggplot(filtered_data, aes_string(x = variable, fill = "as.factor(stroke)")) +
+    geom_bar(position = "fill") +
+    labs(fill = "STROKE", y = "Proportion", title = paste("Proportion of Stroke by", variable, "for 60 and over")) +
+    theme_minimal() +
+    scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) # Custom colors
+
+  # Convert ggplot to an interactive plotly object
+  ggplotly(p)
+}
+
+# Generating and displaying individual plots for individuals over 60
+for (var in variables_to_summarize) {
+  bar_plot <- create_bar_chart(over_60_data, var)
+  print(bar_plot)
+}
+```

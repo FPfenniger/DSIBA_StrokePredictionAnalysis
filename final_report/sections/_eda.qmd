@@ -20,7 +20,6 @@ balanced_stroke_tb <-
   read.csv("../../data/datasets/balanced_stroke_tb.csv")
 preprocessed_stroke_tb <-
   read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
-
 ```
 
 ## Descriptive Statistics
@@ -312,7 +311,7 @@ Our numerical features don't seem to be strongly correlated with each other. The
 
 ## Balanced Dataset Analysis
 
-## Proportions of the Target Variable (Stroke)
+### Proportions of the Target Variable (Stroke)
 We would like to compare the original dataset with the balanced dataset.
 First, we expect plots showing the distribution of the target variable to appear more balanced in the oversampled datase compared to the original dataset.
 
@@ -371,7 +370,7 @@ summary_table <- as.data.frame.matrix(summary_table)
 knitr::kable(summary_table, caption = "Summary of numerical Variables", row.names = FALSE)
 ```
 
-`age` and `avg_glucose_level` have very different summary statistics. The median age in the balanced dataset increased by 14 years to 59 years, up from 45 years in the original dataset. The average glucose level is 93,51 mg/dL, with only slight increase from 91,89 mg/dL.
+`age` and `avg_glucose_level` have very different summary statistics. The median age in the balanced dataset increased by 14 years to 59 years, up from 45 years in the original dataset. The median average glucose level is 96,84 mg/dL, with only slight increase from 91,89 mg/dL. The median bmi stays the same as the original dataset. 
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -491,6 +490,60 @@ for (plot in plots) {
 }
 ```
 
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+library(ggplot2)
+library(plotly)
+library(dplyr)
+
+# Define the choices for the x-axis variables
+x_variable_choices <- c("Ever Married" = "ever_married",
+                         "Work Type" = "work_type", 
+                         "Smoking Status" = "smoking_status",
+                         "Hypertension" = "hypertension", 
+                         "Heart Disease" = "heart_disease")
+
+# Initialize an empty list to store plots
+plots <- list()
+
+# Create a filtered data frame based on the initial data
+filtered_data <- balanced_stroke_tb
+
+# Loop through each variable to create a bar chart
+for (selected_variable in x_variable_choices) {
+  
+  # Check if selected variable is gender and filter accordingly (assuming you also have gender in your dataset)
+  if (selected_variable == "gender") {
+    filtered_data <- filtered_data %>% filter(gender != "Other")
+  }
+  
+  # Generate the bar chart based on the selected variable
+  if (selected_variable %in% c("hypertension", "heart_disease")) {
+    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
+      geom_bar(position = "fill") +
+      labs(title = paste("Distribution of", selected_variable), 
+           fill = "STROKE", y = "Ratio") +
+      scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes"))  # Custom x-axis for binary variables
+  } else {
+    # For other categorical variables
+    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
+      geom_bar(position = "fill") +
+      labs(title = paste("Distribution of", selected_variable), 
+           fill = "STROKE", y = "Ratio")
+  }
+  
+  # Convert ggplot to an interactive plotly object and store it in the list
+  plots[[selected_variable]] <- ggplotly(p)
+}
+
+# Display all plots
+for (plot in plots) {
+  print(plot)  # Print each plot one after the other
+}
+```
+
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -521,7 +574,7 @@ correlation <- cor(as.numeric(outlier_stroke_tb[[selected_variable]]), as.numeri
 cat(sprintf("Correlation Coefficient with Stroke: %.2f\n", correlation))
 ```
 
-## Stratified Dataset Analysis
+# Stratified Dataset Analysis
 
 In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. 
 
@@ -546,12 +599,12 @@ head(under_60_data)
 head(over_60_data)
 ```
 
-### EDA for Stratified Dataset
+## EDA for Stratified Dataset
 We perform an Exploratory Data Analysis on two distinct age groups: individuals under 60 years old and those of 60 years old and over. This analysis aims to uncover valuable insights regarding stroke occurrences, risk factors, and demographic characteristics within each group.
 
 To begin our analysis, we focus first on the group of individuals under 60 years old. 
 
-#### Descriptive Statistics for individuals below 60 
+### Descriptive Statistics for individuals below 60 
 
 ```{r, message=FALSE}
 #| code-fold: true
@@ -616,9 +669,9 @@ summary_table_under_60 <- bind_rows(
 knitr::kable(summary_table_under_60, caption = "Summary of Categorical Variables for Individuals Under 60 Years Old with Proportions", row.names = FALSE)
 ```
 
-## Univariate Analysis for individuals below 60
+### Univariate Analysis for individuals below 60
 
-### Numerical variables for individuals below 60
+#### Numerical variables for individuals below 60
 
 Same as for the whole group EDA, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
@@ -678,7 +731,7 @@ combined_histograms
 ```
 
 
-##### Violin plots for individuals below 60
+##### Violin plots for individuals below 60 #####
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -693,7 +746,8 @@ create_violin_plot <- function(data, variable, stroke_variable) {
   # Generate the violin plot
   plot <- plot_ly(data, x = ~get(stroke_variable), y = ~get(variable), type = "violin",
                   box = list(visible = TRUE),
-                  meanline = list(visible = TRUE)) %>%
+                  meanline = list(visible = TRUE),
+                  name = variable) %>%  # Add the variable name here
     layout(
       title = paste("Violin Plot of", variable, "by Stroke (Individuals Under 60)"),
       xaxis = list(title = "Stroke"),
@@ -735,10 +789,10 @@ library(plotly)
 library(ggplot2)
 library(dplyr)
 
-# List of categorical variables for the analysis
-variables_to_summarize <- c("gender", "ever_married", "work_type", 
-                             "Residence_type", "smoking_status", 
-                             "hypertension", "heart_disease")
+# Updated list of categorical variables for the analysis
+variables_to_summarize <- c("ever_married", "work_type", 
+                             "smoking_status", "hypertension", 
+                             "heart_disease")
 
 # Function to create a bar chart based on the selected variable
 create_bar_chart <- function(data, variable) {
@@ -751,7 +805,7 @@ create_bar_chart <- function(data, variable) {
   # Generate the bar plot
   p <- ggplot(filtered_data, aes_string(x = variable, fill = "as.factor(stroke)")) +
     geom_bar(position = "fill") +
-    labs(fill = "STROKE", y = "Proportion", title = paste("Distribution of", variable, "by Stroke")) +
+    labs(fill = "STROKE", y = "Proportion", title = paste("Proportion of Stroke by", variable, "for under 60")) +
     theme_minimal() +
     scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) # Custom colors
 
@@ -766,6 +820,7 @@ for (var in variables_to_summarize) {
 }
 ```
 
+### Same as for whole dataset, we remove gender and residence type for readability reasons
 Now that we completed the EDA of the group aged below 60, let's check for the group aged of 60 and over.
 
 #### Descriptive Statistics for individuals of 60 and over
@@ -891,7 +946,7 @@ combined_histograms
 ```
 
 
-####Violin plots for individuals of 60 and over 
+####Violin plots for individuals of 60 and over ####
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -906,9 +961,10 @@ create_violin_plot <- function(data, variable, stroke_variable) {
   # Generate the violin plot
   plot <- plot_ly(data, x = ~get(stroke_variable), y = ~get(variable), type = "violin",
                   box = list(visible = TRUE),
-                  meanline = list(visible = TRUE)) %>%
+                  meanline = list(visible = TRUE),
+                  name = variable) %>%  # Add the variable name here
     layout(
-      title = paste("Violin Plot of", variable, "by Stroke (Individuals of 60 and over)"),
+      title = paste("Violin Plot of", variable, "by Stroke (Individuals Aged 60 and Over)"),
       xaxis = list(title = "Stroke"),
       yaxis = list(title = variable)
     )
@@ -916,17 +972,19 @@ create_violin_plot <- function(data, variable, stroke_variable) {
   plot
 }
 
-# Generate individual plots for individuals of 60 and over
+# Generate individual plots for individuals aged 60 and over
 plot_age <- create_violin_plot(over_60_data, variable = "age", stroke_variable = "stroke")
 plot_glucose <- create_violin_plot(over_60_data, variable = "avg_glucose_level", stroke_variable = "stroke")
 plot_bmi <- create_violin_plot(over_60_data, variable = "bmi", stroke_variable = "stroke")
 
-# Combine plots into a grid layout (1 row, 3 columns)
+# Combine plots into a grid layout (1 row, 3 columns) with titles for each variable
 combined_plot <- subplot(
-  plot_age, plot_glucose, plot_bmi,
+  plot_age %>% layout(title = "Age"),
+  plot_glucose %>% layout(title = "Average Glucose Level"),
+  plot_bmi %>% layout(title = "BMI"),
   nrows = 1, titleX = TRUE, titleY = TRUE
 ) %>%
-  layout(title = "Violin Plots of Numerical Variables by Stroke (Individuals Of 60 Years and Over)")
+  layout(title = "Violin Plots of Numerical Variables by Stroke (Individuals Aged 60 and Over)")
 
 # Display the combined plot
 combined_plot
@@ -941,23 +999,15 @@ library(plotly)
 library(ggplot2)
 library(dplyr)
 
-# List of categorical variables for the analysis
-variables_to_summarize <- c("gender", "ever_married", "work_type", 
-                             "Residence_type", "smoking_status", 
-                             "hypertension", "heart_disease")
+# Updated list of categorical variables for the analysis
+variables_to_summarize <- c("ever_married", "hypertension", "heart_disease")
 
 # Function to create a bar chart based on the selected variable
 create_bar_chart <- function(data, variable) {
-  # Create a filtered data frame that excludes "Other" for gender
-  filtered_data <- data
-  if (variable == "gender") {
-    filtered_data <- filtered_data %>% filter(gender != "Other")
-  }
-  
   # Generate the bar plot
-  p <- ggplot(filtered_data, aes_string(x = variable, fill = "as.factor(stroke)")) +
+  p <- ggplot(data, aes_string(x = variable, fill = "as.factor(stroke)")) +
     geom_bar(position = "fill") +
-    labs(fill = "STROKE", y = "Proportion", title = paste("Distribution of", variable, "by Stroke")) +
+    labs(fill = "STROKE", y = "Proportion", title = paste("Proportion of Stroke by", variable, "for 60 and over")) +
     theme_minimal() +
     scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) # Custom colors
 
@@ -972,6 +1022,7 @@ for (var in variables_to_summarize) {
 }
 ```
 
+####We remove gender and residence type, we talk about how now the proportion of people that had a stroke that have never been married is higher than those who have (unlike before). The proportion of individuals who have experienced a stroke appears to be equal across the three categories of the smoking status variable, and similarly for the work type variable (See appendix).#####
 
 
 #### Balancing Stratified Dataset
