@@ -32,9 +32,11 @@ colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 #| code-summary: "Click to show code"
 sum(duplicated(stroke_tb))
 ```
-The dataset seems to be fairly clean. Only the features `bmi` and `smoking_status` have missing values and no duplicated rows are present. We will adress them in the next step.
+The dataset seems to be fairly clean. Only the features `bmi` and `smoking_status` have missing values and no duplicated rows are present. We will address them in the next step.
 
 Our dataset contains several categorical variables. Since a machine learning model requires numerical inputs, we distinguish from the beginning categorical and numerical variables.
+
+“Our dataset includes both categorical and numerical variables. To prepare for machine learning, we clearly distinguish these types from the start, as models require numerical inputs.
 
 ```{r, warning=FALSE}
 #| code-fold: true

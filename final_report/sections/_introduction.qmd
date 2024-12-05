@@ -1,7 +1,7 @@
 ---
 title: "_introduction"
 format: html
-bibliography: references.bib
+bibliography: appendix.qmd
 ---
 # Introduction and Data Structure
 
@@ -18,10 +18,6 @@ To be more specific, the goals of this project are to:
 - Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence.
 
 - Create visualizations to illustrate the results and enhance the understanding of stroke risk factors.
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
 
 ## Research Questions
 
@@ -41,12 +37,23 @@ The data utilized for this project originates from the Stroke Prediction Dataset
 ## Data Structure
 
 ```{r}
-#import of the dataset
-stroke_db <- read.csv("../data/stroke_dataset.csv")
+# Load necessary libraries
+library(knitr)
+library(kableExtra)
+library(dplyr)
+# Read the dataset
+stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
+str(stroke_tb)
 
-#saving as a tibble
-stroke_tb <- as_tibble(stroke_db)
-head(stroke_tb)
+# Convert to a tibble
+stroke_tb_tibble <- as_tibble(stroke_tb)
+
+# Display the tibble
+print(stroke_tb_tibble)
+
+# Display the entire dataset using kable
+kable(stroke_tb, format = "html") %>%
+  kable_styling(full_width = F)
 ```
 
 In total, there are 12 variables including our binary target variable `stroke`. 
@@ -124,9 +131,11 @@ Our dataset contains 5110 observations with 12 attributes. Here's a summary of t
 ```{r, warning=FALSE}
 #|code-fold: true 
 #|code-summary: "Click to show code"
-stroke_tb <- read.csv("../data/stroke_dataset.csv") 
-head(stroke_tb)
-str(stroke_tb)
+stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
+
+# Display the entire dataset using kable
+kable(stroke_tb, format = "html") %>%
+  kable_styling(full_width = F)
 ```
 Relevant metadata:
 
