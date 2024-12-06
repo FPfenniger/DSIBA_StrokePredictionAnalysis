@@ -263,16 +263,8 @@ high_risk_age_data <- upSample(
   yname = "stroke"
 )
 
-
-# Check the structure to confirm changes
-str(balanced_stroke_tb)
-
-
 # Check the distribution to confirm balancing
 table(balanced_stroke_tb$stroke)
-
-# Save the dataset
-write.csv(balanced_stroke_tb, "../../data/datasets/balanced_stroke_tb.csv", row.names = FALSE)
 ```
 
 ### Scaling
@@ -314,11 +306,6 @@ scaled_high_risk_age_tb <- high_risk_age_data %>%
 
 # Display the scaled dataset
 kable(scaled_stroke_tb)
-
-# Save the scaled datasets
-write.csv(scaled_stroke_tb, "../../data/datasets/scaled_stroke_tb.csv", row.names = FALSE)
-write.csv(scaled_unbalanced_stroke_tb, "../../data/datasets/scaled_unbalanced_stroke_tb.csv", row.names = FALSE)
-write.csv(scaled_high_risk_age_tb, "../../data/datasets/scaled_high_risk_age_tb.csv", row.names = FALSE)
 ```
 # Modelling
 
