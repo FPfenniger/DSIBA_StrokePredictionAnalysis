@@ -99,7 +99,7 @@ Categorical Variables:
 colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 ```
 
-## Findings and Results
+## EDA Findings & Insights
 
 ### Predictive model
 
