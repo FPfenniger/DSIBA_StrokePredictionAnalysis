@@ -12,6 +12,25 @@ library(plotly)
 library(knitr)
 ```
 
+```{r, warning=FALSE}
+library(tidyverse)
+library(plotly)
+library(knitr)
+library(caret)
+library(vcd)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+outlier_stroke_tb <- 
+  read.csv("../../data/datasets/outlier_stroke_tb.csv")
+balanced_stroke_tb <-
+  read.csv("../../data/datasets/balanced_stroke_tb.csv")
+preprocessed_stroke_tb <-
+  read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
+```
+
 ## Stroke: A Global Health Emergency
 
 The Problem:
@@ -71,7 +90,7 @@ Dataset is fairly clean
     •   Missing values in bmi and smoking_status.
 ```
 
-After data transformations:
+After preprocessing:
 
 ```         
 Variable Adjustments:
@@ -87,6 +106,26 @@ Outlier Analysis:
 •   avg_glucose_level: 12.25% of dataset (627 points).
 •   bmi: 2.47% of dataset(126 points).
 •   Retained outliers for now due to potential relevance as risk factors.
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+variables <- c("age", "avg_glucose_level", "bmi")
+
+# Loop through each variable and render the plots
+for (var in variables) {
+  p <- ggplot(preprocessed_stroke_tb, aes_string(y = var)) +
+    geom_boxplot(outlier.color = "red", outlier.size = 2) +
+    labs(title = paste("Boxplot of", var), y = var, x = "") 
+  
+  # Explicitly print the plot
+  print(ggplotly(p))
+}
+```
+
+```         
 
 Categorical Variables:
 •   Removed infrequent categories in gender (Other) and work_type (Never_worked).
@@ -101,7 +140,129 @@ colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 
 ## Findings and Results
 
-### Predictive model
+### EDA: Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(ggplot2)
+library(plotly)
+
+# Function to create the histogram as plotly object
+create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+  # Extract the variable and stroke data
+  original_data <- data[[variable]]
+  stroke_data <- data[[stroke_variable]]
+  
+  # Calculate mean and standard deviation for reference lines
+  mean_val <- mean(original_data, na.rm = TRUE)
+  sd_val <- sd(original_data, na.rm = TRUE)
+  
+  # Combine data and stroke status into a data frame
+  plot_data <- data.frame(data = original_data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+  
+  # Generate the ggplot object (temporary)
+  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+    labs(y = "Frequency", fill = "Stroke Status") +
+    scale_fill_manual(values = c("No Stroke" = "#1f77b4", "Stroke" = "#ff7f0e")) +  # Set custom colors
+    theme_minimal() +
+    theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))  # Center title
+  
+  # Convert to interactive Plotly plot
+  p_plotly <- ggplotly(p) %>%
+    layout(showlegend = show_legend)  # Set legend visibility
+  
+  return(p_plotly)
+}
+
+# Generate histograms for each variable separately without repeating legends
+hist_age <- create_histogram(outlier_stroke_tb, "age", "stroke", binwidth = 5, show_legend = FALSE) %>%
+  layout(title = "Distribution of Age", xaxis = list(title = "Age"), 
+         yaxis = list(title = "Frequency"))
+
+hist_glucose <- create_histogram(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
+  layout(title = "Distribution of Average Glucose Level", xaxis = list(title = "Average Glucose Level"), 
+         yaxis = list(title = "Frequency"))
+
+hist_bmi <- create_histogram(outlier_stroke_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
+  layout(title = "Distribution of BMI", xaxis = list(title = "BMI"), 
+         yaxis = list(title = "Frequency"))
+
+# Combine all histograms into a single interactive plot with a main title
+combined_histograms <- subplot(hist_age, hist_glucose, hist_bmi, nrows = 1, titleY = TRUE,
+                               shareX = TRUE, shareY = TRUE) %>%
+  layout(title = "Histograms of Numerical Variables by Stroke", showlegend = TRUE)  # Set main title with legend visible
+
+# Display combined histogram
+combined_histograms
+```
+
+###EDA: 
+Weak positive relationships between age and stroke, and avg_glucose_level and stroke. No relationship between bmi and stroke.
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(knitr)
+
+# Calculate correlation coefficients for each variable with stroke
+cor_age <- cor(as.numeric(outlier_stroke_tb$age), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+cor_glucose <- cor(as.numeric(outlier_stroke_tb$avg_glucose_level), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+cor_bmi <- cor(as.numeric(outlier_stroke_tb$bmi), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+
+# Create a correlation table
+correlation_table <- data.frame(
+  Variable = c("Age", "Average Glucose Level", "BMI"),
+  Correlation_with_Stroke = round(c(cor_age, cor_glucose, cor_bmi), 2)
+)
+
+# Display the correlation table with kable
+kable(correlation_table, caption = "Correlation Coefficients with Stroke")
+```
+
+Summary of categorical variables
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# List of categorical variables
+variables_to_summarize <- c("stroke", "gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
+
+# Convert binary integer variables to factors
+outlier_stroke_tb <- outlier_stroke_tb %>%
+  mutate(
+    stroke = as.factor(stroke),
+    hypertension = as.factor(hypertension),
+    heart_disease = as.factor(heart_disease)
+  )
+
+# Calculate total count for proportion calculation
+total_count <- nrow(outlier_stroke_tb)
+
+# Create summary table 
+summary_table <- bind_rows(
+  lapply(variables_to_summarize, function(var) {
+    outlier_stroke_tb %>%
+      group_by(.data[[var]]) %>%
+      summarize(
+        Count = n(),
+        Proportion = n() / total_count,
+        .groups = "drop"
+      ) %>%
+      rename(Type = .data[[var]]) %>%
+      mutate(
+        Variable = var,
+        Type = as.character(Type),
+        Proportion = round(Proportion * 100, 2)  
+      )
+  })
+) %>%
+  select(Variable, Type, Count, Proportion) %>%  
+  arrange(Variable, Type)                        
+
+# Display the combined table with kable
+knitr::kable(summary_table, caption = "Summary of Categorical Variables with Proportion", row.names = FALSE)
+```
 
 ## Model evaluation
 
