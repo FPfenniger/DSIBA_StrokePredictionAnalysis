@@ -24,6 +24,7 @@ library(kableExtra)
 #| code-fold: true
 #| code-summary: "Click to show code"
 outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+str(outlier_stroke_tb)
 ```
 
 ### Feature Encoding
@@ -39,32 +40,28 @@ the first level to set a reference.
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
 # Initialize the dataset
 encoded_stroke_tb <- outlier_stroke_tb
 
-# Encode binary variables
+# Encode binary variables without phantom levels
 encoded_stroke_tb$gender <- factor(
   ifelse(encoded_stroke_tb$gender == "Female", "1", 
-         ifelse(outlier_stroke_tb$gender == "Male", "0", NA)), 
-  levels = c("0", "1")
+         ifelse(encoded_stroke_tb$gender == "Male", "0", NA))
 )
 
 encoded_stroke_tb$ever_married <- factor(
   ifelse(encoded_stroke_tb$ever_married == "Yes", "1", 
-         ifelse(outlier_stroke_tb$ever_married == "No", "0", NA)), 
-  levels = c("0", "1")
+         ifelse(encoded_stroke_tb$ever_married == "No", "0", NA))
 )
 
 encoded_stroke_tb$Residence_type <- factor(
   ifelse(encoded_stroke_tb$Residence_type == "Urban", "1", 
-         ifelse(outlier_stroke_tb$Residence_type == "Rural", "0", NA)), 
-  levels = c("0", "1")
+         ifelse(encoded_stroke_tb$Residence_type == "Rural", "0", NA))
 )
 
-kable(encoded_stroke_tb)
 ```
 
+In the next step, we encode the remaining categorical variables with multiple categories. Here we always define one reference category:
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -81,19 +78,17 @@ colnames(work_type_matrix) <- gsub("work_type", "work_type", colnames(work_type_
 # Exclude reference level "Private"
 work_type_matrix <- work_type_matrix[, -grep("Private", colnames(work_type_matrix))]
 
-
-
-
 # Bind matrices to dataset
 encoded_stroke_tb <- cbind(
   encoded_stroke_tb[, !(names(outlier_stroke_tb) %in% c("smoking_status", "work_type"))],
   smoking_status_matrix,
   work_type_matrix
 )
-kable(encoded_stroke_tb)
+
+str(encoded_stroke_tb)
 
 ```
-
+And we turn the binary variables into factors with the correct levels and apply the `make.names()` function to the column names to ensure they are valid.
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -110,8 +105,7 @@ colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
 # Display the final dataset structure
 kable(encoded_stroke_tb)
 
-# Save the updated dataset to CSV
-write.csv(encoded_stroke_tb, "../../data/datasets/encoded_stroke_tb.csv", row.names = FALSE)
+str(encoded_stroke_tb)
 ```
 
 We set the reference level for `smoking_status` to "never smoked" and
@@ -166,11 +160,18 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 
 The only relationship, which seems to be problematic in terms of
 multicollinearity seems to be between `ever_married` and
-`work_typechildren`. For the prediction model, we will therefore exclude
-one of the two features. Another possibility is to further explore their
-relationship with the VIF(Variation Inflation Factor), which will help
-us with the decision to either keep both variables or drop one of them.
+`work_typechildren`. This makes a lot of sense, as children are not yet married and therefore a strong correlation will consist between `ever_married` (0) and `work_typechildren` (1). For the predictive models, we will therefore exclude `work_typechildren` because evidence and our EDA suggests that stroke risk is correlated with age, making this variable a weak predictor. 
 
+```{r}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Drop work_typechildren
+encoded_stroke_tb <- encoded_stroke_tb %>% 
+  select(-work_typechildren)
+
+str(encoded_stroke_tb)
+```
 As all other effect sizes appear to be smaller than 0.3, we can safely
 conclude that all other categorical features are sufficiently
 independent to use as predictors. In conclusion, multicollinearity does
@@ -365,7 +366,7 @@ $$
 The *receiver operating characteristic* curve is a graphical representation of the true positive rate (recall) against the false positive rate (specificity). Concretley, It shows the tradeoff between sensitivity and specificity. The area under the curve (AUC) is a measure of how well the model can distinguish between classes. An AUC of 1 indicates a perfect model, while an AUC of 0.5 indicates a model that performs no better than random chance.
 
 - Odds ratio
-The odds ratio is the exponentiated coefficient of a logistic regression model. It represents the change in odds of the target variable for a one-unit change in the predictor variable. An odds ratio greater than 1 indicates a positive relationship between the predictor and the target variable, while an odds ratio less than 1 indicates a negative relationship.
+The odds ratio is the exponentiated coefficient of a logistic regression model. It represents the change in odds of the target variable for a one-unit change in the predictor variable. An odds ratio greater than 1 indicates a positive relationship between the predictor and the target variable, while an odds ratio less than 1 indicates a negative relationship. It will help us to understand the importance and direction of each feature in predicting the target variable.
 
 ## Baseline Model
 
@@ -391,8 +392,7 @@ unbalanced_original_data <- scaled_unbalanced_stroke_tb
 # Ensure valid factor levels for all binary and categorical variables
 cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
                    "Residence_type", "smoking_statusformerly.smoked", 
-                   "smoking_statussmokes", "work_typechildren", 
-                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
 
 # Explicitly set factor levels to "0" and "1"
 unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
@@ -589,7 +589,6 @@ ggplot(data = data.frame(
 rename_variables <- function(variable) {
   case_when(
     variable == "age" ~ "Age",
-    variable == "work_typechildren1" ~ "Work Type: Children",
     variable == "work_typeSelf.employed1" ~ "Work Type: Self-Employed",
     variable == "hypertension1" ~ "Hypertension",
     variable == "smoking_statussmokes1" ~ "Smoking Status: Smokes",
@@ -600,6 +599,7 @@ rename_variables <- function(variable) {
     variable == "smoking_statusformerly.smoked1" ~ "Smoking Status: Formerly Smoked",
     variable == "gender1" ~ "Gender: Female",
     variable == "Residence_type1" ~ "Residence Type: Urban",
+    variable == "bmi" ~ "BMI",
     TRUE ~ variable
   )
 }
@@ -648,8 +648,7 @@ balanced_original_data <- scaled_stroke_tb
 # Ensure valid factor levels for all binary and categorical variables
 cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
                    "Residence_type", "smoking_statusformerly.smoked", 
-                   "smoking_statussmokes", "work_typechildren", 
-                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
 
 # Explicitly set factor levels to "0" and "1"
 balanced_original_data[cat_variables] <- lapply(balanced_original_data[cat_variables], function(col) {
@@ -852,8 +851,7 @@ steps for the training set.
 # Ensure valid factor levels for all binary and categorical variables
 cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
                    "Residence_type", "smoking_statusformerly.smoked", 
-                   "smoking_statussmokes", "work_typechildren", 
-                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
 
 # Explicitly set factor levels to "0" and "1"
 low_risk_age_tb[cat_variables] <- lapply(low_risk_age_tb[cat_variables], function(col) {
@@ -961,18 +959,6 @@ print(conf_matrix_train)
 
 ```
 
-The stratified model for the lower age group performs well, achieving an
-overall accuracy of 77.70%. The recall for the positive class (Yes) is
-strong at 82.79%, ensuring that most true positives are correctly
-identified, which is crucial in identifying strokes. The precision of
-75.15% indicates that around three-quarters of the predicted positive
-cases are correct, demonstrating good reliability in its predictions.
-The F1-Score of 78.78% confirms the model balances precision and recall
-effectively. Specificity is somewhat lower at 72.62%, suggesting some
-false positives, but this trade-off may be acceptable given the high
-recall. Overall, the model performs effectively in this stratified
-group, though improving specificity could further enhance its
-reliability.
 
 ### Evaluation and Discussion
 
@@ -1027,6 +1013,12 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
+probably due to several factors:
+- different stroke distribution in the training set
+- overfitting to the training set structure
+- the small size of the test set
+
+
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1051,6 +1043,14 @@ ggplot(data = data.frame(
   theme_minimal()
 ```
 
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+generate_importance_table(logistic_model_3, "Logistic Model 3")
+```
+
 ## High-Risk Age Model
 
 ### Train-test split
@@ -1066,8 +1066,7 @@ high_risk_age_data <- scaled_high_risk_age_tb
 # Ensure valid factor levels for all binary and categorical variables
 cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
                    "Residence_type", "smoking_statusformerly.smoked", 
-                   "smoking_statussmokes", "work_typechildren", 
-                   "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
 
 # Explicitly set factor levels to "0" and "1"
 high_risk_age_data[cat_variables] <- lapply(high_risk_age_data[cat_variables], function(col) {
