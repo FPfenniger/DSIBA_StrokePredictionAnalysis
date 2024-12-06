@@ -80,9 +80,9 @@ kable(stroke_tb)
 
 ```
 
-## Data Transformations
+## Data Preprocessing
 
-Before preprocessing:
+Original dataset:
 
 ```         
 Dataset is fairly clean
@@ -90,7 +90,7 @@ Dataset is fairly clean
     •   Missing values in bmi and smoking_status.
 ```
 
-After preprocessing:
+Processed dataset:
 
 ```         
 Variable Adjustments:
@@ -125,9 +125,9 @@ for (var in variables) {
 }
 ```
 
-```         
-
 Categorical Variables:
+
+```         
 •   Removed infrequent categories in gender (Other) and work_type (Never_worked).
 •   Noted rare occurrences in heart_disease, hypertension, and stroke.
 ```
@@ -140,7 +140,48 @@ colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 
 ## EDA Findings & Insights
 
-### EDA: Univariate analysis: Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
+### Profile of Stroke Cases
+
+From the initial EDA, we can observe that individuals are at more struck by stroke if
+
+```         
+    • older than 60 years
+    • avg_glucose_level above
+    • have heart disease
+    • are former or current smokers
+    • have hypertension
+    • are married
+    • are self-employed or work in the private sector
+```
+
+### Descriptive statistics
+
+Relevant Numerical Variables:
+
+```         
+    •   age: Weak positive relationship with stroke (r = 0.24).
+    •   avg_glucose_level: Very weak positive relationship with stroke (r = 0.13).
+```
+
+Relevant Categorical Variables:
+
+```         
+    •   heart_disease
+    •   smoking_status
+    •   hypertension
+    •   ever_married
+    •   work_type
+```
+
+Non-Relevant Variables
+
+```         
+    •   gender: No difference in stroke proportions between female and male categories.
+    •   residence_type: No difference in stroke proportions across urban and rural categories.
+    •   bmi: No relationship with stroke (r = 0.04).
+```
+
+###Deep dive \### 1. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -198,7 +239,8 @@ combined_histograms <- subplot(hist_age, hist_glucose, hist_bmi, nrows = 1, titl
 combined_histograms
 ```
 
-###EDA: Univariate Analysis: There exist weak positive relationships between age and stroke, and avg_glucose_level and stroke. No relationship between bmi and stroke.
+### 2. There exist weak positive relationships between age and stroke, and avg_glucose_level and stroke. No relationship between bmi and stroke.
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -217,32 +259,6 @@ correlation_table <- data.frame(
 
 # Display the correlation table with kable
 kable(correlation_table, caption = "Correlation Coefficients with Stroke")
-```
-
-### Univariate analysis:
-
-Non-Relevant Variables
-```
-	•	gender: No difference in stroke proportions between female and male categories.
-	•	residence_type: No difference in stroke proportions across urban and rural categories.
-	•	bmi: No relationship with stroke (r = 0.04).
-```
-
-Potential Predictors for Further Exploration
-
-Categorical Variables:
-```
-	•	heart_disease
-	•	smoking_status
-	•	hypertension
-	•	ever_married
-	•	work_type
-```
-
-Numerical Variables:
-```
-	•	age: Weak positive relationship with stroke (r = 0.24).
-	•	avg_glucose_level: Very weak positive relationship with stroke (r = 0.13).
 ```
 
 ```{r, message = FALSE}
@@ -286,29 +302,6 @@ summary_table <- bind_rows(
 # Display the combined table with kable
 knitr::kable(summary_table, caption = "Summary of Categorical Variables with Proportion", row.names = FALSE)
 ```
-
-Smoking: Potential risk factor
-```
-	•	Highest Proportion: Former smokers.
-	•	Possibly partly influenced by age (former smokers are often older).
-	•	Current smokers have slightly higher stroke proportions than never smokers.
-```
-
-Hypertension: Potential risk factor
-```
-	•	Higher stroke proportions in individuals with hypertension compared to those without.
-```
-
-ever_married:
-	•	Observation: Married individuals show higher stroke proportions than unmarried.
-	•	Possible Cause: Age-related (older individuals are more likely married and at greater stroke risk).
-	
-work_type:
-	•	Highest Proportions: Private sector employees and self-employed individuals.
-	•	Other work types show lower stroke case proportions.
-
-heart disease:
-	•	Observation: Higher stroke proportions in individuals with heart disease.
 
 ```{r}
 #| code-fold: true
@@ -364,7 +357,33 @@ for (plot in plots) {
 }
 ```
 
-Since age is a potential risk factor, and other variables such as ever_married, former smokers, are also associated with age, we will explore the relationships in a bivariate analysis
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Select the numeric columns from your data
+numeric_data <- outlier_stroke_tb[, c("age", "avg_glucose_level", "bmi")]
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
+
+# Convert the correlation matrix to a format that plotly can use (optional step)
+heatmap_data <- as.data.frame(as.table(correlation_matrix))
+
+# Plot the correlation matrix as a heatmap using plotly
+plot_ly(
+  x = colnames(correlation_matrix),
+  y = rownames(correlation_matrix),
+  z = correlation_matrix,
+  type = "heatmap",
+  colorscale = "Viridis"  # Corrected typo
+) %>%
+  layout(
+    title = "Correlation Matrix Heatmap",
+    xaxis = list(title = "", tickangle = 45),
+    yaxis = list(title = "")
+  )
+```
+
 ## Model evaluation
 
 ## Conclusion
