@@ -350,7 +350,7 @@ Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
 $$
 
 - ROC Curve and AUC
-The *receiver operating characteristic* curve is a graphical representation of the true positive rate (recall) against the false positive rate (specificity). Concretley, It shows the tradeoff between sensitivity and specificity. The area under the curve (AUC) is a measure of how well the model can distinguish between classes. An AUC of 1 indicates a perfect model, while an AUC of 0.5 indicates a model that performs no better than random chance.
+The *receiver operating characteristic* curve is a graphical representation of the true positive rate (recall) against the false positive rate (specificity). Concretely, it shows the tradeoff between sensitivity and specificity. The area under the curve (AUC) is a measure of how well the model can distinguish between classes. An AUC of 1 indicates a perfect model, while an AUC of 0.5 indicates a model that performs no better than random chance.
 
 - Odds ratio
 The odds ratio is the exponentiated coefficient of a logistic regression model. It represents the change in odds of the target variable for a one-unit change in the predictor variable. An odds ratio greater than 1 indicates a positive relationship between the predictor and the target variable, while an odds ratio less than 1 indicates a negative relationship. It will help us to understand the importance and direction of each feature in predicting the target variable.
