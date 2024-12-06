@@ -219,7 +219,31 @@ correlation_table <- data.frame(
 kable(correlation_table, caption = "Correlation Coefficients with Stroke")
 ```
 
-### EDA: Univariate analysis: Summary of categorical variables
+### Univariate analysis:
+
+Non-Relevant Variables
+```
+	•	gender: No difference in stroke proportions between female and male categories.
+	•	residence_type: No difference in stroke proportions across urban and rural categories.
+	•	bmi: No relationship with stroke (r = 0.04).
+```
+
+Potential Predictors for Further Exploration
+
+Categorical Variables:
+```
+	•	heart_disease
+	•	smoking_status
+	•	hypertension
+	•	ever_married
+	•	work_type
+```
+
+Numerical Variables:
+```
+	•	age: Weak positive relationship with stroke (r = 0.24).
+	•	avg_glucose_level: Very weak positive relationship with stroke (r = 0.13).
+```
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -339,6 +363,8 @@ for (plot in plots) {
   print(plot)  # You can use print to display each plot one after the other
 }
 ```
+
+Since age is a potential risk factor, and other variables such as ever_married, former smokers, are also associated with age, we will explore the relationships in a bivariate analysis
 ## Model evaluation
 
 ## Conclusion
