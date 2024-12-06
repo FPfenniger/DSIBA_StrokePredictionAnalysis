@@ -3,6 +3,13 @@ title: "Understanding Stroke: A Data-Driven Approach"
 format: revealjs
 editor: visual
 ---
+```{r, warning=FALSE}
+library(naniar)
+library(tidyverse)
+library(caret)
+library(plotly)
+library(knitr)
+```
 
 ## Stroke: A Global Health Emergency
 
@@ -25,52 +32,60 @@ Key Question:
 
 What factors best predict stroke, and how can we intervene?
 
-## Data
-### Stroke Prediction Dataset Overview
+## Dataset Overview
 
 Data Source
-
-	•	Origin: Kaggle’s Stroke Prediction Dataset
+```     
+	•	Origin: Found on Kaggle.com. Owned and last updated in 2020 by Federico Soriano Palacios.
 	•	Observations: 5110
-	•	Features: 12 (including binary target variable stroke)
-	•	Usage: Educational purposes only; source details are confidential.
-
+	•	Features: 11
+```     
 Key Variables
-
+```     
 	•	Target Variable: stroke (0 = No, 1 = Yes)
 	•	Demographics: gender, age, Residence_type
 	•	Health Metrics: hypertension, heart_disease, avg_glucose_level, bmi
 	•	Lifestyle: smoking_status, work_type, ever_married
+```     
 
-### Data Preprocessing
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 
-	•	Dataset Owner: Federico Soriano Palacios
-	•	Last Updated: 4 years ago
-	•	Preprocessing Note: bmi converted to numeric.
+# Original Dataset
+#kable(stroke_tb)
 
-	1.	Data Overview:
-	•	Dataset is clean with no duplicate rows.
+```
+
+## Data Transformations
+Before preprocessing:
+```     
+Dataset is fairly clean
+	•	No duplicate rows.
 	•	Missing values in bmi and smoking_status.
-	2.	Variable Adjustments:
+``` 
+
+After data transformations:
+``` 
+	1.	Variable Adjustments:
 	•	Reclassified variables: bmi → numerical; hypertension, heart_disease → categorical.
 	•	Removed irrelevant column: id.
-	3.	Handling Missing Values:
+	2.	Handling Missing Values:
 	•	Replaced missing values: bmi → median, smoking_status → mode.
-	4.	Outlier Analysis:
+	3.	Outlier Analysis:
 	•	Visualized outliers in age, avg_glucose_level, and bmi using boxplots.
 	•	Outliers Identified:
 	•	avg_glucose_level: 12.25% (627 points).
 	•	bmi: 2.47% (126 points).
 	•	Retained outliers for now due to potential relevance as risk factors.
-	5.	Categorical Variables:
+	4.	Categorical Variables:
 	•	Removed infrequent categories in gender (Other) and work_type (Never_worked).
 	•	Noted rare occurrences in heart_disease, hypertension, and stroke.
-## Conclusion
-
-When you click the **Render** button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:
-
-```{r}
-1 + 1
+```     
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+#colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 ```
 
 ## Findings and Results
@@ -80,6 +95,12 @@ When you click the **Render** button a presentation will be generated that inclu
 ## Model evaluation
 
 ## Conclusion
+Introduction: Briefly introduce your project goals and motivation.
+Research Questions: What were the key research questions?
+Data: Provide a high-level overview of your data sources and preprocessing.
+Findings and Results: Highlight your key findings, insights, or model results.
+Conclusion: Summarize your main takeaways and future potential directions.
+
 Length:
 
 The presentation should be 7 minutes or less. The time limit will be strictly enforced.
