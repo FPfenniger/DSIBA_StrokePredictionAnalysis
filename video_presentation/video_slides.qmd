@@ -409,10 +409,9 @@ Modeling Approach
 	•	Train a logistic regression model for each dataset.
 	•	Evaluate model performance on a shared test set.
 
-### Results:
-1. Original Dataset
+### Results: 1. Original Dataset
 
-Key Performance Metrics
+Baseline Metrics
 ```
 	•	Accuracy: High at 95.08%, but misleading due to poor performance on the minority class (Yes).
 	•	Specificity: Nearly perfect at 99.97%, indicating strong prediction of the majority class (No).
@@ -420,10 +419,132 @@ Key Performance Metrics
 	•	F1-Score: Very low at 0.99%, reflecting poor balance between precision and recall.
 ```
 
-Insights
+Interpretation
 ```
-	•	The baseline model is highly biased toward the majority class (No).
-	•	Poor performance on the minority class (Yes) makes it unsuitable for predicting strokes effectively.
+	•	The baseline model is highly biased toward the majority class (Stroke = No).
+	•	Poor performance on the minority class (Stroke = Yes) makes it unsuitable for predicting strokes effectively.
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Train-Test Split
+
+# Load the dataset
+unbalanced_original_data <- scaled_unbalanced_stroke_tb
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+unbalanced_original_data$stroke <- factor(
+  unbalanced_original_data$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_unbalanced <- unbalanced_original_data[trainIndex, ]
+test_unbalanced <- unbalanced_original_data[-trainIndex, ]
+
+colnames(test_unbalanced) <- make.names(colnames(test_unbalanced))  # Make all column names valid
+colnames(test_unbalanced) <- colnames(train_unbalanced)  # Align with the training dataset
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_1, newdata = test_unbalanced, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_unbalanced$stroke <- factor(test_unbalanced$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_unbalanced$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_unbalanced$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_unbalanced$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      # No cross-validation
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_1 <- train(
+  stroke ~ ., 
+  data = train_unbalanced,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
 ```
 
 ```{r, warning=FALSE}
@@ -461,7 +582,744 @@ print(classification_report_train)
 print(conf_matrix_train)
 
 ```
-## Model evaluation
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_1, newdata = test_unbalanced, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_unbalanced$stroke <- factor(test_unbalanced$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_unbalanced$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_unbalanced$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_unbalanced$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_unbalanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Step 1: Mapping function for comprehensive variable names
+rename_variables <- function(variable) {
+  case_when(
+    variable == "age" ~ "Age",
+    variable == "work_typechildren1" ~ "Work Type: Children",
+    variable == "work_typeSelf.employed1" ~ "Work Type: Self-Employed",
+    variable == "hypertension1" ~ "Hypertension",
+    variable == "smoking_statussmokes1" ~ "Smoking Status: Smokes",
+    variable == "work_typeGovt_job1" ~ "Work Type: Government Job",
+    variable == "heart_disease1" ~ "Heart Disease",
+    variable == "avg_glucose_level" ~ "Average Glucose Level",
+    variable == "ever_married1" ~ "Ever Married",
+    variable == "smoking_statusformerly.smoked1" ~ "Smoking Status: Formerly Smoked",
+    variable == "gender1" ~ "Gender: Female",
+    variable == "Residence_type1" ~ "Residence Type: Urban",
+    TRUE ~ variable
+  )
+}
+
+
+# Step 2: Define a function to generate the importance table for a specific model
+generate_importance_table <- function(model, model_name = "Logistic Model") {
+  # Extract coefficients
+  coefficients <- summary(model)$coefficients
+  
+  # Create the variable importance table
+  variable_importance <- as.data.frame(coefficients) %>%
+    rownames_to_column("Predictor") %>%             # Convert row names to a column
+    mutate(
+      Predictor = rename_variables(Predictor),      # Rename variables
+      `Odds Ratio` = exp(Estimate)                 # Calculate Odds Ratios
+    ) %>%
+    select(Predictor, Estimate, `Odds Ratio`, `Pr(>|z|)`) %>%  # Keep relevant columns
+    rename(
+      Coefficient = Estimate,                      # Rename Estimate to Coefficient
+      `P-value` = `Pr(>|z|)`                       # Rename P-value column
+    ) %>%
+    filter(Predictor != "(Intercept)") %>%           # Exclude the intercept
+    arrange(desc(`Odds Ratio`))                # Sort by absolute value of coefficients
+  
+  # Display the table with a dynamic caption
+  kable(variable_importance, caption = paste(model_name, "- Predictor Importance with Odds Ratios")) %>%
+    kable_styling(full_width = FALSE, position = "center")
+}
+generate_importance_table(logistic_model_1, "Logistic Model 1")
+```
+
+### Results: 2.	Balanced Original Dataset
+
+#### Train-test split
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Load the dataset
+balanced_original_data <- scaled_stroke_tb
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+balanced_original_data[cat_variables] <- lapply(balanced_original_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+balanced_original_data$stroke <- factor(
+  balanced_original_data$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_balanced <- balanced_original_data[trainIndex, ]
+test_balanced <- balanced_original_data[-trainIndex, ]
+```
+
+#### Model
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      # No cross-validation
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_2 <- train(
+  stroke ~ ., 
+  data = train_balanced,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the training set
+train_predictions_prob <- predict(logistic_model_2, newdata = train_balanced, type = "prob")
+train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert predictions to factors to match the training set
+train_predictions_class <- factor(train_predictions_class, levels = levels(train_balanced$stroke))
+
+# Confusion Matrix for Training Set
+conf_matrix_train <- confusionMatrix(train_predictions_class, train_balanced$stroke, positive = "Yes")
+
+# Extract Metrics from the Confusion Matrix
+precision <- conf_matrix_train$byClass["Precision"]
+recall <- conf_matrix_train$byClass["Recall"]
+f1_score <- conf_matrix_train$byClass["F1"]
+specificity <- conf_matrix_train$byClass["Specificity"]
+accuracy <- conf_matrix_train$overall["Accuracy"]
+
+# Generate a Classification Report for the Training Set
+classification_report_train <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print the Classification Report
+print(classification_report_train)
+
+# Print the Confusion Matrix for Context
+print(conf_matrix_train)
+```
+
+Improved Metrics
+```
+	•	Accuracy: 77.45% - Strikes a better balance between positive and negative classes.
+	•	Recall (Positive Class): 81.35% - Effectively identifies most true positives.
+	•	F1-Score: 78.29% - Indicates a good balance between precision and recall.
+	•	Specificity: 73.5% - Lower, suggesting some false positives.
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_2, newdata = test_balanced, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_balanced$stroke <- factor(test_balanced$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_balanced$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_balanced$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_balanced$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_balanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+generate_importance_table(logistic_model_2, "Logistic Model 2")
+```
+
+### Results: 3. Low-Risk Age Group
+
+Objective: Build the first stratified model for the low-risk age group.
+	
+Approach
+	•	Dataset Split: Divide the original dataset into training and test sets.
+	•	Preprocessing: Apply previously mentioned preprocessing steps to the training set.
+
+Next Steps
+	•	Train a logistic regression model on the low-risk age group training data.
+	•	Evaluate model performance on the test set.
+
+### Train-test split
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+low_risk_age_tb[cat_variables] <- lapply(low_risk_age_tb[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+low_risk_age_tb$stroke <- factor(
+  low_risk_age_tb$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(low_risk_age_tb$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_low_risk <- low_risk_age_tb[trainIndex, ]
+test_low_risk <- low_risk_age_tb[-trainIndex, ]
+
+# Balance the training set 
+train_low_risk <- upSample(
+  x = train_low_risk[, names(train_low_risk) != "stroke"], 
+  y = train_low_risk$stroke, 
+  yname = "stroke"
+) 
+
+# Scale both training and test set
+train_low_risk <- train_low_risk %>%
+  mutate(across(where(is.double), ~ standardize(.)))
+
+test_low_risk <- test_low_risk %>%
+  mutate(across(where(is.double), ~ standardize(.)))
+```
+
+### Model
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_3 <- train(
+  stroke ~ ., 
+  data = train_low_risk,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the training set
+train_predictions_prob <- predict(logistic_model_3, newdata = train_low_risk, type = "prob")
+train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert predictions to factors to match the training set
+train_predictions_class <- factor(train_predictions_class, levels = levels(train_low_risk$stroke))
+
+# Confusion Matrix for Training Set
+conf_matrix_train <- confusionMatrix(train_predictions_class, train_low_risk$stroke, positive = "Yes")
+
+# Extract Metrics from the Confusion Matrix
+precision <- conf_matrix_train$byClass["Precision"]
+recall <- conf_matrix_train$byClass["Recall"]
+f1_score <- conf_matrix_train$byClass["F1"]
+specificity <- conf_matrix_train$byClass["Specificity"]
+accuracy <- conf_matrix_train$overall["Accuracy"]
+
+# Generate a Classification Report for the Training Set
+classification_report_train <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print the Classification Report
+print(classification_report_train)
+
+# Print the Confusion Matrix for Context
+print(conf_matrix_train)
+
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_3, newdata = test_low_risk, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_low_risk$stroke <- factor(test_low_risk$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_low_risk$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_low_risk$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_low_risk$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+probably due to several factors:
+- different stroke distribution in the training set
+- overfitting to the training set structure
+- the small size of the test set
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_low_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+generate_importance_table(logistic_model_3, "Logistic Model 3")
+```
+
+### Results: 4. High-Risk Age Group
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+
+# Load the dataset
+high_risk_age_data <- scaled_high_risk_age_tb
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+high_risk_age_data[cat_variables] <- lapply(high_risk_age_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+high_risk_age_data$stroke <- factor(
+  high_risk_age_data$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(high_risk_age_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_high_risk <- high_risk_age_data[trainIndex, ]
+test_high_risk <- high_risk_age_data[-trainIndex, ]
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_4 <- train(
+  stroke ~ ., 
+  data = train_high_risk,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the training set
+train_predictions_prob <- predict(logistic_model_4, newdata = train_high_risk, type = "prob")
+train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert predictions to factors to match the training set
+train_predictions_class <- factor(train_predictions_class, levels = levels(train_high_risk$stroke))
+
+# Confusion Matrix for Training Set
+conf_matrix_train <- confusionMatrix(train_predictions_class, train_high_risk$stroke, positive = "Yes")
+
+# Extract Metrics from the Confusion Matrix
+precision <- conf_matrix_train$byClass["Precision"]
+recall <- conf_matrix_train$byClass["Recall"]
+f1_score <- conf_matrix_train$byClass["F1"]
+specificity <- conf_matrix_train$byClass["Specificity"]
+accuracy <- conf_matrix_train$overall["Accuracy"]
+
+# Generate a Classification Report for the Training Set
+classification_report_train <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print the Classification Report
+print(classification_report_train)
+
+# Print the Confusion Matrix for Context
+print(conf_matrix_train)
+
+```
+
+Performance Metrics
+```
+	•	Accuracy: 63.70% - Moderate performance overall.
+	•	Recall (Positive Class): 66.11% - Captures a fair portion of true positives.
+	•	Precision: 63.07% - About 63% of predicted positives are correct.
+	•	F1-Score: 64.56% - Reasonable balance between precision and recall.
+	•	Specificity: 61.30% - Low, leading to higher false-positive rates.
+```
+
+Intetpretation
+```
+	•	Strength: Moderate ability to capture true positives.
+	•	Weakness: Struggles to distinguish between classes, with low specificity and accuracy.
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_4, newdata = test_high_risk, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_high_risk$stroke <- factor(test_high_risk$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_high_risk$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+  
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_high_risk$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_high_risk$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+    Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_high_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+generate_importance_table(logistic_model_4, "Logistic Model 4")
+```
+
 
 ## Conclusion
 
