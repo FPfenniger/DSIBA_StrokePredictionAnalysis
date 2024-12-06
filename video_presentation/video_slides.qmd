@@ -1,32 +1,17 @@
 ---
-title: "presentation_slides"
+title: "Understanding Stroke: A Data-Driven Approach"
 format: revealjs
 editor: visual
 ---
 
-Length:
-
-The presentation should be 7 minutes or less. The time limit will be strictly enforced.
-Content:
-
-Introduction: Briefly introduce your project goals and motivation.
-Research Questions: What were the key research questions?
-Data: Provide a high-level overview of your data sources and preprocessing.
-Findings and Results: Highlight your key findings, insights, or model results.
-Conclusion: Summarize your main takeaways and future potential directions.
-Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀
-
-
-## Understanding Stroke: A Data-Driven Approach
-
-### Stroke: A Global Health Emergency
+## Stroke: A Global Health Emergency
 
 The Problem:
 
-```         
+```   
 •   15M strokes/year (WHO): 5M deaths, 5M disabilities.
 •   Stroke disrupts brain blood flow: caused by blockage or bleeding.
-```
+```   
 
 Project Goals:
 
@@ -95,3 +80,14 @@ When you click the **Render** button a presentation will be generated that inclu
 ## Model evaluation
 
 ## Conclusion
+Length:
+
+The presentation should be 7 minutes or less. The time limit will be strictly enforced.
+Content:
+
+Introduction: Briefly introduce your project goals and motivation.
+Research Questions: What were the key research questions?
+Data: Provide a high-level overview of your data sources and preprocessing.
+Findings and Results: Highlight your key findings, insights, or model results.
+Conclusion: Summarize your main takeaways and future potential directions.
+Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀
