@@ -20,6 +20,18 @@ library(caret)
 library(vcd)
 ```
 
+```{r}
+library(caret)
+library(tidyverse)
+library(vcd)
+library(knitr)
+library(janitor)
+library(caret)  
+library(MLmetrics)  
+library(pROC)
+library(kableExtra)
+```
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -138,7 +150,7 @@ Categorical Variables:
 colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 ```
 
-## EDA Findings & Insights
+## Findings and Results
 
 ### Profile of Stroke Cases
 
@@ -181,7 +193,7 @@ Non-Relevant Variables
     •   bmi: No relationship with stroke (r = 0.04).
 ```
 
-###Deep dive \### 1. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
+### Plot annotation: Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -239,7 +251,7 @@ combined_histograms <- subplot(hist_age, hist_glucose, hist_bmi, nrows = 1, titl
 combined_histograms
 ```
 
-### 2. There exist weak positive relationships between age and stroke, and avg_glucose_level and stroke. No relationship between bmi and stroke.
+### Plot annotation: There exist weak positive relationships between age and stroke, and avg_glucose_level and stroke. No relationship between bmi and stroke.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -384,9 +396,88 @@ plot_ly(
   )
 ```
 
+### Predictive Modeling
+Analysis Overview
+
+We divide the analysis into four datasets for model training and evaluation:
+	1.	Original Dataset
+	2.	Balanced Original Dataset
+	3.	Low-Risk Age Group
+	4.	High-Risk Age Group
+
+Modeling Approach
+	•	Train a logistic regression model for each dataset.
+	•	Evaluate model performance on a shared test set.
+
+### Results:
+1. Original Dataset
+
+Key Performance Metrics
+```
+	•	Accuracy: High at 95.08%, but misleading due to poor performance on the minority class (Yes).
+	•	Specificity: Nearly perfect at 99.97%, indicating strong prediction of the majority class (No).
+	•	Recall (Positive Class): Extremely low at 0.5%, identifying very few true positives.
+	•	F1-Score: Very low at 0.99%, reflecting poor balance between precision and recall.
+```
+
+Insights
+```
+	•	The baseline model is highly biased toward the majority class (No).
+	•	Poor performance on the minority class (Yes) makes it unsuitable for predicting strokes effectively.
+```
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+
+# Predict probabilities on the training set
+train_predictions_prob <- predict(logistic_model_1, newdata = train_unbalanced, type = "prob")
+train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert predictions to factors to match the training set
+train_predictions_class <- factor(train_predictions_class, levels = levels(train_unbalanced$stroke))
+
+# Confusion Matrix for Training Set
+conf_matrix_train <- confusionMatrix(train_predictions_class, train_unbalanced$stroke, positive = "Yes")
+
+# Extract Metrics from the Confusion Matrix
+precision <- conf_matrix_train$byClass["Precision"]
+recall <- conf_matrix_train$byClass["Recall"]
+f1_score <- conf_matrix_train$byClass["F1"]
+specificity <- conf_matrix_train$byClass["Specificity"]
+accuracy <- conf_matrix_train$overall["Accuracy"]
+
+# Generate a Classification Report for the Training Set
+classification_report_train <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print the Classification Report
+print(classification_report_train)
+
+# Print the Confusion Matrix for Context
+print(conf_matrix_train)
+
+```
 ## Model evaluation
 
 ## Conclusion
+
+## Grading criteria:
+
+Criteria	(Max Points 20):	Description
+
+Content	(4):	Clear and comprehensive explanation of the project, its goals, and outcomes.
+
+Organization	(4):	Logical flow of information, from introduction to conclusion.
+
+Teamwork	(4):	Demonstration of collaboration and presentation dynamics (individual projects automatically earn full points).
+
+Visuals	(4):	Well-designed and relevant slides or visual aids that effectively convey information.
+
+Presentation Mechanics	(4):	Clear speaking, good video/audio quality, and adherence to time limits.
 
 ## Requirements:
 
@@ -403,3 +494,7 @@ Conclusion: Summarize your main takeaways and future potential directions.
 Length: 7 minutes or less. The time limit will be strictly enforced. Content:
 
 Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀
+
+## Remarks for presentation slides:
+
+Lets not show results in the presentation that are not relevant. Aim remains to predict stroke.
