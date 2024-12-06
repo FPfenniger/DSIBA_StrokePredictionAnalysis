@@ -57,7 +57,7 @@ Key Variables
 #| code-summary: "Click to show code"
 
 # Original Dataset
-#kable(stroke_tb)
+kable(stroke_tb)
 
 ```
 
@@ -96,7 +96,7 @@ Categorical Variables:
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-#colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
+colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 ```
 
 ## Findings and Results
