@@ -197,17 +197,19 @@ The variable `age` shows a weak positive relationship with the target variable `
 #| code-summary: "Click to show code"
 library(knitr)
 
-# Convert columns to numeric if they are not already
-outlier_stroke_tb$age <- as.numeric(as.character(outlier_stroke_tb$age))
-outlier_stroke_tb$avg_glucose_level <- as.numeric(as.character(outlier_stroke_tb$avg_glucose_level))
-outlier_stroke_tb$bmi <- as.numeric(as.character(outlier_stroke_tb$bmi))
-outlier_stroke_tb$stroke <- as.numeric(as.character(outlier_stroke_tb$stroke))
+# Calculate correlation coefficients for each variable with stroke
+cor_age <- cor(as.numeric(outlier_stroke_tb$age), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+cor_glucose <- cor(as.numeric(outlier_stroke_tb$avg_glucose_level), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+cor_bmi <- cor(as.numeric(outlier_stroke_tb$bmi), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
 
-# Calculate the correlation coefficients
-correlation_matrix <- cor(outlier_stroke_tb[, c("age", "avg_glucose_level", "bmi", "stroke")], use = "complete.obs")
+# Create a correlation table
+correlation_table <- data.frame(
+  Variable = c("Age", "Average Glucose Level", "BMI"),
+  Correlation_with_Stroke = round(c(cor_age, cor_glucose, cor_bmi), 2)
+)
 
-# Create a kable table
-kable(correlation_matrix, digits = 2, caption = "Correlation Coefficients between Variables")
+# Display the correlation table with kable
+kable(correlation_table, caption = "Correlation Coefficients with Stroke")
 ```
 
 ### Categorical variables
@@ -613,8 +615,7 @@ combined_plot
 
 As for the violin plots of the initial datasets, stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The proportions of stroke cases vary significantly across the different value ranges of age and avg_glucose_level.
 
-
-
+The balancing indicate more pronounced relationships between these variables and stroke occurrences. The strong positive correlation between age and stroke, which increased to 0.58 from 0.24, suggests that as age rises, so does the likelihood of experiencing a stroke. This enhancement may stem from balancing the dataset, which equalized the number of individuals with strokes and those without, thereby reducing biases caused by an uneven distribution across age groups and clarifying the association. Similarly, the correlation between average glucose levels and stroke strengthened to 0.26, up from 0.13, potentially highlighting a clearer link between higher glucose levels and stroke risk. Lastly, the correlation for `bmi` rose slightly to 0.09 from 0.04. 
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -628,7 +629,7 @@ cor_bmi <- cor(as.numeric(initial_balanced_stroke_tb$bmi), as.numeric(initial_ba
 
 # Create a correlation table
 correlation_table <- data.frame(
-  Variable = c("Age", "Avg Glucose Level", "BMI"),
+  Variable = c("Age", "Average Glucose Level", "BMI"),
   Correlation_with_Stroke = round(c(cor_age, cor_glucose, cor_bmi), 2)
 )
 
@@ -636,19 +637,25 @@ correlation_table <- data.frame(
 kable(correlation_table)
 ```
 
+
+
 # Stratified Dataset Analysis
 
 In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. 
 
-Looking at the violin plot for individuals that have experienced a stroke, the average age  is 67.73 years. We have arbitrarily chosen to divide the dataset into two age groups at age 60 for several reasons. This age threshold may clinically be significant because we know that the risk of stroke increases notably after a certain age, allowing us to focus our analysis more effectively on the populations most affected. Additionally, individuals over 60 may exhibit different biological changes that impact stroke risk factors.
+The decision to use 60 years as the cutoff is clinically significant for several reasons. Research indicates that the risk of stroke markedly increases with age, particularly after 60, meaning that this age threshold allows us to focus our analysis on populations that are most affected by this condition. Furthermore, individuals over 60 often experience biological changes that can influence stroke risk factors, such as increased incidence of hypertension, changes in blood vessel elasticity, and the onset of other comorbidities. By stratifying at this age, we can capture these critical differences in risk profiles, leading to more precise analysis
 
 ##### Add proof that 60 is a great choice from the internet #####
+
+Looking at the violin plot for individuals that have experienced a stroke, the average age  is 67.73 years. We have arbitrarily chosen to divide the dataset into two age groups at age 60 for several reasons. 
 
 With this sampling method, we hope to increase our model's generalizability and robustness in the section.
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Click to show code"
+# Load necessary library
+library(knitr)
 
 # Create dataset for individuals under 60 years old
 under_60_data <- outlier_stroke_tb[outlier_stroke_tb$age < 60, ]
@@ -656,9 +663,12 @@ under_60_data <- outlier_stroke_tb[outlier_stroke_tb$age < 60, ]
 # Create dataset for individuals aged 60 years and older
 over_60_data <- outlier_stroke_tb[outlier_stroke_tb$age >= 60, ]
 
-# Display the first few rows of each dataset 
-head(under_60_data)
-head(over_60_data)
+# Display the first few rows of each dataset using kable
+# For individuals under 60
+kable(head(under_60_data), caption = "Individuals Under 60 Years")
+
+# For individuals aged 60 and older
+kable(head(over_60_data), caption = "Individuals Aged 60 and Older")
 ```
 
 ## EDA for Stratified Dataset
@@ -709,13 +719,13 @@ total_count_under_60 <- nrow(under_60_data)
 summary_table_under_60 <- bind_rows(
   lapply(variables_to_summarize, function(var) {
     under_60_data %>%
-      group_by(.data[[var]]) %>%
+      group_by(!!sym(var)) %>%
       summarize(
         Count = n(),
         Proportion = n() / total_count_under_60,
         .groups = "drop"
       ) %>%
-      rename(Type = .data[[var]]) %>%
+      rename(Type = !!sym(var)) %>%
       mutate(
         Variable = var,
         Type = as.character(Type),
@@ -803,9 +813,15 @@ combined_histograms <- subplot(
 # Display the combined histograms
 combined_histograms
 ```
+Looking at the numerical variables summary and at the histograms for individuals below 60 years old, we find that: 
 
+- `age`: The dataset includes individuals with ages ranging from 0.08 to 59 years, with an average age of 33.13 years (versus 43.35 years old for the full dataset). The median decrease to 35 years old (versus 45 years old for the full dataset). This is a 10 years decrease for the median ! 
 
-##### Violin plots for individuals below 60 #####
+- `avg_glucose_level`: The histogram of this variable still shows a right-skewed bimodal distribution. The mean of average glucose level slightly decrease to 100.36 mg/dL (versus 106.18 mg/dL) and the same goes for the median, which drops to 90.39 mg/dL (versus 91.89 mg/dL). 
+
+- `bmi`: The histogram shows a right-skewed distribution. The mean of 28.52 exhibits minimal fluctuation (versus 28.88), the same applies to the median of 27.70 (versus 28.10). 
+
+Same as for the balanced dataset analysis, we create some violin plots for the numerical variables to get a better view of these variables.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -847,13 +863,29 @@ combined_plot <- subplot(
 combined_plot
 ```
 
-Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
+The proportions of stroke cases vary significantly across the different value ranges of `age`. Individuals between 50 and 60 years old seem to experience stroke significantly more. 
 
--   `age`: The dataset includes individuals with ages ranging from 0.08 to 59 years, with an average age of 33.03 years. 
--   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 100.34. The average glucose levels range from 55.12 to 267.76 mg/dL.
--   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.5. The BMI values range from 10.3 to 97.6.
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(knitr)
 
-For completeness we added a violin Plot of the numerical variables with correlation coefficients respective to `stroke` displayed below the plot.
+# Calculate correlation coefficients for each variable
+cor_age <- cor(as.numeric(under_60_data$age), as.numeric(under_60_data$stroke), method = "pearson")
+cor_glucose <- cor(as.numeric(under_60_data$avg_glucose_level), as.numeric(under_60_data$stroke), method = "pearson")
+cor_bmi <- cor(as.numeric(under_60_data$bmi), as.numeric(under_60_data$stroke), method = "pearson")
+
+# Create a correlation table
+correlation_table <- data.frame(
+  Variable = c("Age", "Average Glucose Level", "BMI"),
+  Correlation_with_Stroke = round(c(cor_age, cor_glucose, cor_bmi), 2)
+)
+
+# Display the correlation table with kable
+kable(correlation_table, caption = "Correlation Coefficients with Stroke (Individuals Under 60 Years Old)")
+```
+Looking at the correlation coefficients, we notice that the correlation between `age` and `stroke` drops to 0.14 (versus 0.24 for the full dataset). The same goes for the correlation between `avg_glucose_level` and `stroke` which 0.07 (versus 0.13 for the full dataset). The correlation between `bmi` and `stroke` stays extremely low 0.06 (versus 0.04). 
+The correlations drop with the target variable `stroke` after stratification for individuals below 60 suggest that while age and glucose levels are known risk factors for stroke, their influence may be less pronounced among younger individuals. 
 
 ### Categorical variables for individuals below 60
 
@@ -901,8 +933,19 @@ for (i in seq_along(variables_to_summarize)) {
 }
 ```
 
+- `ever_married`:Individuals that have ever been married have a higher proportion of stroke (around 2.88%) than those who have never been married (around 0.49%).  
 
-### Same as for whole dataset, we remove gender and residence type for readability reasons
+- `work_type`:The category `children` has a proportion of around 0.29% of stroke, which is lower than the other categories (around 2%). 
+
+- `smoking_status`: `formerly smoked` has the highest proportion of stroke (3.23%), followed closely by the category `smokes` (2.84%). Lastly, `never smoked` has the lowest proportion of stroke (1.34%). 
+
+- `hypertension`: Individuals that have hypertension have a higher proportion of stroke (around 6.44%) than those who don't (1.57%). 
+
+- `heart_disease`:Individuals that have a heart disease have a higher proportion of stroke (around 6.45%) than those who don't (1.7%).
+
+For readability reasons, we do not present the plots for the variables `gender` and `Residence_type` as the proportions of stroke appear to be consistent across the categories they comprise (See Appendix for reference). 
+
+
 Now that we completed the EDA of the group aged below 60, let's check for the group aged of 60 and over.
 
 #### Descriptive Statistics for individuals of 60 and over
@@ -1039,7 +1082,16 @@ combined_histograms <- subplot(
 combined_histograms
 ```
 
-####Violin plots for individuals of 60 and over ####
+Looking at the numerical variables summary and at the histograms for individuals of 60 and over years old, we find that: 
+
+- `age`: The dataset includes individuals with ages ranging from 60 to 82 years, with an average age of 70.9 years (versus 43.35 years old for the full dataset). The median increase to 71 years old (versus 45 years old for the full dataset). This is a 26 years increase for the median ! 
+
+- `avg_glucose_level`: The histogram of this variable still shows a right-skewed bimodal distribution. The mean of average glucose level slightly increase to 121.9 mg/dL (versus 106.18 mg/dL) and the same goes for the median, which rise to 96.97 mg/dL (versus 91.89 mg/dL). 
+
+- `bmi`: The histogram shows a right-skewed distribution. The mean of 29.85 exhibits minimal fluctuation (versus 28.88), the same applies to the median of 27.70 (versus 28.80).
+
+
+Same as for individuals below 60 years old, here are the violin plots for individuals of 60 and over years old:
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1083,6 +1135,35 @@ combined_plot <- subplot(
 combined_plot
 ```
 
+Even tough the proportions of stroke cases across the different value ranges of `age`, does not vary as much as the group below 60 years old, we still see a clear distribution of stroke towards older individuals. Individuals between 75 and 80 years old seem to experience stroke more. 
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(knitr)
+
+# Calculate correlation coefficients for each variable for individuals aged 60 and over
+cor_age_over_60 <- cor(as.numeric(over_60_data$age), as.numeric(over_60_data$stroke), method = "pearson")
+cor_glucose_over_60 <- cor(as.numeric(over_60_data$avg_glucose_level), as.numeric(over_60_data$stroke), method = "pearson")
+cor_bmi_over_60 <- cor(as.numeric(over_60_data$bmi), as.numeric(over_60_data$stroke), method = "pearson")
+
+# Create a correlation table
+correlation_table_over_60 <- data.frame(
+  Variable = c("Age", "Average Glucose Level", "BMI"),
+  Correlation_with_Stroke = round(c(cor_age_over_60, cor_glucose_over_60, cor_bmi_over_60), 2)
+)
+
+# Display the correlation table with kable
+kable(correlation_table_over_60, caption = "Correlation Coefficients with Stroke (Individuals Aged 60 and Over)")
+```
+
+Looking at the correlation coefficients, we notice that the correlation between `age` and `stroke` drops to 0.17 (versus 0.24 for the full dataset). The same goes for the correlation between `avg_glucose_level` and `stroke` which 0.10 (versus 0.13 for the full dataset). The correlation coefficient between `bmi` and `stroke` becomes negative -0.04 (versus 0.04) but stays extremely low and indicate that BMI is not a strong predictor of stroke in individuals of 60 and over years old. 
+
+For the variable `age`, the reduction of the correlation coefficient may suggest that while age remains an important risk factor for stroke, its predictive power diminishes within a narrower age range, possibly due to the high baseline incidence of stroke in this group, which can obscure the strength of the correlation with age alone.
+
+Similarly, the correlation between `avg_glucose_level` and `stroke` decreases from 0.13 in the full dataset to 0.10 for individuals aged 60 and over. This decline implies that glucose levels, while still relevant, may play a somewhat less significant role in stroke risk within this specific age group. It may reflect the fact that at advanced ages, other age-related risk factors or comorbid conditions could overshadow the impact of glucose levels. 
+
+
 ### Categorical variables for individuals of 60 and over
 
 ```{r, message = FALSE}
@@ -1119,9 +1200,13 @@ for (i in seq_along(variables_to_summarize)) {
 }
 ```
 
+- `ever_married`: Surprisingly, we notice that unlike for the group of individuals below 60 years old, the proportion of people that had a stroke that have never been married (19.63%) is higher than those who have (12.61%). 
 
-####We remove gender and residence type, we talk about how now the proportion of people that had a stroke that have never been married is higher than those who have (unlike before). The proportion of individuals who have experienced a stroke appears to be equal across the three categories of the smoking status variable, and similarly for the work type variable (See appendix).#####
+- `hypertension`: Same as for the group of individuals below 60 years old, individuals who have hypertension have a higher proportion of stroke (17.91%) than those who don't (11.85%). 
 
+- `heart_disease`: Same as for the group of individuals below 60 years old, individuals who have a heart disease have a higher proportion of stroke (20.09%) than those who don't (11.88%).
+
+For readability reasons, we do not present the plots for the variables `gender`, `Residence_type`, `smoking_status` and `work_type` as the proportions of stroke appear to be consistent across the categories they comprise (See Appendix for reference).
 
 #### Balancing Stratified Dataset
 
