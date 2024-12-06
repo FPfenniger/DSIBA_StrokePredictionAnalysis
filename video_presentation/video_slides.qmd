@@ -77,14 +77,17 @@ After data transformations:
 Variable Adjustments:
 •   Reclassified variables: bmi → numerical; hypertension, heart_disease → categorical.
 •   Removed irrelevant column: id.
+
 Handling Missing Values:
 •   Replaced missing values: bmi → median, smoking_status → mode.
+
 Outlier Analysis:
 •   Visualized outliers in age, avg_glucose_level, and bmi using boxplots.
 •   Outliers Identified:
 •   avg_glucose_level: 12.25% of dataset (627 points).
 •   bmi: 2.47% of dataset(126 points).
 •   Retained outliers for now due to potential relevance as risk factors.
+
 Categorical Variables:
 •   Removed infrequent categories in gender (Other) and work_type (Never_worked).
 •   Noted rare occurrences in heart_disease, hypertension, and stroke.
@@ -104,10 +107,18 @@ Categorical Variables:
 
 ## Conclusion
 
-Introduction: Briefly introduce your project goals and motivation. Research Questions: What were the key research questions? Data: Provide a high-level overview of your data sources and preprocessing. Findings and Results: Highlight your key findings, insights, or model results. Conclusion: Summarize your main takeaways and future potential directions.
+## Requirements:
 
-Length:
+Introduction: Briefly introduce your project goals and motivation.
 
-The presentation should be 7 minutes or less. The time limit will be strictly enforced. Content:
+Research Questions: What were the key research questions?
 
-Introduction: Briefly introduce your project goals and motivation. Research Questions: What were the key research questions? Data: Provide a high-level overview of your data sources and preprocessing. Findings and Results: Highlight your key findings, insights, or model results. Conclusion: Summarize your main takeaways and future potential directions. Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀
+Data: Provide a high-level overview of your data sources and preprocessing.
+
+Findings and Results: Highlight your key findings, insights, or model results.
+
+Conclusion: Summarize your main takeaways and future potential directions.
+
+Length: 7 minutes or less. The time limit will be strictly enforced. Content:
+
+Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀
