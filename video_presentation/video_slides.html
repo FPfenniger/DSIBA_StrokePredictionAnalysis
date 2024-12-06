@@ -10,7 +10,7 @@
 <link href="video_slides_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
   <meta name="generator" content="quarto-1.5.57">
 
-  <title>presentation_slides</title>
+  <title>Understanding Stroke: A Data-Driven Approach</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
@@ -325,21 +325,14 @@
     <div class="slides">
 
 <section id="title-slide" class="quarto-title-block center">
-  <h1 class="title">presentation_slides</h1>
+  <h1 class="title">Understanding Stroke: A Data-Driven Approach</h1>
 
 <div class="quarto-title-authors">
 </div>
 
 </section>
-<section class="slide level2">
-
-<p>Length:</p>
-<p>The presentation should be 7 minutes or less. The time limit will be strictly enforced. Content:</p>
-<p>Introduction: Briefly introduce your project goals and motivation. Research Questions: What were the key research questions? Data: Provide a high-level overview of your data sources and preprocessing. Findings and Results: Highlight your key findings, insights, or model results. Conclusion: Summarize your main takeaways and future potential directions. Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀</p>
-</section>
-<section id="understanding-stroke-a-data-driven-approach" class="slide level2">
-<h2>Understanding Stroke: A Data-Driven Approach</h2>
-<h3 id="stroke-a-global-health-emergency">Stroke: A Global Health Emergency</h3>
+<section id="stroke-a-global-health-emergency" class="slide level2">
+<h2>Stroke: A Global Health Emergency</h2>
 <p>The Problem:</p>
 <pre><code>•   15M strokes/year (WHO): 5M deaths, 5M disabilities.
 •   Stroke disrupts brain blood flow: caused by blockage or bleeding.</code></pre>
@@ -350,31 +343,53 @@
 <p>Key Question:</p>
 <p>What factors best predict stroke, and how can we intervene?</p>
 </section>
-<section id="data-preprocessing" class="slide level2">
-<h2>Data preprocessing</h2>
-<p>When you click the <strong>Render</strong> button a document will be generated that includes:</p>
-<ul>
-<li>Content authored with markdown</li>
-<li>Output from executable code</li>
-</ul>
+<section id="dataset-overview" class="slide level2">
+<h2>Dataset Overview</h2>
+<p>Data Source</p>
+<pre><code>    •   Origin: Found on Kaggle.com. Owned and last updated in 2020 by Federico Soriano Palacios.
+    •   Observations: 5110
+    •   Features: 11</code></pre>
+<p>Key Variables</p>
+<pre><code>    •   Target Variable: stroke (0 = No, 1 = Yes)
+    •   Demographics: gender, age, Residence_type
+    •   Health Metrics: hypertension, heart_disease, avg_glucose_level, bmi
+    •   Lifestyle: smoking_status, work_type, ever_married</code></pre>
 </section>
-<section id="exploratory-data-analysis" class="slide level2">
-<h2>Exploratory data analysis</h2>
-<p>When you click the <strong>Render</strong> button a presentation will be generated that includes both content and the output of embedded code. You can embed code like this:</p>
-<div class="cell">
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2</code></pre>
-</div>
-</div>
+<section id="data-transformations" class="slide level2">
+<h2>Data Transformations</h2>
+<p>Before preprocessing:</p>
+<pre><code>Dataset is fairly clean
+    •   No duplicate rows.
+    •   Missing values in bmi and smoking_status.</code></pre>
+<p>After data transformations:</p>
+<pre><code>    1.  Variable Adjustments:
+    •   Reclassified variables: bmi → numerical; hypertension, heart_disease → categorical.
+    •   Removed irrelevant column: id.
+    2.  Handling Missing Values:
+    •   Replaced missing values: bmi → median, smoking_status → mode.
+    3.  Outlier Analysis:
+    •   Visualized outliers in age, avg_glucose_level, and bmi using boxplots.
+    •   Outliers Identified:
+    •   avg_glucose_level: 12.25% (627 points).
+    •   bmi: 2.47% (126 points).
+    •   Retained outliers for now due to potential relevance as risk factors.
+    4.  Categorical Variables:
+    •   Removed infrequent categories in gender (Other) and work_type (Never_worked).
+    •   Noted rare occurrences in heart_disease, hypertension, and stroke.</code></pre>
 </section>
-<section id="predictive-model" class="slide level2">
-<h2>Predictive model</h2>
+<section id="findings-and-results" class="slide level2">
+<h2>Findings and Results</h2>
+<h3 id="predictive-model">Predictive model</h3>
 </section>
 <section id="model-evaluation" class="slide level2">
 <h2>Model evaluation</h2>
 </section>
 <section id="conclusion" class="slide level2">
 <h2>Conclusion</h2>
+<p>Introduction: Briefly introduce your project goals and motivation. Research Questions: What were the key research questions? Data: Provide a high-level overview of your data sources and preprocessing. Findings and Results: Highlight your key findings, insights, or model results. Conclusion: Summarize your main takeaways and future potential directions.</p>
+<p>Length:</p>
+<p>The presentation should be 7 minutes or less. The time limit will be strictly enforced. Content:</p>
+<p>Introduction: Briefly introduce your project goals and motivation. Research Questions: What were the key research questions? Data: Provide a high-level overview of your data sources and preprocessing. Findings and Results: Highlight your key findings, insights, or model results. Conclusion: Summarize your main takeaways and future potential directions. Tell your story well! Focus on delivering clear, concise, and engaging insights from your project. 🚀</p>
 <div class="quarto-auto-generated-content">
 <div class="footer footer-default">
 
