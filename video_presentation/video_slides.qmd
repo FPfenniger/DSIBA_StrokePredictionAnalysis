@@ -138,7 +138,7 @@ Categorical Variables:
 colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 ```
 
-## Findings and Results
+## EDA Findings & Insights
 
 ### EDA: Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
 

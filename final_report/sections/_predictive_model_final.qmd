@@ -375,7 +375,6 @@ low-risk age group, and the high-risk age group. We will train a
 logistic regression model for each dataset, before evaluating them on
 the test set. We will then compare the performance of the models and discuss potential strengths and weaknesses.
 
-First we introduce all 
 ### Train-test split
 
 In order to evaluate the performance of our model, we split the original
@@ -501,8 +500,7 @@ indicating strong performance for the majority class (No), the model
 struggles with recall for the positive class, identifying only 0.5% of
 true positives. This results in a very low F1-score of 0.99%, reflecting
 poor balance between precision and recall. These results highlight the
-model's significant bias toward the majority class, making it inadequate
-for practical use in detecting strokes.
+model's significant bias toward the majority class. For the evaluation on the test set we therefore expect exclusive prediction of "No" for the stroke variable and metrics in the same range as the training set.
 
 ### Evaluation and Discussion
 
@@ -559,7 +557,7 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
-
+As previously stated, our baseline model didn't predict any strokes at all, which is reflected in the condfusion matrix. 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
