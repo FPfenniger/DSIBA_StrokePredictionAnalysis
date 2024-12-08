@@ -348,9 +348,13 @@ Accuracy is the ratio of correctly predicted observations to the total observati
 $$
 Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
 $$
+- Precision/Recall Curve
+for stratified 
+
+
 
 - ROC Curve and AUC
-The *receiver operating characteristic* curve is a graphical representation of the true positive rate (recall) against the false positive rate (specificity). Concretely, it shows the tradeoff between sensitivity and specificity. The area under the curve (AUC) is a measure of how well the model can distinguish between classes. An AUC of 1 indicates a perfect model, while an AUC of 0.5 indicates a model that performs no better than random chance.
+The *receiver operating characteristic* curve is a graphical representation of the true positive rate (recall) against the false positive rate (specificity). Concretely, it shows the tradeoff between sensitivity and specificity. The diagonal line represents the random classifier line. A good model stays as far away from the line as possible and tends to fit to the upper left corner. The area under the curve (AUC) is a measure of how well the model can distinguish between classes and serves primarly to compare models between eachother. An AUC of 1 indicates a perfect model, while an AUC of 0.5 indicates a model that performs no better than random chance.
 
 - Odds ratio
 The odds ratio is the exponentiated coefficient of a logistic regression model. It represents the change in odds of the target variable for a one-unit change in the predictor variable. An odds ratio greater than 1 indicates a positive relationship between the predictor and the target variable, while an odds ratio less than 1 indicates a negative relationship. It will help us to understand the importance and direction of each feature in predicting the target variable.
@@ -1069,6 +1073,9 @@ high_risk_age_data$stroke <- factor(
   labels = c("No", "Yes")       # Valid names for levels
 )
 
+high_risk_age_ablation  <- high_risk_age_data %>% 
+  select(-c("age")) 
+
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartition(high_risk_age_data$stroke, p = 0.8, 
@@ -1076,6 +1083,9 @@ trainIndex <- createDataPartition(high_risk_age_data$stroke, p = 0.8,
 
 train_high_risk <- high_risk_age_data[trainIndex, ]
 test_high_risk <- high_risk_age_data[-trainIndex, ]
+
+train_high_risk_ablated <- high_risk_age_ablation[trainIndex, ]
+test_high_risk_ablated <- high_risk_age_ablation[-trainIndex, ]
 ```
 
 ### Model
@@ -1241,3 +1251,114 @@ ggplot(data = data.frame(
 generate_importance_table(logistic_model_4, "Logistic Model 4")
 ```
 
+### Ablation Analysis on Age
+As we have a narrow age range in this strata, we examine whether removing `age` increases the predictive power of our logistic model. We hope particularly to enhance our understanding of the predictor's relative importance. 
+
+We train a new model, which only differs in a removed `age` column:
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_5 <- train(
+  stroke ~ ., 
+  data = train_high_risk_ablated,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_5, newdata = test_high_risk_ablated, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_high_risk_ablated$stroke <- factor(test_high_risk_ablated$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_high_risk_ablated$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+  
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_high_risk_ablated$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_high_risk_ablated$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+    Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_high_risk_ablated$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+generate_importance_table(logistic_model_5, "Logistic Model 5")
+```
