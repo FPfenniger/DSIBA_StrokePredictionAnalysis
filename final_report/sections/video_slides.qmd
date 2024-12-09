@@ -64,80 +64,64 @@ under_60_data_tb <- read.csv("../../data/datasets/under_60_data_tb.csv")
 -   Analyze key factors like age, heart disease, & lifestyle.
 -   Visualize insights for better understanding.
 
-## Key Question: What factors best predict stroke, and how can we intervene?
+Key question: What factors best predict stroke, and how can we intervene?
 
 # Dataset Overview
 
-## Data Source
+### Data Source
 
 -   Origin: Found on Kaggle.com. Owned and last updated in 2020 by Federico Soriano Palacios.
 -   Observations: 5110
 -   Features: 11
 
-## Key Variables
+### Key Variables
 
 -   Target Variable: stroke (0 = No, 1 = Yes)
 -   Demographics: gender, age, Residence_type
 -   Health Metrics: hypertension, heart_disease, avg_glucose_level, bmi
 -   Lifestyle: smoking_status, work_type, ever_married
 
+## Dataset
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
 # Original Dataset
-kable(stroke_tb)
+kable(head(stroke_tb))
 
 ```
 
 # Data Preprocessing
 
-## Original dataset:
+## Status quo:
 
 Dataset is fairly clean because - No duplicate rows - Missing values only in bmi and smoking_status
 
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
+kable(colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == ""))
 ```
 
 ## Processed dataset:
 
-Variable Adjustments:
+**Variable Adjustments:**
+- Reclassified:
+  - `bmi` → numerical
+  - `hypertension`, `heart_disease` → categorical
+- Removed irrelevant column: `id`
 
--Reclassified variables: bmi → numerical; hypertension, heart_disease → categorical. - Removed irrelevant column: id.
+**Handling Missing Values:**
+- `bmi`: replaced missing values with **median**
+- `smoking_status`: replaced missing values with **mode**
 
-Handling Missing Values:
+**Outlier Analysis:**
+- Visualized outliers in: `age`, `avg_glucose_level`, `bmi`
+- Outliers Identified:
+  - `avg_glucose_level`: 12.25% of dataset (627 points)
+  - `bmi`: 2.47% of dataset (126 points)
+- Decision: **Retain outliers** for now, as they may be relevant risk factors
 
--   Replaced missing values: bmi → median, smoking_status → mode.
-
-Outlier Analysis:
-
--   Visualized outliers in age, avg_glucose_level, and bmi using boxplots.
--   Outliers Identified:
--   avg_glucose_level: 12.25% of dataset (627 points).
--   bmi: 2.47% of dataset(126 points).
--   Retained outliers for now due to potential relevance as risk factors.
-
-```{r}
-#| code-fold: true
-#| code-summary: "Click to show code"
-library(ggplot2)
-library(plotly)
-
-variables <- c("age", "avg_glucose_level", "bmi")
-
-for (var in variables) {
-  p <- ggplot(preprocessed_stroke_tb, aes_string(y = var)) +
-    geom_boxplot(outlier.color = "red", outlier.size = 2) +
-    labs(title = paste("Boxplot of", var), y = var, x = "") 
-  
-  # Convert to Plotly and apply partial_bundle to reduce size
-  p_plotly <- ggplotly(p) %>% partial_bundle()
-  print(p_plotly)
-}
-```
 
 Categorical Variables:
 
@@ -155,25 +139,9 @@ From the initial EDA, we can observe that individuals are at more struck by stro
 -   have heart disease
 -   are former or current smokers
 -   have hypertension
--   are married
--   are self-employed or work in the private sector
 
-# Descriptive statistics
 
-Relevant Numerical Variables:
-
--   age: Weak positive relationship with stroke (r = 0.24).
--   avg_glucose_level: Very weak positive relationship with stroke (r = 0.13).
-
-Relevant Categorical Variables: - heart_disease - smoking_status - hypertension - ever_married - work_type
-
-Non-Relevant Variables
-
--   gender: No difference in stroke proportions between female and male categories.
--   residence_type: No difference in stroke proportions across urban and rural categories.
--   bmi: No relationship with stroke (r = 0.04).
-
-## Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
+Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -231,7 +199,8 @@ combined_histograms <- subplot(hist_age, hist_glucose, hist_bmi, nrows = 1, titl
 combined_histograms
 ```
 
-## There exist weak positive relationships between age and stroke, and avg_glucose_level and stroke. No relationship between bmi and stroke.
+## 
+There exist weak positive relationships between age and stroke, and avg_glucose_level and stroke. No relationship between bmi and stroke.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -253,56 +222,13 @@ correlation_table <- data.frame(
 kable(correlation_table, caption = "Correlation Coefficients with Stroke")
 ```
 
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-# List of categorical variables
-variables_to_summarize <- c("stroke", "gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
-
-# Convert binary integer variables to factors
-outlier_stroke_tb <- outlier_stroke_tb %>%
-  mutate(
-    stroke = as.factor(stroke),
-    hypertension = as.factor(hypertension),
-    heart_disease = as.factor(heart_disease)
-  )
-
-# Calculate total count for proportion calculation
-total_count <- nrow(outlier_stroke_tb)
-
-# Create summary table 
-summary_table <- bind_rows(
-  lapply(variables_to_summarize, function(var) {
-    outlier_stroke_tb %>%
-      group_by(.data[[var]]) %>%
-      summarize(
-        Count = n(),
-        Proportion = n() / total_count,
-        .groups = "drop"
-      ) %>%
-      rename(Type = .data[[var]]) %>%
-      mutate(
-        Variable = var,
-        Type = as.character(Type),
-        Proportion = round(Proportion * 100, 2)  
-      )
-  })
-) %>%
-  select(Variable, Type, Count, Proportion) %>%  
-  arrange(Variable, Type)                        
-
-# Display the combined table with kable
-knitr::kable(summary_table, caption = "Summary of Categorical Variables with Proportion", row.names = FALSE)
-```
 
 ```{r}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
 # Define choices for the variable selection, excluding Gender and Residence Type
-x_variable_choices <- c("Ever Married" = "ever_married",
-                        "Work Type" = "work_type", 
-                        "Smoking Status" = "smoking_status",
+x_variable_choices <- c("Smoking Status" = "smoking_status",
                         "Hypertension" = "hypertension", 
                         "Heart Disease" = "heart_disease")
 
@@ -371,8 +297,13 @@ plot_ly(
     yaxis = list(title = "")
   )
 ```
+# Balanced EDA
+
+Changes compared to baseline and we expect these factors to be potential predictors.
+
 
 # Predictive Modeling
+
 
 ## Final data preparations: 
 
@@ -383,36 +314,18 @@ plot_ly(
 
 ## Modeling
 
-We divide the analysis into four datasets for model training and evaluation: 
-1. Original Dataset 
-2. Balanced Original Dataset 
-3. Low-Risk Age Group 
-4. High-Risk Age Group
+For the modeling part, we decided to split the analysis into four differents parts:
+- Baseline Model 
+- Balanced Baseline Model
+- Low-Risk Age Model 
+- High-Risk Age Model
 
 Modeling Approach: 
 - Train a logistic regression model for each dataset
 - Test model performance on a shared test set
 -  80% of the data for training and 20% for testing
 
-
-# Results: 1. Original Dataset
-
-## Baseline Results
-![](figures/1_Results.png)
-## Baseline Metrics
-![](figures/1_Metrics.png)
-
--   Accuracy: High at 95.08%, but misleading due to poor performance on the minority class (Stroke =Yes).
--   Specificity: Nearly perfect at 99.97%, indicating strong prediction of the majority class (Stroke = No).
--   Recall (Positive Class): Extremely low at 0.5%, identifying very few true positives.
--   F1-Score: Very low at 0.99%, reflecting poor balance between precision and recall.
-
-![](figures/1_ROC.png)
-![](figures/1_Odds_ratio.png)
-## Interpretation
-
--   The baseline model is highly biased toward the majority class (Stroke = No).
--   Poor performance on the minority class (Stroke = Yes) makes it unsuitable for predicting strokes effectively.
+We focus on the most successful prediction model: the balanced baseline model.
 
 
 # Results: 2. Balanced Original Dataset
