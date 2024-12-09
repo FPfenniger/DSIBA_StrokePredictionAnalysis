@@ -19,7 +19,7 @@ library(kableExtra)
 ```
 
 # Final Data Preparations
- 
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -61,7 +61,9 @@ encoded_stroke_tb$Residence_type <- factor(
 
 ```
 
-In the next step, we encode the remaining categorical variables with multiple categories. Here we always define one reference category:
+In the next step, we encode the remaining categorical variables with
+multiple categories. Here we always define one reference category:
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -88,7 +90,11 @@ encoded_stroke_tb <- cbind(
 str(encoded_stroke_tb)
 
 ```
-And we turn the binary variables into factors with the correct levels and apply the `make.names()` function to the column names to ensure they are valid.
+
+And we turn the binary variables into factors with the correct levels
+and apply the `make.names()` function to the column names to ensure they
+are valid.
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -160,7 +166,12 @@ for (index1 in 1:(length(cat_variables) - 1)) {
 
 The only relationship, which seems to be problematic in terms of
 multicollinearity seems to be between `ever_married` and
-`work_typechildren`. This makes a lot of sense, as children are not yet married and therefore a strong correlation will consist between `ever_married` (0) and `work_typechildren` (1). For the predictive models, we will therefore exclude `work_typechildren` because evidence and our EDA suggests that stroke risk is correlated with age, making this variable a weak predictor. 
+`work_typechildren`. This makes a lot of sense, as children are not yet
+married and therefore a strong correlation will consist between
+`ever_married` (0) and `work_typechildren` (1). For the predictive
+models, we will therefore exclude `work_typechildren` because evidence
+and our EDA suggests that stroke risk is correlated with age, making
+this variable a weak predictor.
 
 ```{r}
 #| code-fold: true
@@ -172,6 +183,7 @@ encoded_stroke_tb <- encoded_stroke_tb %>%
 
 str(encoded_stroke_tb)
 ```
+
 As all other effect sizes appear to be smaller than 0.3, we can safely
 conclude that all other categorical features are sufficiently
 independent to use as predictors. In conclusion, multicollinearity does
@@ -279,11 +291,9 @@ $$
 z = \frac{x - \mu}{\sigma}
 $$
 
-Where: 
-- z is the standardized value, 
-- x is the original feature value, 
-- mu is the mean of the feature, 
-- sigma is the standard deviation of the feature.
+Where: - z is the standardized value, - x is the original feature
+value, - mu is the mean of the feature, - sigma is the standard
+deviation of the feature.
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -307,57 +317,78 @@ scaled_high_risk_age_tb <- high_risk_age_data %>%
 # Display the scaled dataset
 kable(scaled_stroke_tb)
 ```
+
 # Modelling
 
 We divide our analysis into four different datasets and predictive
 models: the original dataset, the balanced original dataset, the
 low-risk age group, and the high-risk age group. We will train a
 logistic regression model for each dataset, before evaluating them on
-the test set. We will then compare the performance of the models and discuss potential strengths and weaknesses.
+the test set. We will then compare the performance of the models and
+discuss potential strengths and weaknesses.
 
 ## Metrics and Terms
-First of all we introduce the metrics we will be using to evaluate our models. 
 
-- Confusion matrix
-The confusion matrix compares the actual values of the target variable with the predicted values and serves as a basis for our evaluation. It is a 2x2 matrix that contains the following values: True Positives (predicting correctly a stroke), True Negatives (predicting correctly no stroke occurrence), False Positives (predicting a stroke when there is none) and False Negatives (predicting no stroke when there is one). The confusion matrix is used to calculate the following metrics:
+First of all we introduce the metrics we will be using to evaluate our
+models.
 
-- Precision
-Precision is the ratio of correctly predicted positive observations to the total predicted positive observations. The formula for precision is given by:
+-   Confusion matrix The confusion matrix compares the actual values of
+    the target variable with the predicted values and serves as a basis
+    for our evaluation. It is a 2x2 matrix that contains the following
+    values: True Positives (predicting correctly a stroke), True
+    Negatives (predicting correctly no stroke occurrence), False
+    Positives (predicting a stroke when there is none) and False
+    Negatives (predicting no stroke when there is one). The confusion
+    matrix is used to calculate the following metrics:
+
+-   Precision Precision is the ratio of correctly predicted positive
+    observations to the total predicted positive observations. The
+    formula for precision is given by:
 
 $$
 Precision = \frac{TP}{TP + FP}
-$$
-- Recall
-Recall is the ratio of correctly predicted positive observations to the all observations in actual class. In our case and general in healthcare research, recall should be prioritized as undetected strokes are generally more fatal than false alarms. The formula for recall is given by: 
+$$ - Recall Recall is the ratio of correctly predicted positive
+observations to the all observations in actual class. In our case and
+general in healthcare research, recall should be prioritized as
+undetected strokes are generally more fatal than false alarms. The
+formula for recall is given by:
 
 $$
 Recall = \frac{TP}{TP + FN}
-$$
-- F1 Score
-The F1 score is the harmonic mean of Precision and Recall and often used in unbalanced dataset like ours as it considers false positives and false negatives. The formula for F1 score ranges from 0 to 1 and is given by:
-$$
+$$ - F1 Score The F1 score is the harmonic mean of Precision and Recall
+and often used in unbalanced dataset like ours as it considers false
+positives and false negatives. The formula for F1 score ranges from 0 to
+1 and is given by: $$
 F1 = 2×\frac{Precision × Recall}{Precision + Recall}
-$$
-- Specificity
-Specificity is the ratio of correctly predicted negative observations to the total actual negative observations. The formula for specificity is given by:
-$$
+$$ - Specificity Specificity is the ratio of correctly predicted
+negative observations to the total actual negative observations. The
+formula for specificity is given by: $$
 Specificity = \frac{TN}{TN + FP}
-$$
-- Accuracy
-Accuracy is the ratio of correctly predicted observations to the total observations. The formula for accuracy is given by:
-$$
+$$ - Accuracy Accuracy is the ratio of correctly predicted observations
+to the total observations. The formula for accuracy is given by: $$
 Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
-$$
-- Precision/Recall Curve
-for stratified 
+$$ - Precision/Recall Curve for stratified
 
+-   ROC Curve and AUC The *receiver operating characteristic* curve is a
+    graphical representation of the true positive rate (recall) against
+    the false positive rate (specificity). Concretely, it shows the
+    tradeoff between sensitivity and specificity. The diagonal line
+    represents the random classifier line. A good model stays as far
+    away from the line as possible and tends to fit to the upper left
+    corner. The area under the curve (AUC) is a measure of how well the
+    model can distinguish between classes and serves primarly to compare
+    models between eachother. An AUC of 1 indicates a perfect model,
+    while an AUC of 0.5 indicates a model that performs no better than
+    random chance.
 
-
-- ROC Curve and AUC
-The *receiver operating characteristic* curve is a graphical representation of the true positive rate (recall) against the false positive rate (specificity). Concretely, it shows the tradeoff between sensitivity and specificity. The diagonal line represents the random classifier line. A good model stays as far away from the line as possible and tends to fit to the upper left corner. The area under the curve (AUC) is a measure of how well the model can distinguish between classes and serves primarly to compare models between eachother. An AUC of 1 indicates a perfect model, while an AUC of 0.5 indicates a model that performs no better than random chance.
-
-- Odds ratio
-The odds ratio is the exponentiated coefficient of a logistic regression model. It represents the change in odds of the target variable for a one-unit change in the predictor variable. An odds ratio greater than 1 indicates a positive relationship between the predictor and the target variable, while an odds ratio less than 1 indicates a negative relationship. It will help us to understand the importance and direction of each feature in predicting the target variable.
+-   Odds ratio The odds ratio is the exponentiated coefficient of a
+    logistic regression model. It represents the change in odds of the
+    target variable for a one-unit change in the predictor variable. An
+    odds ratio greater than 1 indicates a positive relationship between
+    the predictor and the target variable, while an odds ratio less than
+    1 indicates a negative relationship. It will help us to understand
+    the importance and direction of each feature in predicting the
+    target variable.
 
 ## Baseline Model
 
@@ -365,7 +396,8 @@ We divide our analysis into four different datasets and predictive
 models: the original dataset, the balanced original dataset, the
 low-risk age group, and the high-risk age group. We will train a
 logistic regression model for each dataset, before evaluating them on
-the test set. We will then compare the performance of the models and discuss potential strengths and weaknesses.
+the test set. We will then compare the performance of the models and
+discuss potential strengths and weaknesses.
 
 ### Train-test split
 
@@ -491,7 +523,9 @@ indicating strong performance for the majority class (No), the model
 struggles with recall for the positive class, identifying only 0.5% of
 true positives. This results in a very low F1-score of 0.99%, reflecting
 poor balance between precision and recall. These results highlight the
-model's significant bias toward the majority class. For the evaluation on the test set we therefore expect exclusive prediction of "No" for the stroke variable and metrics in the same range as the training set.
+model's significant bias toward the majority class. For the evaluation
+on the test set we therefore expect exclusive prediction of "No" for the
+stroke variable and metrics in the same range as the training set.
 
 ### Evaluation and Discussion
 
@@ -548,7 +582,10 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
-As previously stated, our baseline model didn't predict any strokes at all, which is reflected in the condfusion matrix. 
+
+As previously stated, our baseline model didn't predict any strokes at
+all, which is reflected in the condfusion matrix.
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -950,7 +987,6 @@ print(conf_matrix_train)
 
 ```
 
-
 ### Evaluation and Discussion
 
 ```{r, message = FALSE}
@@ -1004,12 +1040,10 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
-probably due to several factors:
-- different stroke distribution in the training set
-- overfitting to the training set structure
-- the small size of the test set
 
-
+probably due to several factors: - different stroke distribution in the
+training set - overfitting to the training set structure - the small
+size of the test set
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1033,7 +1067,6 @@ ggplot(data = data.frame(
   annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
   theme_minimal()
 ```
-
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1252,9 +1285,14 @@ generate_importance_table(logistic_model_4, "Logistic Model 4")
 ```
 
 ### Ablation Analysis on Age
-As we have a narrow age range in this strata, we examine whether removing `age` increases the predictive power of our logistic model. We hope particularly to enhance our understanding of the predictor's relative importance. 
+
+As we have a narrow age range in this strata, we examine whether
+removing `age` increases the predictive power of our logistic model. We
+hope particularly to enhance our understanding of the predictor's
+relative importance.
 
 We train a new model, which only differs in a removed `age` column:
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -1285,6 +1323,7 @@ logistic_model_5 <- train(
   metric = "ROC"
 )
 ```
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -1335,6 +1374,7 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -1357,6 +1397,7 @@ ggplot(data = data.frame(
   annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
   theme_minimal()
 ```
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
