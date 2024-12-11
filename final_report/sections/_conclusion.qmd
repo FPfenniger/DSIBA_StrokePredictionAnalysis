@@ -1,5 +1,24 @@
 ---
-title: "Conclusion"
+title: "Final Analysis"
 format: html
-server: shiny
 ---
+
+# Final Analysis
+In this final section, we will present the results of our analysis and discuss the implications of our findings. We start with a results section, where we discuss the performance of the models we trained. We then move on to a conclusions section, where we discuss the implications of our findings and how they relate to our research questions. Finally, we present some final thoughts on the project.
+
+## Results
+
+### Naive Model
+
+### Baseline Model
+
+### Low-Risk Age Mode
+
+### High-Risk Age Model
+
+## Conclusions
+
+### Research Questions
+
+### Final Thoughts
+

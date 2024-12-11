@@ -252,11 +252,7 @@ to retain all available data, which would otherwise be reduced through
 downsampling. By upsampling, we enhance the representation of stroke
 cases, helping the model learn more effectively and improve both
 prediction accuracy and recall, particularly for the minority class
-(here when strokes occur).Because the upsampling in the low-risk age
-group is rather extreme (from 1.5% to 50% stroke cases), we will use the
-upsampled dataset only for training and use the original dataset for the
-evaluation. We will therefore address the balancing and scaling part
-later on, in the specific model part of the low-risk age group.
+(here when strokes occur).
 
 ```{r, warning=FALSE}
 #|code-fold: true
@@ -313,9 +309,6 @@ scaled_unbalanced_stroke_tb <- encoded_stroke_tb %>%
 
 scaled_high_risk_age_tb <- high_risk_age_data %>%
   mutate(across(where(is.double), ~ standardize(.)))
-
-# Display the scaled dataset
-kable(scaled_stroke_tb)
 ```
 
 # Modelling
@@ -385,6 +378,10 @@ $$
 Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
 $$
 
+
+- Precision/Recall AUC and PR-curve
+
+
 -   ROC Curve and AUC The *receiver operating characteristic* curve is a
     graphical representation of the true positive rate (recall) against
     the false positive rate (specificity). Concretely, it shows the
@@ -426,7 +423,7 @@ training and 20% for testing.
 #| code-summary: "Click to show code"
 
 # Load the dataset
-unbalanced_original_data <- scaled_unbalanced_stroke_tb
+unbalanced_original_data <- encoded_stroke_tb
 
 # Ensure valid factor levels for all binary and categorical variables
 cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
@@ -455,8 +452,32 @@ trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8,
 train_unbalanced <- unbalanced_original_data[trainIndex, ]
 test_unbalanced <- unbalanced_original_data[-trainIndex, ]
 
-colnames(test_unbalanced) <- make.names(colnames(test_unbalanced))  # Make all column names valid
-colnames(test_unbalanced) <- colnames(train_unbalanced)  # Align with the training dataset
+# Scaling
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute scaling parameters from training data only
+train_means <- sapply(train_unbalanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_unbalanced[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_unbalanced <- train_unbalanced
+for (var in continuous_vars) {
+  scaled_train_unbalanced[[var]] <- standardize_with_params(scaled_train_unbalanced[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_unbalanced[[var]] <- standardize_with_params(test_unbalanced[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
 ```
 
 ### Model
@@ -488,60 +509,13 @@ ctrl <- trainControl(
 set.seed(42)
 logistic_model_1 <- train(
   stroke ~ ., 
-  data = train_unbalanced,
+  data = scaled_train_unbalanced,
   method = "glm",
   family = "binomial",
   trControl = ctrl,
   metric = "ROC"
 )
 ```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-
-# Predict probabilities on the training set
-train_predictions_prob <- predict(logistic_model_1, newdata = train_unbalanced, type = "prob")
-train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
-
-# Convert predictions to factors to match the training set
-train_predictions_class <- factor(train_predictions_class, levels = levels(train_unbalanced$stroke))
-
-# Confusion Matrix for Training Set
-conf_matrix_train <- confusionMatrix(train_predictions_class, train_unbalanced$stroke, positive = "Yes")
-
-# Extract Metrics from the Confusion Matrix
-precision <- conf_matrix_train$byClass["Precision"]
-recall <- conf_matrix_train$byClass["Recall"]
-f1_score <- conf_matrix_train$byClass["F1"]
-specificity <- conf_matrix_train$byClass["Specificity"]
-accuracy <- conf_matrix_train$overall["Accuracy"]
-
-# Generate a Classification Report for the Training Set
-classification_report_train <- data.frame(
-  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
-  Value = c(precision, recall, f1_score, specificity, accuracy)
-)
-
-# Print the Classification Report
-print(classification_report_train)
-
-# Print the Confusion Matrix for Context
-print(conf_matrix_train)
-```
-
-The baseline model demonstrates a high overall accuracy of 95.08%, but
-this is misleading due to its inability to effectively predict the
-minority class (Yes). While specificity is nearly perfect at 99.97%,
-indicating strong performance for the majority class (No), the model
-struggles with recall for the positive class, identifying only 0.5% of
-true positives. This results in a very low F1-score of 0.99%, reflecting
-poor balance between precision and recall. These results highlight the
-model's significant bias toward the majority class. For the evaluation
-on the test set we therefore expect exclusive prediction of "No" for the
-stroke variable and metrics in the same range as the training set.
-
 ### Evaluation and Discussion
 
 We start by evaluating the model on the test.
@@ -622,7 +596,11 @@ ggplot(data = data.frame(
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# Step 1: Mapping function for comprehensive variable names
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_unbalanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_unbalanced[continuous_vars], sd, na.rm = TRUE)
+
+# Define the renaming function for predictors (unchanged)
 rename_variables <- function(variable) {
   case_when(
     variable == "age" ~ "Age",
@@ -641,32 +619,43 @@ rename_variables <- function(variable) {
   )
 }
 
-
-# Step 2: Define a function to generate the importance table for a specific model
-generate_importance_table <- function(model, model_name = "Logistic Model") {
+# Updated function to generate the importance table
+generate_importance_table <- function(model, model_name = "Logistic Model", continuous_vars, train_sds) {
   # Extract coefficients
   coefficients <- summary(model)$coefficients
   
-  # Create the variable importance table
+  # Convert to a data frame and adjust continuous estimates to the original scale
   variable_importance <- as.data.frame(coefficients) %>%
-    rownames_to_column("Predictor") %>%             # Convert row names to a column
+    rownames_to_column("OriginalPredictor") %>%
     mutate(
-      Predictor = rename_variables(Predictor),      # Rename variables
-      `Odds Ratio` = exp(Estimate)                 # Calculate Odds Ratios
+      # For continuous predictors, divide the coefficient by the training set SD
+      AdjustedEstimate = if_else(
+        OriginalPredictor %in% continuous_vars,
+        Estimate / train_sds[OriginalPredictor],
+        Estimate
+      )
     ) %>%
-    select(Predictor, Estimate, `Odds Ratio`, `Pr(>|z|)`) %>%  # Keep relevant columns
+    mutate(
+      Predictor = rename_variables(OriginalPredictor),
+      `Odds Ratio` = exp(AdjustedEstimate)
+    ) %>%
+    select(Predictor, AdjustedEstimate, `Odds Ratio`, `Pr(>|z|)`) %>%
     rename(
-      Coefficient = Estimate,                      # Rename Estimate to Coefficient
-      `P-value` = `Pr(>|z|)`                       # Rename P-value column
+      Coefficient = AdjustedEstimate,
+      `P-value` = `Pr(>|z|)`
     ) %>%
-    filter(Predictor != "(Intercept)") %>%           # Exclude the intercept
-    arrange(desc(`Odds Ratio`))                # Sort by absolute value of coefficients
+    filter(Predictor != "(Intercept)") %>%
+    arrange(desc(`Odds Ratio`))
   
   # Display the table with a dynamic caption
-  kable(variable_importance, caption = paste(model_name, "- Predictor Importance with Odds Ratios")) %>%
+  kable(variable_importance, caption = paste(model_name, "- Predictor Effect with Odds Ratios")) %>%
     kable_styling(full_width = FALSE, position = "center")
 }
-generate_importance_table(logistic_model_1, "Logistic Model 1")
+
+# Example usage (assuming 'logistic_model_1' is your trained model, 
+# 'continuous_vars' and 'train_sds' are defined in the environment):
+generate_importance_table(logistic_model_1, "Logistic Model 1", continuous_vars, train_sds)
+
 ```
 
 ## Balanced Baseline Model
@@ -869,6 +858,12 @@ ggplot(data = data.frame(
 #| code-fold: true
 #| code-summary: "Click to show code"
 
+# Identify the continuous variables that were scaled
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute their original standard deviations from the unscaled dataset
+original_sds <- sapply(balanced_stroke_tb[, continuous_vars, drop=FALSE], sd, na.rm = TRUE)
+
 generate_importance_table(logistic_model_2, "Logistic Model 2")
 ```
 
@@ -904,7 +899,6 @@ low_risk_age_tb$stroke <- factor(
   labels = c("No", "Yes")       # Valid names for levels
 )
 
-
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
 trainIndex <- createDataPartition(low_risk_age_tb$stroke, p = 0.8, 
@@ -913,12 +907,12 @@ trainIndex <- createDataPartition(low_risk_age_tb$stroke, p = 0.8,
 train_low_risk <- low_risk_age_tb[trainIndex, ]
 test_low_risk <- low_risk_age_tb[-trainIndex, ]
 
-# Balance the training set 
+# Balance the training set
 train_low_risk <- upSample(
-  x = train_low_risk[, names(train_low_risk) != "stroke"], 
+  x = train_low_risk[, names(low_risk_age_tb) != "stroke"], 
   y = train_low_risk$stroke, 
   yname = "stroke"
-) 
+)
 
 # Scale both training and test set
 train_low_risk <- train_low_risk %>%
@@ -1080,6 +1074,13 @@ ggplot(data = data.frame(
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
+
+# Identify the continuous variables that were scaled
+continuous_vars <- c("age", "avg_glucose_level", "bmi")  # Adjust as appropriate
+
+# Compute their original standard deviations from the unscaled dataset
+original_sds <- sapply(encoded_stroke_tb[, continuous_vars, drop=FALSE], sd, na.rm = TRUE)
+
 
 generate_importance_table(logistic_model_3, "Logistic Model 3")
 ```
