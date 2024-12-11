@@ -341,33 +341,49 @@ models.
     Negatives (predicting no stroke when there is one). The confusion
     matrix is used to calculate the following metrics:
 
--   Precision Precision is the ratio of correctly predicted positive
-    observations to the total predicted positive observations. The
-    formula for precision is given by:
+-   Precision
+
+Precision is the ratio of correctly predicted positive observations to
+the total predicted positive observations. The formula for precision is
+given by:
 
 $$
 Precision = \frac{TP}{TP + FP}
-$$ - Recall Recall is the ratio of correctly predicted positive
-observations to the all observations in actual class. In our case and
-general in healthcare research, recall should be prioritized as
-undetected strokes are generally more fatal than false alarms. The
-formula for recall is given by:
+$$
+
+-   Recall Recall is the ratio of correctly predicted positive
+    observations to the all observations in actual class. In our case
+    and general in healthcare research, recall should be prioritized as
+    undetected strokes are generally more fatal than false alarms. The
+    formula for recall is given by:
 
 $$
 Recall = \frac{TP}{TP + FN}
-$$ - F1 Score The F1 score is the harmonic mean of Precision and Recall
-and often used in unbalanced dataset like ours as it considers false
-positives and false negatives. The formula for F1 score ranges from 0 to
-1 and is given by: $$
+$$
+
+-   F1 Score The F1 score is the harmonic mean of Precision and Recall
+    and often used in unbalanced dataset like ours as it considers false
+    positives and false negatives. The formula for F1 score ranges from
+    0 to 1 and is given by:
+
+$$
 F1 = 2×\frac{Precision × Recall}{Precision + Recall}
-$$ - Specificity Specificity is the ratio of correctly predicted
-negative observations to the total actual negative observations. The
-formula for specificity is given by: $$
+$$
+
+-   Specificity Specificity is the ratio of correctly predicted negative
+    observations to the total actual negative observations. The formula
+    for specificity is given by:
+
+$$
 Specificity = \frac{TN}{TN + FP}
-$$ - Accuracy Accuracy is the ratio of correctly predicted observations
-to the total observations. The formula for accuracy is given by: $$
+$$
+
+-   Accuracy Accuracy is the ratio of correctly predicted observations
+    to the total observations. The formula for accuracy is given by:
+
+$$
 Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
-$$ - Precision/Recall Curve for stratified
+$$
 
 -   ROC Curve and AUC The *receiver operating characteristic* curve is a
     graphical representation of the true positive rate (recall) against
@@ -390,7 +406,7 @@ $$ - Precision/Recall Curve for stratified
     the importance and direction of each feature in predicting the
     target variable.
 
-## Baseline Model
+## Naive Model
 
 We divide our analysis into four different datasets and predictive
 models: the original dataset, the balanced original dataset, the
@@ -513,7 +529,6 @@ print(classification_report_train)
 
 # Print the Confusion Matrix for Context
 print(conf_matrix_train)
-
 ```
 
 The baseline model demonstrates a high overall accuracy of 95.08%, but
@@ -555,9 +570,6 @@ if (!all(levels(test_predictions_class) == levels(test_unbalanced$stroke))) {
   stop("Mismatch in factor levels between predictions and actuals!")
 }
 
-# Check Confusion Matrix Input
-print(table(test_predictions_class, test_unbalanced$stroke))
-
 # Generate Confusion Matrix
 conf_matrix_test <- confusionMatrix(
   data = test_predictions_class, 
@@ -582,9 +594,6 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
-
-As previously stated, our baseline model didn't predict any strokes at
-all, which is reflected in the condfusion matrix.
 
 ```{r, message = FALSE}
 #| code-fold: true

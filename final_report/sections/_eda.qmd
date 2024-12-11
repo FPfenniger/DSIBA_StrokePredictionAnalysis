@@ -316,58 +316,11 @@ plot_ly(
   )
 ```
 
-Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features
-
+Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features. A further examination of the categorical features for collinearity will be done in the final data preparation in the next part. 
 
 ## Balanced Dataset Analysis
 
-### Proportions of the Target Variable (Stroke)
-We would like to compare the original dataset with the balanced dataset.
-First, we expect plots showing the distribution of the target variable to appear more balanced in the oversampled datase compared to the original dataset.
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-# Bar chart for the original dataset (outlier_stroke_tb)
-# Load necessary libraries
-library(ggplot2)
-library(plotly)
-
-# Bar chart for the original dataset
-p <- ggplot(outlier_stroke_tb, aes(x = factor(stroke))) +
-  geom_bar() +
-  labs(title = "Stroke Distribution in Original Dataset",
-       x = "Stroke (0 = No Stroke, 1 = Stroke)",
-       y = "Count") +
-  theme_minimal()
-
-# Convert ggplot to an interactive plotly object
-ggplotly(p)
-```
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-# Balanced dataset
-# Load necessary libraries
-library(ggplot2)
-library(plotly)
-
-# Bar chart for the balanced dataset
-p <- ggplot(balanced_stroke_tb, aes(x = factor(stroke))) +
-  geom_bar() +
-  labs(title = "Stroke Distribution in Balanced Dataset",
-       x = "Stroke (0 = No Stroke, 1 = Stroke)",
-       y = "Count") +
-  theme_minimal()
-
-# Convert ggplot to an interactive plotly object
-ggplotly(p)
-```
-
-Indeed, the distribution of the target variable `stroke` appears  balanced in the oversampled dataset compared to the original dataset. This is a positive outcome, as a balanced dataset can help improve the performance of machine learning models by reducing bias towards the majority class.However, lets check how the predictor variables have been affected by the oversampling.
-
-### Descriptive Statistics for the balanced dataset
+### Exploration 
 
 ```{r}
 #| code-fold: true
@@ -448,8 +401,6 @@ for (plot in plots) {
 ```
 
 Now incorporating the balanced dataset, the univariate analysis of categorical variables such as `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` will be re-examined to observe differences. These variables previously showed notable disparities in the proportions of stroke cases across their levels in the original dataset, indicating their potential as predictors of stroke risk. Visualizing these variables with the balanced dataset will help identify any shifts in patterns and strengthen their relevance for further exploration and modeling.
-
-#### Note to myself: use upsampled dataset on preprocessed instead of encoded dataset. errors in smoking status and work type when using balanced_stroke_tb
 
 
 ```{r, message = FALSE}
@@ -573,46 +524,6 @@ kable(results, format = "markdown", col.names = c("Condition", "Count", "Proport
 
 To go deeper in the analysis of the numerical variables of the balanced dataset, we create their violinplots. This will allow us to observe the distribution of the data for each variable in relation to the target variable `stroke`
 
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-library(plotly)
-
-# Function to create a violin plot
-create_violin_plot <- function(data, variable, stroke_variable) {
-  # Ensure the stroke variable is a factor
-  data[[stroke_variable]] <- as.factor(data[[stroke_variable]])
-  
-  # Generate the violin plot
-  plot <- plot_ly(data, x = ~get(stroke_variable), y = ~get(variable), type = "violin",
-                  box = list(visible = TRUE),
-                  meanline = list(visible = TRUE),
-                  name = variable) %>%
-    layout(
-      title = paste("Violin Plot of", variable, "by Stroke"),
-      xaxis = list(title = "Stroke"),
-      yaxis = list(title = variable)
-    )
-  
-  plot
-}
-
-# Generate individual plots for each numerical variable
-plot_age <- create_violin_plot(initial_balanced_stroke_tb, variable = "age", stroke_variable = "stroke")
-plot_glucose <- create_violin_plot(initial_balanced_stroke_tb, variable = "avg_glucose_level", stroke_variable = "stroke")
-plot_bmi <- create_violin_plot(initial_balanced_stroke_tb, variable = "bmi", stroke_variable = "stroke")
-
-# Combine plots into a grid layout (1 row, 3 columns)
-combined_plot <- subplot(
-  plot_age, plot_glucose, plot_bmi,
-  nrows = 1, titleX = TRUE, titleY = TRUE
-) %>%
-  layout(title = "Balanced Violin Plots of Numerical Variables by Stroke")
-
-# Display the combined plot
-combined_plot
-```
-
 As for the violin plots of the initial datasets, stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. The proportions of stroke cases vary significantly across the different value ranges of age and avg_glucose_level.
 
 The balancing indicate more pronounced relationships between these variables and stroke occurrences. The strong positive correlation between age and stroke, which increased to 0.58 from 0.24, suggests that as age rises, so does the likelihood of experiencing a stroke. This enhancement may stem from balancing the dataset, which equalized the number of individuals with strokes and those without, thereby reducing biases caused by an uneven distribution across age groups and clarifying the association. Similarly, the correlation between average glucose levels and stroke strengthened to 0.26, up from 0.13, potentially highlighting a clearer link between higher glucose levels and stroke risk. Lastly, the correlation for `bmi` rose slightly to 0.09 from 0.04. 
@@ -637,15 +548,11 @@ correlation_table <- data.frame(
 kable(correlation_table)
 ```
 
-
-
-# Stratified Dataset Analysis
+## Stratified Dataset Analysis
 
 In our previous EDA we observed that `age` is the strongest predictor for `stroke`. To ensure that our model is not biased towards the age distribution in the dataset, we will perform stratified sampling based on the age variable. We will create two age groups (one group composed of individuals below 60, the other one composed of individuals of 60 and over) and ensure that the distribution of these groups is similar in both the training and test datasets. 
 
 The decision to use 60 years as the cutoff is clinically significant for several reasons. Research indicates that the risk of stroke markedly increases with age, particularly after 60, meaning that this age threshold allows us to focus our analysis on populations that are most affected by this condition. Furthermore, individuals over 60 often experience biological changes that can influence stroke risk factors, such as increased incidence of hypertension, changes in blood vessel elasticity, and the onset of other comorbidities. By stratifying at this age, we can capture these critical differences in risk profiles, leading to more precise analysis
-
-##### Add proof that 60 is a great choice from the internet #####
 
 Looking at the violin plot for individuals that have experienced a stroke, the average age  is 67.73 years. We have arbitrarily chosen to divide the dataset into two age groups at age 60 for several reasons. 
 
@@ -671,13 +578,11 @@ kable(head(under_60_data), caption = "Individuals Under 60 Years")
 kable(head(over_60_data), caption = "Individuals Aged 60 and Older")
 ```
 
-## EDA for Stratified Dataset
+### Exploration
 We perform an Exploratory Data Analysis on two distinct age groups: individuals under 60 years old and those of 60 years old and over. This analysis aims to uncover valuable insights regarding stroke occurrences, risk factors, and demographic characteristics within each group.
 
+#### Low-Risk Age Group
 To begin our analysis, we focus first on the group of individuals under 60 years old. 
-
-### Descriptive Statistics for individuals below 60 
-
 ```{r, message=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -739,10 +644,6 @@ summary_table_under_60 <- bind_rows(
 # Display the combined table with kable
 knitr::kable(summary_table_under_60, caption = "Summary of Categorical Variables with Proportions (Individuals Under 60 Years Old)", row.names = FALSE)
 ```
-
-### Univariate Analysis for individuals below 60
-
-#### Numerical variables for individuals below 60
 
 Same as for the whole group EDA, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
@@ -887,8 +788,6 @@ kable(correlation_table, caption = "Correlation Coefficients with Stroke (Indivi
 Looking at the correlation coefficients, we notice that the correlation between `age` and `stroke` drops to 0.14 (versus 0.24 for the full dataset). The same goes for the correlation between `avg_glucose_level` and `stroke` which 0.07 (versus 0.13 for the full dataset). The correlation between `bmi` and `stroke` stays extremely low 0.06 (versus 0.04). 
 The correlations drop with the target variable `stroke` after stratification for individuals below 60 suggest that while age and glucose levels are known risk factors for stroke, their influence may be less pronounced among younger individuals. 
 
-### Categorical variables for individuals below 60
-
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -945,10 +844,8 @@ for (i in seq_along(variables_to_summarize)) {
 
 For readability reasons, we do not present the plots for the variables `gender` and `Residence_type` as the proportions of stroke appear to be consistent across the categories they comprise (See Appendix for reference). 
 
-
+#### High-Risk Age Group
 Now that we completed the EDA of the group aged below 60, let's check for the group aged of 60 and over.
-
-#### Descriptive Statistics for individuals of 60 and over
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1011,9 +908,6 @@ summary_table_over_60 <- bind_rows(
 # Display the combined table with kable
 knitr::kable(summary_table_over_60, caption = "Summary of Categorical Variables with Proportions (Individuals of 60 and Over Years Old)", row.names = FALSE)
 ```
-## Univariate Analysis for individuals of 60 and over
-
-### Numerical variables for individuals of 60 and over
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1163,9 +1057,6 @@ For the variable `age`, the reduction of the correlation coefficient may suggest
 
 Similarly, the correlation between `avg_glucose_level` and `stroke` decreases from 0.13 in the full dataset to 0.10 for individuals aged 60 and over. This decline implies that glucose levels, while still relevant, may play a somewhat less significant role in stroke risk within this specific age group. It may reflect the fact that at advanced ages, other age-related risk factors or comorbid conditions could overshadow the impact of glucose levels. 
 
-
-### Categorical variables for individuals of 60 and over
-
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -1200,78 +1091,8 @@ for (i in seq_along(variables_to_summarize)) {
 }
 ```
 
-- `ever_married`: Surprisingly, we notice that unlike for the group of individuals below 60 years old, the proportion of people that had a stroke that have never been married (19.63%) is higher than those who have (12.61%). 
-
 - `hypertension`: Same as for the group of individuals below 60 years old, individuals who have hypertension have a higher proportion of stroke (17.91%) than those who don't (11.85%). 
 
 - `heart_disease`: Same as for the group of individuals below 60 years old, individuals who have a heart disease have a higher proportion of stroke (20.09%) than those who don't (11.88%).
 
 For readability reasons, we do not present the plots for the variables `gender`, `Residence_type`, `smoking_status` and `work_type` as the proportions of stroke appear to be consistent across the categories they comprise (See Appendix for reference).
-
-#### Balancing Stratified Dataset
-
-In our dataset, we have a total of 1,376 individuals aged 60 and over, and 3,734 individuals under 60.
-
-```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show the code"
-
-low_risk_age_tb <- outlier_stroke_tb %>%
-  filter(age < 60)
-
-low_risk_age_tb$stroke <- as.factor(low_risk_age_tb$stroke)
-
-x_data <- low_risk_age_tb[, names(low_risk_age_tb) != "stroke"] 
-y_data <- low_risk_age_tb$stroke                             
-
-# Perform upsampling
-low_risk_age_tb <- upSample(
-  x = x_data,
-  y = y_data,
-  yname = "stroke" # Column name for the target variable in the upsampled dataset
-)
-
-# Step 3: Check the class distribution to confirm balancing
-table(low_risk_age_tb$stroke)
-
-# Scaling
-low_risk_age_tb[sapply(low_risk_age_tb, is.double)] <- lapply(low_risk_age_tb[sapply(low_risk_age_tb, is.double)], scale)
-
-
-# save
-
-write.csv(low_risk_age_tb, "../../data/datasets/low_risk_age_tb.csv")
-
-```
-
-
-```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show the code"
-
-high_risk_age_tb <- outlier_stroke_tb %>%
-  filter(age >= 60)
-
-high_risk_age_tb$stroke <- as.factor(high_risk_age_tb$stroke)
-
-x_data <- high_risk_age_tb[, names(high_risk_age_tb) != "stroke"] 
-y_data <- high_risk_age_tb$stroke                             
-
-# Perform upsampling
-high_risk_age_tb <- upSample(
-  x = x_data,
-  y = y_data,
-  yname = "stroke" # Column name for the target variable in the upsampled dataset
-)
-
-# Step 3: Check the class distribution to confirm balancing
-table(high_risk_age_tb$stroke)
-
-# Scaling
-high_risk_age_tb[sapply(high_risk_age_tb, is.double)] <- lapply(high_risk_age_tb[sapply(high_risk_age_tb, is.double)], scale)
-
-# save
-
-write.csv(high_risk_age_tb, "../../data/datasets/high_risk_age_tb.csv")
-
-```
