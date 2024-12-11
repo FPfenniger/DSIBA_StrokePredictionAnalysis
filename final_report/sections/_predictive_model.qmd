@@ -1,12 +1,12 @@
 ---
-title: "_predictive_model"
+title: "predictive_model"
 format: html
 editor: 
   markdown: 
     wrap: 72
 ---
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(caret)
 library(tidyverse)
 library(vcd)
@@ -19,11 +19,13 @@ library(kableExtra)
 ```
 
 # Final Data Preparation
-
+In the following chapter we will prepare the data for the modeling phase. We will start by encoding the categorical variables, checking them for multicollinearity, balancing the dataset, and finally scaling the continuous variables (which is done after the train-test split in the Modeling part). 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
+# Import of the dataset
 outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+# Structure of the dataset
 str(outlier_stroke_tb)
 ```
 
@@ -32,18 +34,15 @@ str(outlier_stroke_tb)
 For the categorical feature encoding, we convert our categorical
 variables into dummy variables to utilize them in our predictive model.
 To avoid the dummy variable trap, we drop the first level of each
-categorical variable. We start by encoding binary variables as 0 and 1,
+categorical variable and use it as a reference level. We start by encoding binary variables as 0 and 1,
 and then create dummy variables for the remaining categorical variables.
-We use the `model.matrix` function to create dummy variables and drop
-the first level to set a reference.
-
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 # Initialize the dataset
 encoded_stroke_tb <- outlier_stroke_tb
 
-# Encode binary variables without phantom levels
+# Encode binary variables
 encoded_stroke_tb$gender <- factor(
   ifelse(encoded_stroke_tb$gender == "Female", "1", 
          ifelse(encoded_stroke_tb$gender == "Male", "0", NA))
@@ -58,12 +57,10 @@ encoded_stroke_tb$Residence_type <- factor(
   ifelse(encoded_stroke_tb$Residence_type == "Urban", "1", 
          ifelse(encoded_stroke_tb$Residence_type == "Rural", "0", NA))
 )
-
 ```
 
-In the next step, we encode the remaining categorical variables with
-multiple categories. Here we always define one reference category:
-
+In the next step, we encode the remaining categorical variables `smoking_status` and `work_type` with
+multiple categories. Here we always define one reference category. We use the `model.matrix()` function to create dummy variables and drop the first level. We set the reference level for `smoking_status` to "never smoked" and for `work_type` to "Private".
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -88,13 +85,10 @@ encoded_stroke_tb <- cbind(
 )
 
 str(encoded_stroke_tb)
-
 ```
-
 And we turn the binary variables into factors with the correct levels
 and apply the `make.names()` function to the column names to ensure they
 are valid.
-
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -108,27 +102,51 @@ encoded_stroke_tb[binary_vars] <- lapply(encoded_stroke_tb[binary_vars], functio
 # Apply make.names() to column names
 colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
 
-# Display the final dataset structure
-kable(encoded_stroke_tb)
+# Display the dataset with up to 10 observations per page
+kable(encoded_stroke_tb, format = "html") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE) %>%
+  scroll_box(height = "300px")
 
 str(encoded_stroke_tb)
 ```
 
-We set the reference level for `smoking_status` to "never smoked" and
-for `work_type` to "Private". This way, we ensure that the model can
-interpret the dummy variables correctly. To be sure that our model will
-recognize the binary variables as such, we convert them to factors and
-set the same levels for every categorical variable.
-
 ### Multicollinearity
 
-To examine associations and multicollinearity between the categorical
-variables, we use a chi-squared test. The chi-squared test is a
-statistical test used to determine whether there is a significant
-association between two categorical variables. To determine the
-importance of the test result we additionally computed the Cramér's V
-for effect size (threshold applied here 0.3). Additionally, we apply the
-Fisher's Exact Test if there are zero counts in the contingency table.
+To examine associations between the categorical variables, we use the **chi-squared test**. The chi-squared test is a statistical test used to determine whether there is a significant association between two categorical variables. The test statistic is computed as:
+
+$$
+\chi^2 = \sum \frac{(O_i - E_i)^2}{E_i}
+$$
+
+Where:
+- \( O_i \) = Observed frequency
+- \( E_i \) = Expected frequency
+
+To determine the importance of the test result, we additionally compute **Cramér's V** for effect size, defined as:
+
+$$
+V = \sqrt{\frac{\chi^2}{n \cdot \text{min}(r-1, c-1)}}
+$$
+
+Where:
+- \( \chi^2 \) = Chi-squared statistic
+- \( n \) = Total number of observations
+- \( r \), \( c \) = Number of rows and columns in the contingency table, respectively.
+
+The threshold for interpreting the effect size is set at \( V \geq 0.3 \).
+
+If there are zero counts in the contingency table, we apply the **Fisher's Exact Test**, which is suitable for small sample sizes and contingency tables with low expected frequencies. Fisher's Exact Test computes the exact probability of observing the given contingency table under the null hypothesis of independence. The test uses the hypergeometric distribution:
+
+$$
+P = \frac{{\binom{a+b}{a} \cdot \binom{c+d}{c}}}{{\binom{n}{a+c}}}
+$$
+
+Where:
+- \( a, b, c, d \) = Counts in the contingency table cells.
+- \( n \) = Total number of observations.
+
+Here:
+- \( \binom{x}{y} \) = Binomial coefficient, calculated as \( \binom{x}{y} = \frac{x!}{y!(x-y)!} \).
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -176,7 +194,6 @@ this variable a weak predictor.
 ```{r}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
 # Drop work_typechildren
 encoded_stroke_tb <- encoded_stroke_tb %>% 
   select(-work_typechildren)
@@ -287,31 +304,16 @@ $$
 z = \frac{x - \mu}{\sigma}
 $$
 
-Where: - z is the standardized value, - x is the original feature
-value, - mu is the mean of the feature, - sigma is the standard
-deviation of the feature.
+Where: 
+- z is the standardized value, 
+- x is the original feature
+value, 
+- mu is the mean of the feature, 
+- sigma is the standard deviation of the feature.
 
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
+The scaling will be done after the train-test split to avoid data leakage. 
 
-# Define a function to standardize continuous variables
-standardize <- function(x) {
-  (x - mean(x, na.rm = TRUE)) / sd(x, na.rm = TRUE)
-}
-
-# Apply standardization to continuous (numeric) columns in the dataset
-scaled_stroke_tb <- balanced_stroke_tb %>%
-  mutate(across(where(is.double), ~ standardize(.)))
-
-scaled_unbalanced_stroke_tb <- encoded_stroke_tb %>%
-  mutate(across(where(is.double), ~ standardize(.)))
-
-scaled_high_risk_age_tb <- high_risk_age_data %>%
-  mutate(across(where(is.double), ~ standardize(.)))
-```
-
-# Modelling
+# Modeling
 
 We divide our analysis into four different datasets and predictive
 models: the original dataset, the balanced original dataset, the
@@ -653,7 +655,6 @@ generate_importance_table <- function(model, model_name = "Logistic Model", cont
 }
 
 # Example usage (assuming 'logistic_model_1' is your trained model, 
-# 'continuous_vars' and 'train_sds' are defined in the environment):
 generate_importance_table(logistic_model_1, "Logistic Model 1", continuous_vars, train_sds)
 
 ```
@@ -668,8 +669,9 @@ We repeat the same process for our balanced baseline model.
 #| code-fold: true
 #| code-summary: "Click to show code"
 
+
 # Load the dataset
-balanced_original_data <- scaled_stroke_tb
+balanced_original_data <- balanced_stroke_tb
 
 # Ensure valid factor levels for all binary and categorical variables
 cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
@@ -697,6 +699,33 @@ trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8,
 
 train_balanced <- balanced_original_data[trainIndex, ]
 test_balanced <- balanced_original_data[-trainIndex, ]
+
+# Scaling
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute scaling parameters from training data only
+train_means <- sapply(train_balanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_balanced[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_balanced <- train_balanced
+for (var in continuous_vars) {
+  scaled_train_balanced[[var]] <- standardize_with_params(scaled_train_balanced[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_balanced[[var]] <- standardize_with_params(test_balanced[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
 ```
 
 ### Model
@@ -724,59 +753,13 @@ ctrl <- trainControl(
 set.seed(42)
 logistic_model_2 <- train(
   stroke ~ ., 
-  data = train_balanced,
+  data = scaled_train_balanced,
   method = "glm",
   family = "binomial",
   trControl = ctrl,
   metric = "ROC"
 )
 ```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Predict probabilities on the training set
-train_predictions_prob <- predict(logistic_model_2, newdata = train_balanced, type = "prob")
-train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
-
-# Convert predictions to factors to match the training set
-train_predictions_class <- factor(train_predictions_class, levels = levels(train_balanced$stroke))
-
-# Confusion Matrix for Training Set
-conf_matrix_train <- confusionMatrix(train_predictions_class, train_balanced$stroke, positive = "Yes")
-
-# Extract Metrics from the Confusion Matrix
-precision <- conf_matrix_train$byClass["Precision"]
-recall <- conf_matrix_train$byClass["Recall"]
-f1_score <- conf_matrix_train$byClass["F1"]
-specificity <- conf_matrix_train$byClass["Specificity"]
-accuracy <- conf_matrix_train$overall["Accuracy"]
-
-# Generate a Classification Report for the Training Set
-classification_report_train <- data.frame(
-  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
-  Value = c(precision, recall, f1_score, specificity, accuracy)
-)
-
-# Print the Classification Report
-print(classification_report_train)
-
-# Print the Confusion Matrix for Context
-print(conf_matrix_train)
-```
-
-The balanced baseline model shows substantial improvement in handling
-the minority class compared to the original baseline. With an overall
-accuracy of 77.45%, the model strikes a better balance between the
-positive and negative classes. Recall for the positive class is strong
-at 81.35%, ensuring that most true positives are correctly identified.
-The F1-Score of 78.29% reflects a good balance between precision and
-recall. However, specificity remains relatively lower at 73.5%,
-indicating some false positives. Overall, the model demonstrates
-improved performance for both classes, but there is still room for
-enhancing specificity and further reducing false positives.
-
 ### Evaluation and Discussion
 
 ```{r, message = FALSE}
@@ -861,10 +844,11 @@ ggplot(data = data.frame(
 # Identify the continuous variables that were scaled
 continuous_vars <- c("age", "avg_glucose_level", "bmi")
 
-# Compute their original standard deviations from the unscaled dataset
-original_sds <- sapply(balanced_stroke_tb[, continuous_vars, drop=FALSE], sd, na.rm = TRUE)
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_balanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_balanced[continuous_vars], sd, na.rm = TRUE)
 
-generate_importance_table(logistic_model_2, "Logistic Model 2")
+generate_importance_table(logistic_model_2, "Logistic Model 2", continuous_vars, train_sds)
 ```
 
 ## Low-Risk Age Model
@@ -908,18 +892,38 @@ train_low_risk <- low_risk_age_tb[trainIndex, ]
 test_low_risk <- low_risk_age_tb[-trainIndex, ]
 
 # Balance the training set
-train_low_risk <- upSample(
+balanced_train_low_risk <- upSample(
   x = train_low_risk[, names(low_risk_age_tb) != "stroke"], 
   y = train_low_risk$stroke, 
   yname = "stroke"
 )
 
-# Scale both training and test set
-train_low_risk <- train_low_risk %>%
-  mutate(across(where(is.double), ~ standardize(.)))
+# Scaling
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
 
-test_low_risk <- test_low_risk %>%
-  mutate(across(where(is.double), ~ standardize(.)))
+# Compute scaling parameters from training data only
+train_means <- sapply(train_low_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_low_risk[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_low_risk <- balanced_train_low_risk
+for (var in continuous_vars) {
+  scaled_train_low_risk[[var]] <- standardize_with_params(scaled_train_low_risk[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_low_risk[[var]] <- standardize_with_params(test_low_risk[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
 ```
 
 ### Model
@@ -947,49 +951,13 @@ ctrl <- trainControl(
 set.seed(42)
 logistic_model_3 <- train(
   stroke ~ ., 
-  data = train_low_risk,
+  data = scaled_train_low_risk,
   method = "glm",
   family = "binomial",
   trControl = ctrl,
   metric = "ROC"
 )
 ```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Predict probabilities on the training set
-train_predictions_prob <- predict(logistic_model_3, newdata = train_low_risk, type = "prob")
-train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
-
-# Convert predictions to factors to match the training set
-train_predictions_class <- factor(train_predictions_class, levels = levels(train_low_risk$stroke))
-
-# Confusion Matrix for Training Set
-conf_matrix_train <- confusionMatrix(train_predictions_class, train_low_risk$stroke, positive = "Yes")
-
-# Extract Metrics from the Confusion Matrix
-precision <- conf_matrix_train$byClass["Precision"]
-recall <- conf_matrix_train$byClass["Recall"]
-f1_score <- conf_matrix_train$byClass["F1"]
-specificity <- conf_matrix_train$byClass["Specificity"]
-accuracy <- conf_matrix_train$overall["Accuracy"]
-
-# Generate a Classification Report for the Training Set
-classification_report_train <- data.frame(
-  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
-  Value = c(precision, recall, f1_score, specificity, accuracy)
-)
-
-# Print the Classification Report
-print(classification_report_train)
-
-# Print the Confusion Matrix for Context
-print(conf_matrix_train)
-
-```
-
 ### Evaluation and Discussion
 
 ```{r, message = FALSE}
@@ -1076,16 +1044,18 @@ ggplot(data = data.frame(
 #| code-summary: "Click to show code"
 
 # Identify the continuous variables that were scaled
-continuous_vars <- c("age", "avg_glucose_level", "bmi")  # Adjust as appropriate
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
 
-# Compute their original standard deviations from the unscaled dataset
-original_sds <- sapply(encoded_stroke_tb[, continuous_vars, drop=FALSE], sd, na.rm = TRUE)
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_low_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_low_risk[continuous_vars], sd, na.rm = TRUE)
 
-
-generate_importance_table(logistic_model_3, "Logistic Model 3")
+generate_importance_table(logistic_model_3, "Logistic Model 3", continuous_vars, train_sds)
 ```
 
 ## High-Risk Age Model
+
+Our last model comprises all individuals aged 60 and above. As the variance in age is pretty low and the strata to a certain scale incorporates the information of `age` , we remove the feature. 
 
 ### Train-test split
 
@@ -1093,9 +1063,9 @@ generate_importance_table(logistic_model_3, "Logistic Model 3")
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-
 # Load the dataset
-high_risk_age_data <- scaled_high_risk_age_tb
+high_risk_age_data <- high_risk_age_data %>% 
+  select(-c("age")) 
 
 # Ensure valid factor levels for all binary and categorical variables
 cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
@@ -1116,8 +1086,6 @@ high_risk_age_data$stroke <- factor(
   labels = c("No", "Yes")       # Valid names for levels
 )
 
-high_risk_age_ablation  <- high_risk_age_data %>% 
-  select(-c("age")) 
 
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
@@ -1127,9 +1095,35 @@ trainIndex <- createDataPartition(high_risk_age_data$stroke, p = 0.8,
 train_high_risk <- high_risk_age_data[trainIndex, ]
 test_high_risk <- high_risk_age_data[-trainIndex, ]
 
-train_high_risk_ablated <- high_risk_age_ablation[trainIndex, ]
-test_high_risk_ablated <- high_risk_age_ablation[-trainIndex, ]
+
+# Scaling
+continuous_vars <- c("avg_glucose_level", "bmi")
+
+# Compute scaling parameters from training data only
+train_means <- sapply(train_high_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_high_risk[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_high_risk <- train_high_risk
+for (var in continuous_vars) {
+  scaled_train_high_risk[[var]] <- standardize_with_params(scaled_train_high_risk[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_high_risk[[var]] <- standardize_with_params(test_high_risk[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
 ```
+
 
 ### Model
 
@@ -1156,62 +1150,13 @@ ctrl <- trainControl(
 set.seed(42)
 logistic_model_4 <- train(
   stroke ~ ., 
-  data = train_high_risk,
+  data = scaled_train_high_risk,
   method = "glm",
   family = "binomial",
   trControl = ctrl,
   metric = "ROC"
 )
 ```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Predict probabilities on the training set
-train_predictions_prob <- predict(logistic_model_4, newdata = train_high_risk, type = "prob")
-train_predictions_class <- ifelse(train_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
-
-# Convert predictions to factors to match the training set
-train_predictions_class <- factor(train_predictions_class, levels = levels(train_high_risk$stroke))
-
-# Confusion Matrix for Training Set
-conf_matrix_train <- confusionMatrix(train_predictions_class, train_high_risk$stroke, positive = "Yes")
-
-# Extract Metrics from the Confusion Matrix
-precision <- conf_matrix_train$byClass["Precision"]
-recall <- conf_matrix_train$byClass["Recall"]
-f1_score <- conf_matrix_train$byClass["F1"]
-specificity <- conf_matrix_train$byClass["Specificity"]
-accuracy <- conf_matrix_train$overall["Accuracy"]
-
-# Generate a Classification Report for the Training Set
-classification_report_train <- data.frame(
-  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
-  Value = c(precision, recall, f1_score, specificity, accuracy)
-)
-
-# Print the Classification Report
-print(classification_report_train)
-
-# Print the Confusion Matrix for Context
-print(conf_matrix_train)
-
-```
-
-The stratified model for the high-risk age group shows moderate
-performance, with an overall accuracy of 63.70%. Recall for the positive
-class (Yes) is 66.11%, indicating the model captures a fair portion of
-true positives but leaves room for improvement. Precision is 63.07%,
-meaning that about 63% of predicted positive cases are correct. The
-F1-Score of 64.56% reflects a reasonable balance between precision and
-recall, though not particularly strong. Specificity is low at 61.30%,
-indicating the model struggles with correctly identifying negative
-cases, leading to a higher false-positive rate. Overall, while the model
-captures positive cases moderately well, its low specificity and overall
-accuracy suggest there is significant room for improvement, especially
-in distinguishing between the two classes.
-
 ### Evaluation and Discussion
 
 ```{r, message = FALSE}
@@ -1291,125 +1236,14 @@ ggplot(data = data.frame(
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-generate_importance_table(logistic_model_4, "Logistic Model 4")
+# Identify the continuous variables that were scaled
+continuous_vars <- c("avg_glucose_level", "bmi")
+
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_high_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_high_risk[continuous_vars], sd, na.rm = TRUE)
+
+generate_importance_table(logistic_model_4, "Logistic Model 4", continuous_vars, train_sds)
 ```
 
-### Ablation Analysis on Age
 
-As we have a narrow age range in this strata, we examine whether
-removing `age` increases the predictive power of our logistic model. We
-hope particularly to enhance our understanding of the predictor's
-relative importance.
-
-We train a new model, which only differs in a removed `age` column:
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Custom summary function for Precision, Recall, and ROC AUC
-custom_summary <- function(data, lev = NULL, model = NULL) {
-  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
-  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
-  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
-  c(Precision = precision, Recall = recall, ROC = roc_auc)
-}
-
-# Train logistic regression model
-ctrl <- trainControl(
-  method = "none",      
-  classProbs = TRUE,    # Enable class probabilities
-  summaryFunction = custom_summary # Use custom summary function
-)
-
-# Train logistic regression model on the training dataset
-set.seed(42)
-logistic_model_5 <- train(
-  stroke ~ ., 
-  data = train_high_risk_ablated,
-  method = "glm",
-  family = "binomial",
-  trControl = ctrl,
-  metric = "ROC"
-)
-```
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Predict probabilities on the test set
-test_predictions_prob <- predict(logistic_model_5, newdata = test_high_risk_ablated, type = "prob")
-
-# Ensure the correct column is used for the positive class
-colnames(test_predictions_prob)  # Check column names to confirm
-
-# Convert probabilities to binary predictions
-test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
-
-# Convert to a factor with consistent levels
-test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
-
-# Ensure test_unbalanced$stroke is also a factor
-test_high_risk_ablated$stroke <- factor(test_high_risk_ablated$stroke, levels = c("No", "Yes"))
-
-# Validate Levels of Predictions and Actuals
-if (!all(levels(test_predictions_class) == levels(test_high_risk_ablated$stroke))) {
-  stop("Mismatch in factor levels between predictions and actuals!")
-}
-  
-# Check Confusion Matrix Input
-print(table(test_predictions_class, test_high_risk_ablated$stroke))
-
-# Generate Confusion Matrix
-conf_matrix_test <- confusionMatrix(
-  data = test_predictions_class, 
-  reference = test_high_risk_ablated$stroke, 
-  positive = "Yes"
-)
-
-# Correct Metric Extraction to Handle NA
-precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
-recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
-f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
-specificity <- conf_matrix_test$byClass["Specificity"]
-accuracy <- conf_matrix_test$overall["Accuracy"]
-
-# Generate Metrics Report
-classification_report_test <- data.frame(
-    Value = c(precision, recall, f1_score, specificity, accuracy)
-)
-
-# Print Results
-print(conf_matrix_test)
-print(classification_report_test)
-```
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-# ROC Curve
-roc_curve <- roc(test_high_risk_ablated$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
-
-# Plot the ROC curve with AUC
-auc_value <- auc(roc_curve)
-ggplot(data = data.frame(
-  TPR = roc_curve$sensitivities,
-  FPR = 1 - roc_curve$specificities
-), aes(x = FPR, y = TPR)) +
-  geom_line(color = "blue") +
-  geom_abline(linetype = "dashed", color = "red") +
-  labs(
-    title = "ROC Curve",
-    x = "False Positive Rate (1 - Specificity)",
-    y = "True Positive Rate (Sensitivity)"
-  ) +
-  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
-  theme_minimal()
-```
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-generate_importance_table(logistic_model_5, "Logistic Model 5")
-```
