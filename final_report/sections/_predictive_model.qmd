@@ -809,6 +809,7 @@ classification_report_test <- data.frame(
 )
 
 # Print Results
+write.csv(classification_report_test, "/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/metric_tb.csv")
 print(conf_matrix_test)
 print(classification_report_test)
 ```

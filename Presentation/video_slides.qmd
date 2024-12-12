@@ -1,0 +1,420 @@
+---
+title: "Stroke Prediction Analysis"
+subtitle: "Data Science in Business Analytics"
+author: "Bolor Battaiwan, Fabio Pfenniger, Mohamed Hussein"
+date: "2024-12-16"
+format: 
+  revealjs:
+    self-contained: true
+    monofont: DejaVu Sans Mono
+    theme: default
+    transition: slide
+    slide-number: true
+    scrollable: true
+editor: visual
+---
+
+```{r, message= FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+#| label: setup
+#| echo: false
+
+# loading all the necessary packages
+library(tidyverse)
+library(shiny)
+library(plotly)
+library(vcd)
+library(naniar)
+library(fastDummies)
+library(caret)
+library(knitr)
+library(ggplot2)
+library(dplyr)
+library(janitor)
+library(MLmetrics)  
+library(pROC)
+library(kableExtra)
+```
+
+```{r}
+stroke_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/stroke_dataset.csv")
+preprocessed_stroke_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/preprocessed_stroke_tb.csv")
+outlier_stroke_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/outlier_stroke_tb.csv")
+cleaned_stroke_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/cleaned_stroke_tb.csv")
+encoded_stroke_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/encoded_stroke_tb.csv")
+balanced_stroke_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/balanced_stroke_tb.csv")
+high_risk_age_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/high_risk_age_tb.csv")
+low_risk_age_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/low_risk_age_tb.csv")
+over_60_data_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/over_60_data_tb.csv")
+scaled_low_risk_age_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/scaled_low_risk_age_tb.csv")
+under_60_data_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/under_60_data_tb.csv")
+metric_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/metric_tb.csv")
+```
+
+# Stroke: A Global Health Emergency
+
+## Motivation
+
+-   15M strokes/year (WHO): 5M deaths, 5M disabilities
+-   Stroke disrupts brain blood flow: caused by blockage or bleeding
+-   80% of strokes are preventable by lifestyle changes\*
+
+::: aside
+\*American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes
+:::
+
+## 
+
+**Research goal**
+
+Build a predictive model for stroke occurrence
+
+**Research questions**
+
+-   What are the most significant risk factors associated with stroke?
+-   How accurately can a logistic regression model predict the occurrence of having a stroke?
+
+# Dataset Overview
+
+## Data Source
+
+-   Origin: Kaggle\*
+-   Observations: 5110
+-   Features: 11
+
+::: aside
+\*https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset/data
+:::
+
+## Key Variables
+
+-   Target Variable: `stroke` (0 = No, 1 = Yes)
+-   Demographics: `gender`, `age`, `Residence_type`
+-   Health Metrics: `hypertension`, `heart_disease`, `avg_glucose_level`, `bmi`
+-   Lifestyle: `smoking_status`, `work_type`, `ever_married`
+
+# Data Preprocessing
+
+## Missing values:
+
+-   Missing values only in `bmi` and `smoking_status`
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+kable(colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == ""))
+```
+
+## Processed dataset:
+
+**Handling Missing Values**
+
+-   `bmi`: replaced with **median**
+-   `smoking_status`: replaced with **mode**
+
+**Outliers**
+
+-   Removed infrequent categories in `gender` (Other) and `work_type` (Never_worked).
+-   Observed rare occurrences of `heart_disease`, `hypertension`, and `stroke`.
+
+# Findings and Results
+
+## Exploratory Data Analysis
+
+From the initial EDA, we can identify the following risk factors:
+
+-   older than 60 years
+-   avg_glucose_level in the diabetic range\*
+-   have heart disease
+-   have hypertension
+
+::: aside
+\*Diabetic range: above 140 mg/dL
+:::
+
+## Numerical variables
+
+-   Strokes are most frequent at higher glucose levels and at ages between 60 to 80 years.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(ggplot2)
+library(plotly)
+
+# Function to create the histogram as plotly object
+create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+  # Extract the variable and stroke data
+  original_data <- data[[variable]]
+  stroke_data <- data[[stroke_variable]]
+  
+  # Calculate mean and standard deviation for reference lines
+  mean_val <- mean(original_data, na.rm = TRUE)
+  sd_val <- sd(original_data, na.rm = TRUE)
+  
+  # Combine data and stroke status into a data frame
+  plot_data <- data.frame(data = original_data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
+  
+  # Generate the ggplot object (temporary)
+  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+    labs(y = "Frequency", fill = "Stroke Status") +
+    scale_fill_manual(values = c("No Stroke" = "#1f77b4", "Stroke" = "#ff7f0e")) +  # Set custom colors
+    theme_minimal() +
+    theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))  # Center title
+  
+  # Convert to interactive Plotly plot
+  p_plotly <- ggplotly(p) %>%
+    layout(showlegend = show_legend)  # Set legend visibility
+  
+  return(p_plotly)
+}
+
+# Generate histograms for each variable separately without repeating legends
+hist_age <- create_histogram(outlier_stroke_tb, "age", "stroke", binwidth = 5, show_legend = FALSE) %>%
+  layout(title = "Distribution of Age", xaxis = list(title = "Age"), 
+         yaxis = list(title = "Frequency"))
+
+hist_glucose <- create_histogram(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
+  layout(title = "Distribution of Average Glucose Level", xaxis = list(title = "Average Glucose Level"), 
+         yaxis = list(title = "Frequency"))
+
+hist_bmi <- create_histogram(outlier_stroke_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
+  layout(title = "Distribution of BMI", xaxis = list(title = "BMI"), 
+         yaxis = list(title = "Frequency"))
+
+# Combine all histograms into a single interactive plot with a main title
+combined_histograms <- subplot(hist_age, hist_glucose, hist_bmi, nrows = 1, titleY = TRUE,
+                               shareX = TRUE, shareY = TRUE) %>%
+  layout(title = "Histograms of Numerical Variables by Stroke", showlegend = TRUE)  # Set main title with legend visible
+
+# Display combined histogram
+combined_histograms
+```
+
+## Correlation Analysis
+
+::: {style="font-size: 0.8em;"}
+```{r, message = FALSE}
+library(knitr)
+
+cor_age <- cor(as.numeric(outlier_stroke_tb$age), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+cor_glucose <- cor(as.numeric(outlier_stroke_tb$avg_glucose_level), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+cor_bmi <- cor(as.numeric(outlier_stroke_tb$bmi), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+
+correlation_table <- data.frame(
+  Variable = c("Age", "Average Glucose Level", "BMI"),
+  Correlation_with_Stroke = round(c(cor_age, cor_glucose, cor_bmi), 2)
+)
+
+kable(correlation_table, caption = "Correlation Coefficients with Stroke")
+```
+:::
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Select the numeric columns from your data
+numeric_data <- outlier_stroke_tb[, c("age", "avg_glucose_level", "bmi")]
+
+# Calculate the correlation matrix
+correlation_matrix <- cor(numeric_data, use = "complete.obs")
+
+# Convert the correlation matrix to a format that plotly can use (optional step)
+heatmap_data <- as.data.frame(as.table(correlation_matrix))
+
+# Plot the correlation matrix as a heatmap using plotly
+plot_ly(
+  x = colnames(correlation_matrix),
+  y = rownames(correlation_matrix),
+  z = correlation_matrix,
+  type = "heatmap",
+  colorscale = "Viridis"  # Corrected typo
+) %>%
+  layout(
+    title = "Correlation Matrix Heatmap",
+    xaxis = list(title = "", tickangle = 45),
+    yaxis = list(title = "")
+  )
+```
+
+## Categorical variables
+
+```{r}
+# Define choices for the variable selection, excluding Gender and Residence Type
+x_variable_choices <- c(
+  "Smoking Status" = "smoking_status",
+  "Hypertension" = "hypertension", 
+  "Heart Disease" = "heart_disease"
+)
+
+# Create a filtered data frame based on all selected variables
+filtered_data <- outlier_stroke_tb %>%
+  filter(gender != "Other")  # Remove records where gender is 'Other'
+
+# Generate the Smoking Status plot
+p_smoking <- ggplot(filtered_data, aes(x = smoking_status, fill = as.factor(stroke))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Smoking Status",  # Removed "Stroke by"
+    x = "Smoking Status",      # Explicit x-axis label
+    y = "Proportion"
+  ) +
+  scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) +  # Colors for No Stroke and Stroke
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x labels for readability
+    legend.position = "none"  # Remove legend
+  )
+
+plot_smoking <- ggplotly(p_smoking)
+
+# Generate the Hypertension plot
+p_hypertension <- ggplot(filtered_data, aes(x = as.factor(hypertension), fill = as.factor(stroke))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Hypertension",      # Removed "Stroke by"
+    x = "Hypertension",         # Explicit x-axis label
+    y = "Proportion"
+  ) +
+  scale_x_discrete(labels = c("0" = "No", "1" = "Yes")) +  # Custom labels for binary variables
+  scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) +  # Colors for No Stroke and Stroke
+  theme_minimal() +
+  theme(
+    legend.position = "none"  # Remove legend
+  )
+
+plot_hypertension <- ggplotly(p_hypertension)
+
+# Generate the Heart Disease plot
+p_heart_disease <- ggplot(filtered_data, aes(x = as.factor(heart_disease), fill = as.factor(stroke))) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Heart Disease",     # Removed "Stroke by"
+    x = "Heart Disease",        # Explicit x-axis label
+    y = "Proportion"
+  ) +
+  scale_x_discrete(labels = c("0" = "No", "1" = "Yes")) +  # Custom labels for binary variables
+  scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) +  # Colors for No Stroke and Stroke
+  theme_minimal() +
+  theme(
+    legend.position = "none"  # Remove legend
+  )
+
+plot_heart_disease <- ggplotly(p_heart_disease)
+
+# Combine all three plots into one layout using subplot
+combined_plot <- subplot(
+  plot_smoking, plot_hypertension, plot_heart_disease,
+  nrows = 1,        # Arrange plots in a single row
+  margin = 0.05,    # Margin between plots
+  titleX = TRUE,
+  titleY = TRUE
+) %>%
+  layout(
+    title = list(
+      text = "Distribution Across Risk Factors",  # Removed "Stroke" from title
+      font = list(size = 24),
+      x = 0.5  # Center the title
+    ),
+    showlegend = FALSE  # Remove legend from the combined plot
+  )
+
+# Display the combined plot
+combined_plot
+```
+
+# Predictive Modeling
+
+## Final data preparations
+
+-   **Feature Encoding:** Changing categorical features first into numerics, then into factors.
+-   **Multicollinearity:** Test the predictors on independence
+-   **Dataset balancing:** Upsampling with SMOTE\*
+-   **Scaling:** Ensuring classification algorithms are less sensitive to scale differences. $$
+    z = \frac{x - \mu}{\sigma}
+    $$
+
+::: aside
+\*Synthetic Minority Oversampling Technique
+:::
+
+## Modeling
+
+We start building a naive unbalanced prediction model. The following models try to mitigate issues we encountered during the EDA:
+
+-   Balanced Baseline Model
+-   Stratified Model for the Low-Risk Age Group (age \< 60)
+-   Stratified Model for the High-Risk Age Group (age \>= 60)
+
+Modeling Approach:
+
+-   80% of the data for training and 20% for testing
+-   Fit a logistic regression model
+-   Evaluate model performance on test set
+
+We focus on the most successful prediction model: the [**balanced baseline model**.]{style="color:red;"}
+
+## Balanced Baseline Dataset
+
+::: {.column width="40%"}
+```{r}
+# Load necessary libraries
+library(knitr)
+library(kableExtra)
+
+# Create the confusion matrix
+confusion_matrix <- matrix(
+  c(2850, 751,
+    1021, 3120),
+  nrow = 2,
+  byrow = TRUE,
+  dimnames = list(
+    Prediction = c("No", "Yes"),
+    Reference = c("No", "Yes")
+  )
+)
+
+# Display the confusion matrix as a formatted table with labels
+kable(confusion_matrix, 
+      caption = "Confusion Matrix", 
+      align = "c", 
+      row.names = TRUE,
+      col.names = c("No", "Yes")) %>%
+  kable_styling("striped", full_width = FALSE) %>%
+  add_header_above(c("Prediction" = 1, "Reference" = 2))
+```
+
+:::
+
+::: {.column width="60%"}
+```{r}
+# Load the CSV file
+metric_tb <- read.csv("/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/metric_tb.csv")
+
+# Remove the first column (with 'x' as the header)
+metric_tb <- metric_tb[ , -1]
+
+# Display the metrics table
+kable(metric_tb, col.names = c("Metric", "Value"), caption = "Improved Metrics")
+```
+:::
+
+## ROC curve
+
+![](figures/2_ROC.png)
+
+# Conclusion
+
+## Key Findings
+
+*Key Findings:*
+
+-   Key predictors: `age`, `high blood pressure`, `avg_glucose_level`, and `heart disease`
+-   Contrary to research, `smoking_status` and `bmi` showed little to no impact on `stroke` risk
+
+*Model Limitations:*
+
+-   Logistic regression models used in the analysis may not have captured all patterns in the data
+-   Dataset is limited in external validity
