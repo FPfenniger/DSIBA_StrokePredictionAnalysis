@@ -34,8 +34,7 @@ str(outlier_stroke_tb)
 For the categorical feature encoding, we convert our categorical
 variables into dummy variables to utilize them in our predictive model.
 To avoid the dummy variable trap, we drop the first level of each
-categorical variable and use it as a reference level. We start by encoding binary variables as 0 and 1,
-and then create dummy variables for the remaining categorical variables.
+categorical variable and use it as a reference level. We start by encoding binary variables as 0 and 1.
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -211,9 +210,9 @@ conducting a multivariate analysis, as the results from this section
 seem robust enough to also conclude no multicollinearity among multiple
 features.
 
-### Dataset Balancing
+### Balancing & Stratified Sampling
 
-The dataset revealed that most individuals do not have strokes, creating
+The dataset revealed that most individuals do not have strokes, creating therefore 
 a strong class imbalance. This imbalance can negatively impact model
 performance by biasing it towards the majority class, resulting in poor
 predictive accuracy for minority cases like strokes. Without applying
@@ -231,10 +230,10 @@ individuals aged over 60 have a significantly higher risk of stroke.
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show the code"
-
+# Creation of Low-Risk Age Group
 low_risk_age_tb <- encoded_stroke_tb %>%
   filter(age < 60)
-
+# Creation of High-Risk Age Group
 high_risk_age_tb <- encoded_stroke_tb %>%
   filter(age >= 60)
 ```
