@@ -6,12 +6,6 @@ editor: visual
 
 # Appendix
 
-## From Introduction section
-
-[^1]: Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. https://doi.org/10.1016/j.ncl.2008.07.003
-
-[^2]: American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes
-
 ## From EDA section
 
 ### Proportion of `Stroke` by variables `gender` and `Residence_type`
