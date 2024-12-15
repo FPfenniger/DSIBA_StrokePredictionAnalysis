@@ -1,20 +1,19 @@
 ---
 title: "_introduction"
 format: html
-bibliography: "_appendix"
 ---
 
 # Introduction
 
 ## Overview and Motivation
 
-Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities[^1]. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
+Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities [^1]. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
 
-[^1]: Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. https://doi.org/10.1016/j.ncl.2008.07.003
+[^1]: Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. <https://doi.org/10.1016/j.ncl.2008.07.003>
 
-This project on strokes is driven by several key motivations. One of the most compelling reasons is that, according to the American Heart Association, approximately 80% of strokes are preventable through appropriate preventive measures[^2]. This statistic motivates us to identify and analyze risk factors, as we have the potential to significantly reduce the incidence of this disease.
+This project on strokes is driven by several key motivations. One of the most compelling reasons is that, according to the American Heart Association, approximately 80% of strokes are preventable through appropriate preventive measures [^2]. This statistic motivates us to identify and analyze risk factors, as we have the potential to significantly reduce the incidence of this disease.
 
-[^2]: American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes
+[^2]: American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. <https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes>
 
 Our project has several goals, as outlined below :
 
