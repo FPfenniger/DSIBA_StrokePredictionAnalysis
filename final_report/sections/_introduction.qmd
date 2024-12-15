@@ -1,7 +1,7 @@
 ---
 title: "_introduction"
 format: html
-bibliography: _Appendix.qmd
+bibliography: _Appendix 
 ---
 
 # Introduction
