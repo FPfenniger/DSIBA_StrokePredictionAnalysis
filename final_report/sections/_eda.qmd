@@ -5,7 +5,11 @@ format: html
 # Exploratory Data Analysis
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 ```{r, warning=FALSE}
+=======
+```{r, message = FALSE}
+>>>>>>> Stashed changes
 =======
 ```{r, message = FALSE}
 >>>>>>> Stashed changes
