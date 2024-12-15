@@ -5,6 +5,8 @@ format: html
 # Exploratory Data Analysis
 
 ```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 library(tidyverse)
 library(plotly)
 library(knitr)
@@ -142,6 +144,107 @@ combined_histograms <- subplot(hist_age, hist_glucose, hist_bmi, nrows = 1, titl
 # Display combined histogram
 combined_histograms
 ```
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(plotly)
+library(dplyr)
+
+# Function to create the histogram as a Plotly object
+create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+  # Extract the variable and stroke data
+  original_data <- data[[variable]]
+  stroke_data <- data[[stroke_variable]]
+  
+  # Convert stroke_data into a factor with meaningful labels
+  stroke_factor <- factor(stroke_data, levels = c(0, 1), labels = c("No Stroke", "Stroke"))
+  
+  # Create a plot_data frame with the transformed stroke variable
+  plot_data <- data.frame(
+    data = original_data,
+    stroke = stroke_factor
+  )
+  
+  # Generate the ggplot object
+  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+    labs(
+      y = "Frequency",
+      fill = "Stroke Status",
+      title = paste("Distribution of", gsub("_", " ", variable))
+    ) +
+    # "No Stroke" = grey, "Stroke" = blue
+    scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_blank(),
+      plot.title = element_text(hjust = 0.5),
+      legend.position = ifelse(show_legend, "right", "none")
+    )
+  
+  # Convert to interactive Plotly plot
+  ggplotly(p) %>%
+    layout(showlegend = show_legend)
+}
+
+# Generate histograms
+hist_age <- create_histogram(
+  data = outlier_stroke_tb,
+  variable = "age",
+  stroke_variable = "stroke",
+  binwidth = 5,
+  show_legend = TRUE  # Show legend only here
+) %>%
+  layout(
+    xaxis = list(title = "Age"),
+    yaxis = list(title = "Frequency")
+  )
+
+hist_glucose <- create_histogram(
+  data = outlier_stroke_tb,
+  variable = "avg_glucose_level",
+  stroke_variable = "stroke",
+  binwidth = 5,
+  show_legend = FALSE
+) %>%
+  layout(
+    xaxis = list(title = "Average Glucose Level"),
+    yaxis = list(title = "Frequency")
+  )
+
+hist_bmi <- create_histogram(
+  data = outlier_stroke_tb,
+  variable = "bmi",
+  stroke_variable = "stroke",
+  binwidth = 5,
+  show_legend = FALSE
+) %>%
+  layout(
+    xaxis = list(title = "BMI"),
+    yaxis = list(title = "Frequency")
+  )
+
+# Combine all histograms into a single interactive plot
+combined_histograms <- subplot(
+  hist_age, hist_glucose, hist_bmi,
+  nrows = 1,
+  titleX = TRUE,
+  titleY = TRUE,
+  margin = 0.05
+) %>%
+  layout(
+    title = "Histograms of Numerical Variables by Stroke"
+  )
+
+# Display the combined histogram
+combined_histograms
+```
+
+
+
+
+
 Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
 -   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
