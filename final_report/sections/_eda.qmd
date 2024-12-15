@@ -4,7 +4,11 @@ format: html
 ---
 # Exploratory Data Analysis
 
+<<<<<<< Updated upstream
 ```{r, warning=FALSE}
+=======
+```{r, message = FALSE}
+>>>>>>> Stashed changes
 #| code-fold: true
 #| code-summary: "Click to show code"
 library(tidyverse)
@@ -24,6 +28,23 @@ balanced_stroke_tb <-
 preprocessed_stroke_tb <-
   read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
 ```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Numerical variables
+numerical_variables <- c("age", "avg_glucose_level", "bmi")
+```
+
+move this to preprocessing later
+```{r}
+# Create a tibble with the numerical variables
+numerical_tibble <- outlier_stroke_tb %>%
+  select(all_of(numerical_variables))
+```
+
+remember standardised histograms? Reintroduce them.
 
 ## Descriptive Statistics
 
@@ -318,59 +339,119 @@ kable(correlation_table, caption = "Correlation Coefficients with Stroke")
 ### Categorical variables
 
 The second part of our EDA examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
-```{r}
+
+```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-library(ggplot2)
-library(plotly)
-library(dplyr)
-
-# Define choices for the variable selection, excluding Gender and Residence Type
-x_variable_choices <- c("Ever Married" = "ever_married",
-                        "Work Type" = "work_type", 
-                        "Smoking Status" = "smoking_status",
-                        "Hypertension" = "hypertension", 
-                        "Heart Disease" = "heart_disease")
-
-# Create a filtered data frame based on all selected variables
-filtered_data <- outlier_stroke_tb
-# Remove "Other" for the gender variable
-filtered_data <- filtered_data %>% filter(!(gender == "Other"))  # Simply check for 'Other' in gender
-
-# Initialize an empty list to store plots
-plots <- list()
-
-# Loop through each categorical variable and create a bar chart
-for (selected_variable in x_variable_choices) {
+# Define a custom function to create proportion plots with titles above
+create_proportion_plot <- function(data, variable, title, x_labels = NULL, fill_colors = c("#1f77b4", "#ff7f0e")) {
+  p <- ggplot(data, aes_string(x = variable, fill = "as.factor(stroke)")) +
+    geom_bar(position = "fill") +
+    labs(
+      title = title,
+      x = title,      # Using title as x-axis label for consistency
+      y = "Proportion"
+    ) +
+    scale_fill_manual(values = fill_colors, labels = c("No Stroke", "Stroke")) +
+    theme_minimal() +
+    theme(
+      plot.title.position = "plot",                   # Ensure title is above the plot
+      plot.title = element_text(size = 16, face = "bold", hjust = 0.5),  # Centered and styled title
+      axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x labels for readability
+      plot.margin = margin(t = 30, r = 10, b = 10, l = 10)  # Increase top margin for title
+    )
   
-  # Get variable name
-  variable_name <- names(x_variable_choices)[which(x_variable_choices == selected_variable)]
-  
-  if (variable_name %in% c("hypertension", "heart_disease")) {
-    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
-      geom_bar(position = "fill") +
-      labs(title = paste("Distribution of Stroke by", variable_name),
-           fill = "STROKE", y = "Ratio") +
-      scale_x_continuous(breaks = c(0, 1), labels = c("No", "Yes")) +  # Custom x-axis for binary variables
-      scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e"))  # Set colors for no stroke and stroke
-  } else {
-    # For other categorical variables
-    p <- ggplot(filtered_data, aes_string(x = selected_variable, fill = "as.factor(stroke)")) +
-      geom_bar(position = "fill") +
-      labs(title = paste("Distribution of Stroke by", variable_name),
-           fill = "STROKE", y = "Ratio") +
-      scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e"))  # Set colors for no stroke and stroke
+  # If custom labels are provided, apply them
+  if (!is.null(x_labels)) {
+    p <- p + scale_x_discrete(labels = x_labels)
   }
   
-  # Convert ggplot to an interactive plotly object and store it in the list
-  plots[[variable_name]] <- ggplotly(p)
+  ggplotly(p) %>%
+    layout(
+      margin = list(t = 50)  # Additional top margin in plotly to prevent title overlap
+    )
 }
-# Display all plots
-for (plot in plots) {
-  print(plot)  # You can use print to display each plot one after the other
-}
+
+# Define choices for the variable selection, excluding Gender and Residence Type
+x_variable_choices <- c(
+  "Smoking Status" = "smoking_status",
+  "Hypertension" = "hypertension", 
+  "Heart Disease" = "heart_disease",
+  "Ever Married" = "ever_married",
+  "Work Type" = "work_type"
+)
+
+# Create a filtered data frame based on all selected variables
+filtered_data <- outlier_stroke_tb %>%
+  filter(gender != "Other")  # Remove records where gender is 'Other'
+
+# Generate the Smoking Status plot
+plot_smoking <- create_proportion_plot(
+  data = filtered_data,
+  variable = "smoking_status",
+  title = "Smoking Status",
+  x_labels = c("Unknown", "Never smoked", "Formerly smoked", "Smokes")
+)
+
+# Generate the Hypertension plot
+plot_hypertension <- create_proportion_plot(
+  data = filtered_data,
+  variable = "hypertension",
+  title = "Hypertension",
+  x_labels = c("No", "Yes")
+)
+
+# Generate the Heart Disease plot
+plot_heart_disease <- create_proportion_plot(
+  data = filtered_data,
+  variable = "heart_disease",
+  title = "Heart Disease",
+  x_labels = c("No", "Yes")
+)
+
+# Generate the Ever Married plot
+plot_ever_married <- create_proportion_plot(
+  data = filtered_data,
+  variable = "ever_married",
+  title = "Ever Married",
+  x_labels = c("No", "Yes")
+)
+
+# Generate the Work Type plot
+plot_work_type <- create_proportion_plot(
+  data = filtered_data,
+  variable = "work_type",
+  title = "Work Type",
+  x_labels = c("Govt_job", "Never_worked", "Private", "Self-employed", "children")
+)
+
+# Combine all five plots into a two-row layout using subplot
+combined_plot <- subplot(
+  plot_smoking, plot_hypertension, plot_heart_disease, 
+  plot_ever_married, plot_work_type,
+  nrows = 2,          # Arrange plots in two rows
+  margin = 0.05,      # Margin between plots
+  titleX = TRUE,
+  titleY = TRUE
+) %>%
+  layout(
+    title = list(
+      text = "Distribution Across Risk Factors",
+      font = list(size = 24, family = "Arial", color = "#000000"),
+      x = 0.5,               # Center the title
+      y = 0.95,              # Position the title above the plots
+      xanchor = "center",
+      yanchor = "top"
+    ),
+    showlegend = FALSE      # Remove legend from the combined plot
+  )
+
+# Display the combined plot
+combined_plot
 ```
+
+
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
 
