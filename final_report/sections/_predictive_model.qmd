@@ -209,16 +209,9 @@ features.
 
 ### Balancing & Stratified Sampling
 
-The dataset revealed that most individuals do not have strokes, creating therefore 
-a strong class imbalance. This imbalance can negatively impact model
-performance by biasing it towards the majority class, resulting in poor
-predictive accuracy for minority cases like strokes. Without applying
-upsampling, the model might overly favor "no stroke" predictions,
-yielding high overall accuracy but failing to identify actual stroke
-cases effectively (low recall). By upsampling the minority class, we
-ensure the model learns from stroke cases as well, improving its ability
-to detect strokes and offering a more balanced and meaningful predictive
-performance.
+In the EDA, we observed that `age` is the most significant predictor of stroke occurrence. To account for this, we will split the dataset into two age groups: individuals under 60 years old (low-risk age group) and individuals aged 60 and over (high-risk age group). By doing that, we hope to find different patterns in the dataset and ultimately different risk factors for stroke. These dataset will serve as the basis for our two stratified predictive models.  
+
+Furthermore, our EDA revealed that `stroke` is a rare event in the dataset, with only 4.9% of individuals having a stroke. This class imbalance can negatively impact the model's performance, as it might overly favor the majority class (no stroke) and fail to detect actual stroke cases effectively. To address this issue, we will upsample the minority class (stroke) to balance the dataset. This will ensure that the model learns from stroke cases as well, improving its ability to detect strokes and offering a more balanced and meaningful predictive performance.
 
 #### Stratified Sampling
 Let's start by creating the two stratified datasets, where we take the
@@ -376,6 +369,7 @@ Similar to the low-risk age group, we find the same patterns and distributions o
 #| code-summary: "Click to show the code"
 # Updated list of categorical variables for the analysis
 variables_to_summarize <- c("hypertension", "heart_disease")
+readable_names <- c("Hypertension", "Heart Disease")
 
 # Function to create a bar chart based on the selected variable
 create_bar_chart <- function(data, variable, readable_name) {
@@ -408,6 +402,7 @@ In conclusion, the high-risk age group shows a higher proportion of stroke cases
 This brief exploration of the two stratas suggests that the high-risk age group is more relevant for our predictive model, as the features are more predictive of stroke in this age group. But the difference to the full dataset is not as pronounced as expected. This is likely to impact the performance of the future stratified models.
 
 #### Dataset Balancing
+
 Let's look at stroke occurrences in our three datasets:
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -419,7 +414,7 @@ encoded_stroke_tb %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2)) %>%
   kable(col.names = c("Stroke", "Count", "Proportion"), 
-        caption = "Stroke Occurrence and Proportion") %>%
+        caption = "Baseline Dataset") %>%
   kable_styling(full_width = FALSE)
 
 # Low-Risk Age Group
@@ -428,7 +423,7 @@ low_risk_age_tb %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2)) %>%
   kable(col.names = c("Stroke", "Count", "Proportion"), 
-        caption = "Stroke Occurrence and Proportion") %>%
+        caption = "Low-Risk Age Group") %>%
   kable_styling(full_width = FALSE)
 
 # High-Risk Age Group
@@ -437,14 +432,21 @@ high_risk_age_tb %>%
   summarize(count = n()) %>%
   mutate(proportion = round(count / sum(count), 2)) %>%
   kable(col.names = c("Stroke", "Count", "Proportion"), 
-        caption = "Stroke Occurrence and Proportion") %>%
+        caption = "High-Risk Age Group") %>%
   kable_styling(full_width = FALSE)
 ```
-To address this issue, we use dataset balancing techniques to adjust the
-proportions of stroke and no-stroke cases.By upsampling, we enhance the representation of stroke
-cases, helping the model learn more effectively and improve both
-prediction accuracy and recall, particularly for the minority class
-(here when strokes occur).
+
+We observe a strong imbalance in all datasets, which require balancing. This imbalance can negatively impact model
+performance by biasing it towards the majority class, resulting in poor
+predictive accuracy for minority cases like strokes. Without applying
+upsampling, the model might overly favor "no stroke" predictions,
+yielding high overall accuracy but failing to identify actual stroke
+cases effectively (low recall). By upsampling the minority class, we
+ensure the model learns from stroke cases as well, improving its ability
+to detect strokes and offering a more balanced and meaningful predictive
+performance.
+
+To address this issue, we use Random Upsampling, where we randomly duplicate minority class observations. This technique is simple and effective, as it increases the number of minority class observations without introducing bias.
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -457,6 +459,14 @@ balanced_stroke_tb <- upSample(
   yname = "stroke"
 )
 
+# Balance the low-risk age strata
+low_risk_age_data <- upSample(
+  x = low_risk_age_tb[, names(low_risk_age_tb) != "stroke"], 
+  y = low_risk_age_tb$stroke, 
+  yname = "stroke"
+)
+
+# Balance the high-risk age strata
 high_risk_age_data <- upSample(
   x = high_risk_age_tb[, names(high_risk_age_tb) != "stroke"], 
   y = high_risk_age_tb$stroke, 
@@ -494,7 +504,45 @@ logistic regression model for each dataset, before evaluating them on
 the test set. We will then compare the performance of the models and
 discuss potential strengths and weaknesses.
 
-## Metrics and Terms
+## Model and Evaluation Metrics
+
+### Logistic Regression
+
+Logistic regression is a statistical method used for modeling the relationship between a set of predictor variables and a binary outcome variable (0/1). Unlike linear regression, logistic regression estimates the probability of the occurrence of an event by fitting the data to a **logistic curve**.  
+
+The response variable is binary, such as "yes/no," "success/failure," or "disease/no disease."
+
+The logistic regression model is expressed as:
+
+$$
+p = \frac{e^{\beta_0 + \beta_1X_1 + \dots + \beta_nX_n}}{1 + e^{\beta_0 + \beta_1X_1 + \dots + \beta_nX_n}}
+$$
+
+Taking the natural logarithm of the odds gives the logit function:
+
+$$
+logit(p) = log(\frac{p}{1-p})
+$$
+
+
+Where:  
+- p is the probability of the event occurring.  
+- beta_0 is the intercept.  
+- betas are the coefficients of the predictor variables.  
+- X are the predictor variables.
+
+The model is estimated using **maximum likelihood estimation (MLE)**, which identifies the coefficients that maximize the likelihood of observing the given data.
+
+Important assumptions of logistic regression include:
+
+- Independence of errors
+- Absence of multicollinearity
+- Lack of influential outliers
+- Linearity of independent variables and log odds
+
+
+
+### Evaluation Metrics
 
 First of all we introduce the metrics we will be using to evaluate our
 models.
@@ -528,7 +576,8 @@ $$
 Recall = \frac{TP}{TP + FN}
 $$
 
--   F1 Score The F1 score is the harmonic mean of Precision and Recall
+-   F1 Score 
+The F1 score is the harmonic mean of Precision and Recall
     and often used in unbalanced dataset like ours as it considers false
     positives and false negatives. The formula for F1 score ranges from
     0 to 1 and is given by:
@@ -590,7 +639,7 @@ discuss potential strengths and weaknesses.
 
 In order to evaluate the performance of our model, we split the original
 dataset into a training and a test set. We use 80% of the data for
-training and 20% for testing.
+training and 20% for testing. We also scale the continuous variables and use the same scaling parameters for the test set to avoid data leakage.
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -692,8 +741,7 @@ logistic_model_1 <- train(
 ```
 ### Evaluation and Discussion
 
-We start by evaluating the model on the test.
-
+We start by evaluating the model on the test set.
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -742,7 +790,7 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
-
+As expected, our naive model performs terribly on the test set. Our model just guesses No for all instances and therefore scores 0 for Precision, Recall and F1
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -840,8 +888,6 @@ We repeat the same process for our balanced baseline model.
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-
 # Load the dataset
 balanced_original_data <- balanced_stroke_tb
 
@@ -977,14 +1023,18 @@ accuracy <- conf_matrix_test$overall["Accuracy"]
 
 # Generate Metrics Report
 classification_report_test <- data.frame(
-  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
-  Value = c(precision, recall, f1_score, specificity, accuracy)
+    Value = c(precision, recall, f1_score, specificity, accuracy)
 )
 
 print(conf_matrix_test)
 print(classification_report_test)
 ```
+A Precision of 0.753 reflects that 75.3% of positive predictions were correct, while the Recall of 0.830 highlights the model's ability to correctly identify 83.0% of actual positive cases. This balance between Precision and Recall is captured in the F1 score of 0.790, which is a robust measure of the model’s predictive accuracy.
+The model’s Accuracy of 77.9% further demonstrates reliable classification performance, with a Specificity of 0.728 indicating that 72.8% of actual negative cases were correctly identified. Together, these metrics suggest that the model is well-suited for distinguishing between positive and negative outcomes.
 
+The confusion matrix provides further clarity into the model’s performance. Out of a total of 1934 observations:
+803 true positive predictions were made, alongside 704 true negatives.
+The model misclassified 263 cases as false positives and 164 cases as false negatives. The relatively low number of false negatives aligns with the high Recall value, underlining the model’s strength in capturing positive cases.
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -1007,6 +1057,9 @@ ggplot(data = data.frame(
   annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
   theme_minimal()
 ```
+The ROC curve confirms the model's strong discriminative ability, with an AUC (Area Under the Curve) of 0.839. This indicates that the model has an 83.9% chance of correctly distinguishing between a positive and a negative case. The steep rise in the ROC curve reflects the effective trade-off between sensitivity and specificity.
+
+Finally, we have a look at the effects of the predictors on the outcome. With the odds ratios, we can understand the importance and direction of each feature in predicting the target variable. Important here to note is that the categorical features capture the total change on stroke risk, while the continuous predictors (`age`, `avg_glucose_level`, `bmi`) capture the change in odds for a one-unit increase in the predictor.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1021,6 +1074,16 @@ train_sds   <- sapply(train_balanced[continuous_vars], sd, na.rm = TRUE)
 
 generate_importance_table(logistic_model_2, "Logistic Model 2", continuous_vars, train_sds)
 ```
+- Hypertension has the strongest positive effect on the outcome with an odds ratio of 1.707 (p < 0.0001), indicating individuals with hypertension are 1.7 times more likely to experience the event.
+
+- Heart Disease and Smoking Status (Smokes or Formerly Smoked) are also significant predictors, increasing the odds of the outcome.
+
+- Age has a modest but statistically significant positive effect (odds ratio: 1.08), indicating a gradual increase in risk with age.
+
+- Predictors like BMI and Residence Type: Urban were not statistically significant (p > 0.05).
+
+- Negative coefficients for Work Type: Government Job and Self-Employed indicate that individuals in these categories are less likely to experience a stroke.
+
 
 ## Low-Risk Age Model
 
@@ -1041,33 +1104,26 @@ cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
                    "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
 
 # Explicitly set factor levels to "0" and "1"
-low_risk_age_tb[cat_variables] <- lapply(low_risk_age_tb[cat_variables], function(col) {
+low_risk_age_data[cat_variables] <- lapply(low_risk_age_data[cat_variables], function(col) {
   if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
   levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
   return(col)
 })
 
 # Ensure the target variable "stroke" has valid levels
-low_risk_age_tb$stroke <- factor(
-  low_risk_age_tb$stroke,
+low_risk_age_data$stroke <- factor(
+  low_risk_age_data$stroke,
   levels = c("0", "1"),         # Original levels
   labels = c("No", "Yes")       # Valid names for levels
 )
 
 # Split into training (80%) and testing (20%) sets
 set.seed(42)  
-trainIndex <- createDataPartition(low_risk_age_tb$stroke, p = 0.8, 
+trainIndex <- createDataPartition(low_risk_age_data$stroke, p = 0.8, 
                                   list = FALSE, times = 1)
 
-train_low_risk <- low_risk_age_tb[trainIndex, ]
-test_low_risk <- low_risk_age_tb[-trainIndex, ]
-
-# Balance the training set
-balanced_train_low_risk <- upSample(
-  x = train_low_risk[, names(low_risk_age_tb) != "stroke"], 
-  y = train_low_risk$stroke, 
-  yname = "stroke"
-)
+train_low_risk <- low_risk_age_data[trainIndex, ]
+test_low_risk <- low_risk_age_data[-trainIndex, ]
 
 # Scaling
 continuous_vars <- c("age", "avg_glucose_level", "bmi")
@@ -1082,7 +1138,7 @@ standardize_with_params <- function(x, mean_val, sd_val) {
 }
 
 # Apply scaling to the training set using training parameters
-scaled_train_low_risk <- balanced_train_low_risk
+scaled_train_low_risk <- train_low_risk
 for (var in continuous_vars) {
   scaled_train_low_risk[[var]] <- standardize_with_params(scaled_train_low_risk[[var]], 
                                                train_means[var], 
@@ -1174,7 +1230,6 @@ accuracy <- conf_matrix_test$overall["Accuracy"]
 
 # Generate Metrics Report
 classification_report_test <- data.frame(
-  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
   Value = c(precision, recall, f1_score, specificity, accuracy)
 )
 
@@ -1182,10 +1237,18 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
+The model exhibited robust classification capabilities, with an Accuracy of 78.2% and an F1 Score of 0.795, indicating a balanced performance between precision and recall. Notably, the Recall value of 0.842 highlights the model’s ability to correctly identify 84.2% of true positive cases, which is crucial for minimizing missed at-risk individuals. However, the Precision of 0.752 suggests that 24.8% of positive predictions were false positives, a trade-off often acceptable in scenarios prioritizing sensitivity.
 
-probably due to several factors: - different stroke distribution in the
-training set - overfitting to the training set structure - the small
-size of the test set
+The Specificity of 0.723 reflects the model’s moderate ability to correctly identify negative cases. Taken together, these metrics indicate that the model effectively balances sensitivity and specificity, making it suitable for identifying subtle risks in the low-risk age group.
+
+The confusion matrix further contextualizes the model's predictive performance:
+
+- True Positives (TP): 613 cases were correctly classified as positive.
+- True Negatives (TN): 526 cases were accurately identified as negative.
+- False Positives (FP): 202 cases were incorrectly flagged as positive.
+- False Negatives (FN): 115 cases were missed.
+
+The relatively low number of false negatives aligns with the high Recall value, emphasizing the model’s strength in detecting true positive cases. However, the false positive count highlights areas for further refinement to improve precision without compromising sensitivity.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1209,6 +1272,7 @@ ggplot(data = data.frame(
   annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
   theme_minimal()
 ```
+The ROC curve and its associated AUC value of 0.844 reinforce the model’s excellent discriminative ability. An AUC of 0.844 indicates that the model has an 84.4% probability of distinguishing between positive and negative cases. The steep initial rise of the ROC curve demonstrates strong sensitivity at lower false positive rates, making it well-suited for screening purposes in a population with lower baseline risk.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1223,10 +1287,20 @@ train_sds   <- sapply(train_low_risk[continuous_vars], sd, na.rm = TRUE)
 
 generate_importance_table(logistic_model_3, "Logistic Model 3", continuous_vars, train_sds)
 ```
+Hypertension remains the most significant predictor, with an odds ratio of 2.256 (p < 0.0001), indicating that individuals with hypertension are more than twice as likely to experience the event.
+Smoking Status (both current and former) continues to be a critical risk factor:
+Current smokers have a 1.507-fold increased risk (p < 0.0001).
+Former smokers also retain an elevated risk (1.467, p < 0.0001), suggesting a lingering impact of smoking history.
+Age contributes to the risk, with an odds ratio of 1.108 (p < 0.0001), reflecting the gradual increase in risk even within the low-risk age group.
+BMI shows a slight but significant positive association (odds ratio: 1.012, p = 0.014), highlighting the importance of weight management.
+Conversely, individuals who are self-employed or in government jobs show a protective effect, with reduced odds of the outcome (0.707 and 0.571, respectively).
+Being married also shows a protective association (odds ratio: 0.697, p = 0.0004), which may reflect social or lifestyle factors.
+Predictors such as heart disease and average glucose level were not statistically significant in this stratified model, suggesting these factors may be less influential in a low-risk age group.
+
 
 ## High-Risk Age Model
 
-Our last model comprises all individuals aged 60 and above. As the variance in age is pretty low and the strata to a certain scale incorporates the information of `age` , we remove the feature. 
+Our last model comprises all individuals aged 60 and above. As the variance in age is pretty low and the strata to a certain scale incorporates the information of `age`, we remove the feature entirely from the dataset. 
 
 ### Train-test split
 
@@ -1380,6 +1454,21 @@ classification_report_test <- data.frame(
 print(conf_matrix_test)
 print(classification_report_test)
 ```
+Let's analyze the results of the high-risk age group model:
+
+- Precision (0.619): The model correctly predicted 61.9% of the positive outcomes, indicating a moderate level of reliability for positive predictions.
+
+- Recall (0.510): The model captured only 51.0% of true positive cases, highlighting a notable number of false negatives. This lower Recall suggests limited sensitivity.
+
+- F1 Score (0.560): The harmonic mean between Precision and Recall reflects moderate performance, with room for improvement in sensitivity.
+
+- Specificity (0.687): The model correctly identified 68.7% of negative cases, indicating reasonable performance in minimizing false positives.
+
+- Accuracy (0.598): The overall accuracy of 59.8% suggests that the model’s predictive power is less robust compared to the low-risk age group model.
+
+In summary, the model performs reasonably well in identifying negative cases but struggles with sensitivity, which could be problematic when prioritizing the identification of high-risk individuals.
+
+The higher number of false negatives (117) compared to true positives reflects the lower Recall and indicates that the model fails to identify nearly half of the actual positive cases. This highlights a significant trade-off between precision and sensitivity in the high-risk age group.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1403,7 +1492,11 @@ ggplot(data = data.frame(
   annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
   theme_minimal()
 ```
+The ROC curve illustrates the model's discriminative ability, with an AUC of 0.665.
 
+- AUC = 0.665: This indicates that the model has a 66.5% probability of distinguishing between positive and negative cases, which is only slightly better than random chance.
+
+The relatively shallow ascent of the ROC curve reflects limited sensitivity and highlights challenges in effectively identifying positive cases in the high-risk group. This suggests that the model may require further refinement to enhance its predictive performance.
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -1416,5 +1509,21 @@ train_sds   <- sapply(train_high_risk[continuous_vars], sd, na.rm = TRUE)
 
 generate_importance_table(logistic_model_4, "Logistic Model 4", continuous_vars, train_sds)
 ```
+Key Findings:
+
+- Heart Disease and Hypertension were the most significant risk factors:
+Heart Disease had an odds ratio of 1.437 (p = 0.004), indicating a 43.7% increased risk for individuals with this condition.
+Hypertension contributed an odds ratio of 1.327 (p = 0.012), emphasizing its importance in the high-risk age group.
+
+- Residence Type: Urban showed a positive association (odds ratio = 1.211, p = 0.046), suggesting a slight increase in risk for individuals residing in urban areas. This finding may reflect lifestyle or environmental factors associated with urban living. Realistically, this variable is likely is evaluated too important as research and our EDA suggets that the residence type is not a significant predictor.
+
+- Average Glucose Level had a small but statistically significant positive association (odds ratio = 1.006, p < 0.001), indicating that higher glucose levels contribute to increased risk.
+
+- BMI demonstrated a protective effect with a negative coefficient and an odds ratio of 0.961 (p < 0.001).** This result could reflect non-linear relationships between weight and risk or confounding factors in the high-risk group.
+
+- Work Type (Self-Employed) and being Ever Married were associated once again with protective effects:
+Self-Employed: odds ratio = 0.803 (p = 0.039), indicating a 20% reduction in risk.
+Ever Married: odds ratio = 0.493 (p < 0.001), suggesting a 50.7% lower risk, potentially due to social and emotional support associated with marital status.
+
 
 
