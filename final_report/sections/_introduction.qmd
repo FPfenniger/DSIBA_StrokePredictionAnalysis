@@ -3,11 +3,13 @@ title: "_introduction"
 format: html
 bibliography: appendix.qmd
 ---
-# Introduction and Data Structure
+# Introduction
 
-## Project Goals
+##  Overview and Motivation
 
-Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
+Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities*. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
+
+This project on strokes is driven by several key motivations. One of the most compelling reasons is that, according to the American Heart Association, approximately 80% of strokes are preventable through appropriate preventive measures. This statistic motivates us to identify and analyze risk factors, as we have the potential to significantly reduce the incidence of this disease. 
 
 This project aims to explore associations between key risk factors and stroke incidence using data analysis and predictive modeling.
 
@@ -18,6 +20,16 @@ To be more specific, the goals of this project are to:
 - Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence.
 
 - Create visualizations to illustrate the results and enhance the understanding of stroke risk factors.
+
+*Rebbeca A. Grysiewicz, Kurian Thomas, Dilip K. Pandey, Epidemiology of Ischemic and Hemorrhagic Stroke: Incidence, Prevalence, Mortality, and Risk Factors, Neurologic Clinics, Volume 26, Issue 4, 2008, Pages 871-895, ISSN 0733-8619, https://doi.org/10.1016/j.ncl.2008.07.003.
+(https://www.sciencedirect.com/science/article/pii/S0733861908001047)
+
+## Related Work
+
+- Arboix A. Cardiovascular risk factors for acute stroke: Risk profiles in the different subtypes of ischemic stroke. World J Clin Cases. 2015 May 16;3(5):418-29. doi: 10.12998/wjcc.v3.i5.418. PMID: 25984516; PMCID: PMC4419105. 
+
+- Rebbeca A. Grysiewicz, Kurian Thomas, Dilip K. Pandey, Epidemiology of Ischemic and Hemorrhagic Stroke: Incidence, Prevalence, Mortality, and Risk Factors, Neurologic Clinics, Volume 26, Issue 4, 2008, Pages 871-895, ISSN 0733-8619, https://doi.org/10.1016/j.ncl.2008.07.003.
+(https://www.sciencedirect.com/science/article/pii/S0733861908001047)
 
 ## Research Questions
 
@@ -31,6 +43,8 @@ These questions focus on data features such as age, gender, hypertension, diabet
 
 Our initial exploratory data analysis shows relatively modest associations between stroke and most risk factors. To address this issue, we plan to use a demographically stratified approach in the predictive analysis. Additionally, due to the dataset's low proportion of stroke cases, upsampling was necessary to prevent bias in the predictive model.
 
+
+######Data ---> Déplacer vers section data  
 ## Data Source
 The data utilized for this project originates from the Stroke Prediction Dataset available on Kaggle, which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting occurrences of strokes based on features like age, gender, and medical history. Unfortunately, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
 
