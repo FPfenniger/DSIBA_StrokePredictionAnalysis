@@ -2,6 +2,7 @@
 title: "_eda"
 format: html
 ---
+
 # Exploratory Data Analysis
 
 ```{r, message = FALSE}
@@ -34,6 +35,7 @@ numerical_variables <- c("age", "avg_glucose_level", "bmi")
 ```
 
 move this to preprocessing later
+
 ```{r}
 # Create a tibble with the numerical variables
 numerical_tibble <- outlier_stroke_tb %>%
@@ -106,61 +108,6 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 ### Numerical variables
 
 First, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-library(ggplot2)
-library(plotly)
-
-# Function to create the histogram as plotly object
-create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
-  # Extract the variable and stroke data
-  original_data <- data[[variable]]
-  stroke_data <- data[[stroke_variable]]
-  
-  # Calculate mean and standard deviation for reference lines
-  mean_val <- mean(original_data, na.rm = TRUE)
-  sd_val <- sd(original_data, na.rm = TRUE)
-  
-  # Combine data and stroke status into a data frame
-  plot_data <- data.frame(data = original_data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
-  
-  # Generate the ggplot object (temporary)
-  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
-    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
-    labs(y = "Frequency", fill = "Stroke Status") +
-    scale_fill_manual(values = c("No Stroke" = "#1f77b4", "Stroke" = "#ff7f0e")) +  # Set custom colors
-    theme_minimal() +
-    theme(axis.title.x = element_blank(), plot.title = element_text(hjust = 0.5))  # Center title
-  
-  # Convert to interactive Plotly plot
-  p_plotly <- ggplotly(p) %>%
-    layout(showlegend = show_legend)  # Set legend visibility
-  
-  return(p_plotly)
-}
-
-# Generate histograms for each variable separately without repeating legends
-hist_age <- create_histogram(outlier_stroke_tb, "age", "stroke", binwidth = 5, show_legend = FALSE) %>%
-  layout(title = "Distribution of Age", xaxis = list(title = "Age"), 
-         yaxis = list(title = "Frequency"))
-
-hist_glucose <- create_histogram(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
-  layout(title = "Distribution of Average Glucose Level", xaxis = list(title = "Average Glucose Level"), 
-         yaxis = list(title = "Frequency"))
-
-hist_bmi <- create_histogram(outlier_stroke_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
-  layout(title = "Distribution of BMI", xaxis = list(title = "BMI"), 
-         yaxis = list(title = "Frequency"))
-
-# Combine all histograms into a single interactive plot with a main title
-combined_histograms <- subplot(hist_age, hist_glucose, hist_bmi, nrows = 1, titleY = TRUE,
-                               shareX = TRUE, shareY = TRUE) %>%
-  layout(title = "Histograms of Numerical Variables by Stroke", showlegend = TRUE)  # Set main title with legend visible
-
-# Display combined histogram
-combined_histograms
-```
 
 ```{r}
 # Load necessary libraries
@@ -258,10 +205,6 @@ combined_histograms <- subplot(
 combined_histograms
 ```
 
-
-
-
-
 Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
 -   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
@@ -308,7 +251,8 @@ combined_plot <- subplot(
 # Display the combined plot
 combined_plot
 ```
-The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years. 
+
+The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
 
 The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.24). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
@@ -340,113 +284,103 @@ The second part of our EDA examines the distribution of the categorical variable
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# Define a custom function to create proportion plots with titles above
-create_proportion_plot <- function(data, variable, title, x_labels = NULL, fill_colors = c("#1f77b4", "#ff7f0e")) {
-  p <- ggplot(data, aes_string(x = variable, fill = "as.factor(stroke)")) +
-    geom_bar(position = "fill") +
-    labs(
-      title = title,
-      x = title,      # Using title as x-axis label for consistency
-      y = "Proportion"
-    ) +
-    scale_fill_manual(values = fill_colors, labels = c("No Stroke", "Stroke")) +
-    theme_minimal() +
-    theme(
-      plot.title.position = "plot",                   # Ensure title is above the plot
-      plot.title = element_text(size = 16, face = "bold", hjust = 0.5),  # Centered and styled title
-      axis.text.x = element_text(angle = 45, hjust = 1),  # Rotate x labels for readability
-      plot.margin = margin(t = 30, r = 10, b = 10, l = 10)  # Increase top margin for title
-    )
-  
-  # If custom labels are provided, apply them
-  if (!is.null(x_labels)) {
-    p <- p + scale_x_discrete(labels = x_labels)
-  }
-  
-  ggplotly(p) %>%
-    layout(
-      margin = list(t = 50)  # Additional top margin in plotly to prevent title overlap
-    )
-}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(scales)  # for percentage labels
 
-# Define choices for the variable selection, excluding Gender and Residence Type
-x_variable_choices <- c(
-  "Smoking Status" = "smoking_status",
-  "Hypertension" = "hypertension", 
-  "Heart Disease" = "heart_disease",
-  "Ever Married" = "ever_married",
-  "Work Type" = "work_type"
+# Define the variables and their labels for categories
+var_categories <- list(
+  "smoking_status" = c("Unknown", "Never smoked", "Formerly smoked", "Smokes"),
+  "hypertension" = c("No", "Yes"),
+  "heart_disease" = c("No", "Yes"),
+  "ever_married" = c("No", "Yes"),
+  "work_type" = c("Govt_job", "Never_worked", "Private", "Self-employed", "children")
 )
 
-# Create a filtered data frame based on all selected variables
+# Filter data and select variables of interest
 filtered_data <- outlier_stroke_tb %>%
-  filter(gender != "Other")  # Remove records where gender is 'Other'
+  filter(gender != "Other") %>%
+  select(stroke, names(var_categories))
 
-# Generate the Smoking Status plot
-plot_smoking <- create_proportion_plot(
-  data = filtered_data,
-  variable = "smoking_status",
-  title = "Smoking Status",
-  x_labels = c("Unknown", "Never smoked", "Formerly smoked", "Smokes")
-)
+# Convert stroke to a factor with labels
+filtered_data <- filtered_data %>%
+  mutate(stroke = factor(stroke, levels = c(0, 1), labels = c("No Stroke", "Stroke")))
 
-# Generate the Hypertension plot
-plot_hypertension <- create_proportion_plot(
-  data = filtered_data,
-  variable = "hypertension",
-  title = "Hypertension",
-  x_labels = c("No", "Yes")
-)
+# Pivot data to long format
+long_data <- filtered_data %>%
+  pivot_longer(cols = all_of(names(var_categories)), 
+               names_to = "variable", values_to = "category")
 
-# Generate the Heart Disease plot
-plot_heart_disease <- create_proportion_plot(
-  data = filtered_data,
-  variable = "heart_disease",
-  title = "Heart Disease",
-  x_labels = c("No", "Yes")
-)
+# Compute the proportion of "Stroke" for each variable-category combination
+order_data <- long_data %>%
+  group_by(variable, category, stroke) %>%
+  summarize(n = n(), .groups = "drop") %>%
+  group_by(variable, category) %>%
+  mutate(prop = n / sum(n)) %>%
+  ungroup() %>%
+  filter(stroke == "Stroke")
 
-# Generate the Ever Married plot
-plot_ever_married <- create_proportion_plot(
-  data = filtered_data,
-  variable = "ever_married",
-  title = "Ever Married",
-  x_labels = c("No", "Yes")
-)
+# For each variable, reorder categories by ascending proportion of Stroke
+order_data <- order_data %>%
+  group_by(variable) %>%
+  arrange(prop, .by_group = TRUE) %>%
+  mutate(cat_rank = row_number()) %>%
+  ungroup()
 
-# Generate the Work Type plot
-plot_work_type <- create_proportion_plot(
-  data = filtered_data,
-  variable = "work_type",
-  title = "Work Type",
-  x_labels = c("Govt_job", "Never_worked", "Private", "Self-employed", "children")
-)
+# Compute a variable-level order by mean stroke proportion
+var_order_data <- order_data %>%
+  group_by(variable) %>%
+  summarize(var_prop = mean(prop), .groups = "drop") %>%
+  arrange(var_prop) %>%
+  mutate(var_rank = row_number())
 
-# Combine all five plots into a two-row layout using subplot
-combined_plot <- subplot(
-  plot_smoking, plot_hypertension, plot_heart_disease, 
-  plot_ever_married, plot_work_type,
-  nrows = 2,          # Arrange plots in two rows
-  margin = 0.05,      # Margin between plots
-  titleX = TRUE,
-  titleY = TRUE
-) %>%
+# Join category and variable ranks back to long_data
+long_data <- long_data %>%
+  left_join(order_data %>% select(variable, category, cat_rank), by = c("variable", "category")) %>%
+  left_join(var_order_data %>% select(variable, var_rank), by = "variable")
+
+# Create a combined label "Variable: Category"
+long_data <- long_data %>%
+  mutate(variable_category = paste(variable, category, sep = ": "))
+
+# Arrange by var_rank (variable-level order), then cat_rank (category-level order)
+long_data <- long_data %>%
+  arrange(var_rank, cat_rank)
+
+# Set factor levels according to this ordering
+long_data$variable_category <- factor(long_data$variable_category, levels = unique(long_data$variable_category))
+
+# Create the plot
+p <- ggplot(long_data, aes(x = variable_category, fill = stroke)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Distribution Across Risk Factors",
+    x = NULL,      # After flipping, becomes y-axis
+    y = "Proportion",
+    fill = "Stroke Status"
+  ) +
+  scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+  scale_y_continuous(labels = percent) + # Convert proportion to percentage
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+  ) +
+  coord_flip()
+
+# Convert to Plotly
+combined_plot <- ggplotly(p) %>%
   layout(
-    title = list(
-      text = "Distribution Across Risk Factors",
-      font = list(size = 24, family = "Arial", color = "#000000"),
-      x = 0.5,               # Center the title
-      y = 0.95,              # Position the title above the plots
-      xanchor = "center",
-      yanchor = "top"
-    ),
-    showlegend = FALSE      # Remove legend from the combined plot
+    margin = list(t = 50),
+    showlegend = TRUE,
+    legend = list(title = list(text = "<b>Stroke Status</b>"))
   )
 
-# Display the combined plot
+# Display the combined horizontal bar chart
 combined_plot
 ```
-
 
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
@@ -463,7 +397,7 @@ In contrast, the following variables appear to be not relevant, as there are no 
 
 -   `Residence_type`
 
-Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk. These predictors may even become more relevant when examined in a balanced dataset, which our initial hypotheses would suggest. 
+Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk. These predictors may even become more relevant when examined in a balanced dataset, which our initial hypotheses would suggest.
 
 ## Bivariate Analysis
 
@@ -496,4 +430,4 @@ plot_ly(
   )
 ```
 
-Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features. A further examination of the categorical features for collinearity will be done in the final data preparation in the next part. 
+Our numerical features don't seem to be strongly correlated with each other. The strongest correlation is observed between `age` and `bmi` (0.324), which is not surprising, as BMI is often used as a measure of body fat and is known to increase with age. The correlation between the other numerical features is rather low. We can therefore safely assume independence of our numerical features. A further examination of the categorical features for collinearity will be done in the final data preparation in the next part.
