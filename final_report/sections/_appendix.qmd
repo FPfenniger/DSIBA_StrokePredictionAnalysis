@@ -3,11 +3,18 @@ title: "_Appendix"
 format: html
 editor: visual
 ---
+
 # Appendix
 
-## From EDA section 
+## From Introduction section
 
-### Proportion of `Stroke` by variables `gender` and `Residence_type`  
+[^1]: Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. https://doi.org/10.1016/j.ncl.2008.07.003
+
+[^2]: American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes
+
+## From EDA section
+
+### Proportion of `Stroke` by variables `gender` and `Residence_type`
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -115,7 +122,7 @@ plotly_plot <- ggplotly(p)
 plotly_plot 
 ```
 
-### Proportion of `Stroke` by variables `gender` and `Residence_Type` for individuals below 60 years old 
+### Proportion of `Stroke` by variables `gender` and `Residence_Type` for individuals below 60 years old
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -153,7 +160,7 @@ for (var in variables_to_summarize) {
 }
 ```
 
-### Proportion of `Stroke` by `gender`, `Residence_type`, `smoking_status`, `work_type`  for individuals of 60 and over years old 
+### Proportion of `Stroke` by `gender`, `Residence_type`, `smoking_status`, `work_type` for individuals of 60 and over years old
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -188,6 +195,3 @@ for (i in seq_along(variables_to_summarize)) {
   print(bar_plot)
 }
 ```
-
-
-
