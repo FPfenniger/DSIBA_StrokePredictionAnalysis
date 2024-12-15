@@ -1,7 +1,7 @@
 ---
 title: "_introduction"
 format: html
-bibliography: appendix.qmd 
+bibliography: _appendix
 ---
 
 # Introduction
@@ -28,13 +28,13 @@ We will implement a **logistic regression model** as our predictive tool to addr
 
 ## Related Work
 
--   Arboix, A. (2015). Cardiovascular risk factors for acute stroke: Risk profiles in the different subtypes of ischemic stroke. World Journal of Clinical Cases, 3(5), 418-429. https://doi.org/10.12998/wjcc.v3.i5.418
+-   Arboix, A. (2015). Cardiovascular risk factors for acute stroke: Risk profiles in the different subtypes of ischemic stroke. World Journal of Clinical Cases, 3(5), 418-429. <https://doi.org/10.12998/wjcc.v3.i5.418>
 
--   Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. https://doi.org/10.1016/j.ncl.2008.07.003
+-   Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. <https://doi.org/10.1016/j.ncl.2008.07.003>
 
--   Yi, X., Luo, H., Zhou, J., and al. (2020). Prevalence of stroke and stroke related risk factors: A population-based cross-sectional survey in southwestern China. BMC Neurology, 20, 5. https://doi.org/10.1186/s12883-019-1592-z
+-   Yi, X., Luo, H., Zhou, J., and al. (2020). Prevalence of stroke and stroke related risk factors: A population-based cross-sectional survey in southwestern China. BMC Neurology, 20, 5. <https://doi.org/10.1186/s12883-019-1592-z>
 
--   Kelly-Hayes, M. (2010). Influence of age and health behaviors on stroke risk: Lessons from longitudinal studies. Journal of the American Geriatrics Society, 58(s2), S325-S328. https://doi.org/10.1111/j.1532-5415.2010.02915.x
+-   Kelly-Hayes, M. (2010). Influence of age and health behaviors on stroke risk: Lessons from longitudinal studies. Journal of the American Geriatrics Society, 58(s2), S325-S328. <https://doi.org/10.1111/j.1532-5415.2010.02915.x>
 
 ## Research Questions
 
