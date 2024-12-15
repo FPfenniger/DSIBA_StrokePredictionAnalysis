@@ -1,144 +1,51 @@
 ---
 title: "_introduction"
 format: html
-bibliography: appendix.qmd
+bibliography: "_appendix"
 ---
-# Introduction and Data Structure
 
-## Project Goals
+# Introduction
 
-Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
+## Overview and Motivation
 
-This project aims to explore associations between key risk factors and stroke incidence using data analysis and predictive modeling.
+Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities[^1]. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
 
-To be more specific, the goals of this project are to:
+[^1]: Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. https://doi.org/10.1016/j.ncl.2008.07.003
 
-- Build a predictive model to identify patients at risk of experiencing a stroke.
+This project on strokes is driven by several key motivations. One of the most compelling reasons is that, according to the American Heart Association, approximately 80% of strokes are preventable through appropriate preventive measures[^2]. This statistic motivates us to identify and analyze risk factors, as we have the potential to significantly reduce the incidence of this disease.
 
-- Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence.
+[^2]: American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes
 
-- Create visualizations to illustrate the results and enhance the understanding of stroke risk factors.
+Our project has several goals, as outlined below :
+
+1)  Build a predictive model for stroke occurrence based on risk factors
+
+2)  Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence
+
+3)  Create visualizations to illustrate the results and enhance the understanding of stroke risk factors
+
+We will implement a **logistic regression model** as our predictive tool to address our first project goal. This model will help us determine the likelihood of stroke occurrence based on the identified risk factors. By analyzing these relationships, we aim to accurately predict which individuals are at a higher risk of experiencing a stroke.
+
+## Related Work
+
+-   Arboix, A. (2015). Cardiovascular risk factors for acute stroke: Risk profiles in the different subtypes of ischemic stroke. World Journal of Clinical Cases, 3(5), 418-429. <https://doi.org/10.12998/wjcc.v3.i5.418>
+
+-   Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. <https://doi.org/10.1016/j.ncl.2008.07.003>
+
+-   Yi, X., Luo, H., Zhou, J., and al. (2020). Prevalence of stroke and stroke related risk factors: A population-based cross-sectional survey in southwestern China. BMC Neurology, 20, 5. <https://doi.org/10.1186/s12883-019-1592-z>
+
+-   Kelly-Hayes, M. (2010). Influence of age and health behaviors on stroke risk: Lessons from longitudinal studies. Journal of the American Geriatrics Society, 58(s2), S325-S328. <https://doi.org/10.1111/j.1532-5415.2010.02915.x>
 
 ## Research Questions
 
-1. What are the most significant risk factors associated with stroke?
-2. How accurately can a machine learning model predict an individual’s likelihood of having a stroke based on these factors?
-3. How do specific risk factors, such as age, heart disease, and glucose levels, interact to influence stroke risk?
+Our first research question focuses on determining:
 
-These questions focus on data features such as age, gender, hypertension, diabetes, and lifestyle factors like smoking status, offering insights into stroke risk patterns.
+-   What are the most significant risk factors associated with stroke?
 
-### Adjustments or Refinements
+Furthermore, as we develop a logistic regression model, we also seek to assess its predictive accuracy. Therefore, our second research question is:
+
+-   How accurately can a logistic regression model predict the occurrence of having a stroke?
+
+## Adjustments or Refinements
 
 Our initial exploratory data analysis shows relatively modest associations between stroke and most risk factors. To address this issue, we plan to use a demographically stratified approach in the predictive analysis. Additionally, due to the dataset's low proportion of stroke cases, upsampling was necessary to prevent bias in the predictive model.
-
-## Data Source
-The data utilized for this project originates from the Stroke Prediction Dataset available on Kaggle, which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting occurrences of strokes based on features like age, gender, and medical history. Unfortunately, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
-
-## Data Structure
-
-```{r}
-# Load necessary libraries
-library(knitr)
-library(kableExtra)
-library(dplyr)
-# Read the dataset
-stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
-str(stroke_tb)
-
-# Convert to a tibble
-stroke_tb_tibble <- as_tibble(stroke_tb)
-
-# Display the tibble
-print(stroke_tb_tibble)
-
-# Display the entire dataset using kable
-kable(stroke_tb, format = "html") %>%
-  kable_styling(full_width = F)
-```
-
-In total, there are 12 variables including our binary target variable `stroke`. 
-
-Our dataset contains 5110 observations with 12 attributes. Here's a summary of the main features of the dataset:
-
-1.  `id`:
-
--   Type: Integer (Continuous)
--   Description: A unique identifier for each individual in the dataset
-
-2.  `gender`:
-
--   Type: Character
--   Values: "Male", "Female", or "Other"
--   Description: Gender of the individual
-
-3.  `age`:
-
--   Type: Double
--   Description: Age of the individual
-
-4.  `hypertension`:
-
--   Type: Integer (Binary)
--   Values: 0 (No), 1 (Yes)
--   Description: Indicates whether the individual has hypertension (high blood pressure)
-
-5.  `heart_disease`:
-
--   Type: Integer (Binary)
--   Values: 0 (No), 1 (Yes)
--   Description: Indicates whether the individual has a heart disease
-
-6.  `ever_married`:
-
--   Type: Character
--   Values: "No" or "Yes"
--   Description: Indicates whether the individual has ever been married
-
-7.  `work_type`:
-
--   Type: Character
--   Values: "children", "Govt_job", "Never_worked", "Private", "Self-employed"
--   Description: Type of work the individual is engaged in
-
-8.  `Residence_type`:
-
--   Type: Character
--   Values: "Rural" or "Urban"
--   Description: Indicates the living area of the individual
-
-9.  `avg_glucose_level`:
-
--   Type: Double
--   Description: Average glucose level in the blood
-
-10. `bmi`:
-
--   Type: Character (Originally), Double (After Preprocessing)
--   Description: Body Mass Index, a measure of body fat based on height and weight
-
-11. `smoking_status`:
-
--   Type: Character
--   Values: "formerly smoked", "never smoked", "smokes", "Unknown"
--   Description: Indicates the smoking habits of the individual, where "Unknown" signifies that the smoking status information is not available
-
-12. `stroke`:
-
--   Type: Integer (Binary)
--   Values: 0 (No), 1 (Yes)
--   Description: The target variable indicating whether the individual has had a stroke
-
-```{r, warning=FALSE}
-#|code-fold: true 
-#|code-summary: "Click to show code"
-stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
-
-# Display the entire dataset using kable
-kable(stroke_tb, format = "html") %>%
-  kable_styling(full_width = F)
-```
-Relevant metadata:
-
--   Owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his     Kaggle profile)
-
--   Last update of the dataset was 4 years ago 

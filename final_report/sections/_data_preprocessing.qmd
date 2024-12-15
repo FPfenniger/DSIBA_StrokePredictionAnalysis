@@ -3,6 +3,120 @@ title: "_data_cleaning"
 format: html
 ---
 
+# Data Source
+
+The data utilized for this project originates from the [**Stroke Prediction Dataset**](https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset/data) available on [**Kaggle**](https://www.kaggle.com/), which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting occurrences of strokes based on features like age, gender, and medical history. Unfortunately, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
+
+# Data Structure
+
+```{r}
+# Load necessary libraries
+library(knitr)
+library(kableExtra)
+library(dplyr)
+# Read the dataset
+stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
+str(stroke_tb)
+
+# Convert to a tibble
+stroke_tb_tibble <- as_tibble(stroke_tb)
+
+# Display the tibble
+print(stroke_tb_tibble)
+
+# Display the entire dataset using kable
+kable(stroke_tb, format = "html") %>%
+  kable_styling(full_width = F)
+```
+
+In total, there are 12 variables including our binary target variable `stroke`.
+
+Our dataset contains 5110 observations with 12 attributes. Here's a summary of the main features of the dataset:
+
+1.  `id`:
+
+-   Type: Integer (Continuous)
+-   Description: A unique identifier for each individual in the dataset
+
+2.  `gender`:
+
+-   Type: Character
+-   Values: "Male", "Female", or "Other"
+-   Description: Gender of the individual
+
+3.  `age`:
+
+-   Type: Double
+-   Description: Age of the individual
+
+4.  `hypertension`:
+
+-   Type: Integer (Binary)
+-   Values: 0 (No), 1 (Yes)
+-   Description: Indicates whether the individual has hypertension (high blood pressure)
+
+5.  `heart_disease`:
+
+-   Type: Integer (Binary)
+-   Values: 0 (No), 1 (Yes)
+-   Description: Indicates whether the individual has a heart disease
+
+6.  `ever_married`:
+
+-   Type: Character
+-   Values: "No" or "Yes"
+-   Description: Indicates whether the individual has ever been married
+
+7.  `work_type`:
+
+-   Type: Character
+-   Values: "children", "Govt_job", "Never_worked", "Private", "Self-employed"
+-   Description: Type of work the individual is engaged in
+
+8.  `Residence_type`:
+
+-   Type: Character
+-   Values: "Rural" or "Urban"
+-   Description: Indicates the living area of the individual
+
+9.  `avg_glucose_level`:
+
+-   Type: Double
+-   Description: Average glucose level in the blood
+
+10. `bmi`:
+
+-   Type: Character (Originally), Double (After Preprocessing)
+-   Description: Body Mass Index, a measure of body fat based on height and weight
+
+11. `smoking_status`:
+
+-   Type: Character
+-   Values: "formerly smoked", "never smoked", "smokes", "Unknown"
+-   Description: Indicates the smoking habits of the individual, where "Unknown" signifies that the smoking status information is not available
+
+12. `stroke`:
+
+-   Type: Integer (Binary)
+-   Values: 0 (No), 1 (Yes)
+-   Description: The target variable indicating whether the individual has had a stroke
+
+```{r, warning=FALSE}
+#|code-fold: true 
+#|code-summary: "Click to show code"
+stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
+
+# Display the entire dataset using kable
+kable(stroke_tb, format = "html") %>%
+  kable_styling(full_width = F)
+```
+
+## Relevant metadata:
+
+-   Owner of the dataset: Federico Soriano Palacios (found thanks to the link to his LinkedIn on his Kaggle profile)
+
+-   Last update of the dataset was 4 years ago
+
 # Data Cleaning & Wrangeling
 
 ```{r, warning=FALSE}
@@ -22,16 +136,19 @@ kable(stroke_tb)
 
 str(stroke_tb)
 ```
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 colSums(stroke_tb == "Unknown" | stroke_tb == "N/A" | stroke_tb == "")
 ```
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 sum(duplicated(stroke_tb))
 ```
+
 The dataset seems to be fairly clean. Only the features `bmi` and `smoking_status` have missing values and no duplicated rows are present. We will address them in the next step.
 
 Our dataset includes both categorical and numerical variables. To prepare for machine learning, we clearly distinguish these types from the start, as models require numerical inputs.
@@ -48,9 +165,11 @@ cat(sprintf("Categorical features: %s\nNumerical features: %s",
             paste(categorical_variables, collapse = ", "),
             paste(numerical_variables, collapse = ", ")))
 ```
+
 Here, we observe that some variables don't get recognized correctly. `bmi` is a numerical feature and `hypertension` and `heart_disease` ought to be categorical. We will address these issues in the next steps.
 
 ## Missing Values
+
 Secondly, we address missing values in the features `bmi` and `smoking_status` by replacing them with `N/A`. Additionally, we ensure that `bmi` is recognized as a numerical variable and update the lists of categorical and numerical columns, as `bmi` is now a double. The `id` column is also removed, as it is not relevant for our analysis.
 
 ```{r, warning=FALSE}
@@ -88,6 +207,7 @@ cat("Numerical Variables:\n", paste(numerical_vars, collapse = ", "), "\n")
 write.csv(cleaned_stroke_tb, "../../data/datasets/cleaned_stroke_tb.csv", row.names = FALSE)
 
 ```
+
 Then, to maintain the number of observations in our dataset, we replace the `N/A` values in `bmi` with the median and in `smoking_status` with the modal value.
 
 ```{r, warning=FALSE}
@@ -112,6 +232,7 @@ write.csv(preprocessed_stroke_tb, "../../data/datasets/preprocessed_stroke_tb.cs
 ## Outlier Analysis
 
 We notice that there is only three non-binary quantitative variables: `age`, `avg_glucose_level` and `bmi`. To visualize outliers in each of these variables, we use boxplots. The points outside the range defined by the whiskers were identified as outliers.
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -166,9 +287,11 @@ outlier_count <- sum(column < lower_bound | column > upper_bound, na.rm = TRUE)
 outlier_counts <- sapply(preprocessed_stroke_tb[, c("age", "avg_glucose_level", "bmi")], count_outliers)
 outlier_counts
 ```
+
 Finding zero outliers for age indicates a nearly normal distribution among the individuals in our population. With a dataset containing 5,110 rows, the identification of 627 outliers for avg_glucose_level, representing approximately 12.25% of the total population, and 126 outliers for bmi, constituting about 2.47%. Both boxplots display a considerable number of outliers in the higher range, indicating that there are subsets of individuals in the dataset with unusually high glucose levels and BMI values. These outliers could be due to a variety of factors, such as lifestyle, health conditions, or measurement errors. Considering their importance as risk factors, we decided to keep them in the dataset for now. However, we may revisit this decision later in the analysis, especially as we didn't examine the distributions in the upsampled dataset yet.
 
 After conducting the analysis of the numerical variables, we examine the distribution of the categorical variables.
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -180,7 +303,9 @@ lapply(preprocessed_stroke_tb[categorical_vars], table) %>%
   kable(col.names = c("Variable", "Category", "Count"))
 
 ```
-To simplify the further data exploration, we remove the less frequent categories in `gender`(Other) and `work_type` (Never_worked) as they are not representative of the majority of the population. We further notice that `heart_disease` and `hypertension` aren't very common in our dataset and `stroke` occurrences are also pretty rare, which we will need to consider in our modelling part. But more on that later in the EDA. 
+
+To simplify the further data exploration, we remove the less frequent categories in `gender`(Other) and `work_type` (Never_worked) as they are not representative of the majority of the population. We further notice that `heart_disease` and `hypertension` aren't very common in our dataset and `stroke` occurrences are also pretty rare, which we will need to consider in our modelling part. But more on that later in the EDA.
+
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
