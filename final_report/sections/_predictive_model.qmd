@@ -118,8 +118,8 @@ $$
 $$
 
 Where:
-- \( O_i \) = Observed frequency
-- \( E_i \) = Expected frequency
+- O_i = Observed frequency
+- E_i = Expected frequency
 
 To determine the importance of the test result, we additionally compute **Cramér's V** for effect size, defined as:
 
@@ -128,11 +128,11 @@ V = \sqrt{\frac{\chi^2}{n \cdot \text{min}(r-1, c-1)}}
 $$
 
 Where:
-- \( \chi^2 \) = Chi-squared statistic
-- \( n \) = Total number of observations
-- \( r \), \( c \) = Number of rows and columns in the contingency table, respectively.
+- chi^2 = Chi-squared statistic
+- n = Total number of observations
+- r, c = Number of rows and columns in the contingency table, respectively.
 
-The threshold for interpreting the effect size is set at \( V \geq 0.3 \).
+The threshold for interpreting the effect size is set at 0.3.
 
 If there are zero counts in the contingency table, we apply the **Fisher's Exact Test**, which is suitable for small sample sizes and contingency tables with low expected frequencies. Fisher's Exact Test computes the exact probability of observing the given contingency table under the null hypothesis of independence. The test uses the hypergeometric distribution:
 
@@ -141,11 +141,8 @@ P = \frac{{\binom{a+b}{a} \cdot \binom{c+d}{c}}}{{\binom{n}{a+c}}}
 $$
 
 Where:
-- \( a, b, c, d \) = Counts in the contingency table cells.
-- \( n \) = Total number of observations.
-
-Here:
-- \( \binom{x}{y} \) = Binomial coefficient, calculated as \( \binom{x}{y} = \frac{x!}{y!(x-y)!} \).
+- a, b, c, d  = Counts in the contingency table cells.
+- n = Total number of observations.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -187,7 +184,7 @@ multicollinearity seems to be between `ever_married` and
 married and therefore a strong correlation will consist between
 `ever_married` (0) and `work_typechildren` (1). For the predictive
 models, we will therefore exclude `work_typechildren` because evidence
-and our EDA suggests that stroke risk is correlated with age, making
+and our EDA suggests that stroke risk is strongly correlated with age, making
 this variable a weak predictor.
 
 ```{r}
@@ -199,7 +196,6 @@ encoded_stroke_tb <- encoded_stroke_tb %>%
 
 str(encoded_stroke_tb)
 ```
-
 As all other effect sizes appear to be smaller than 0.3, we can safely
 conclude that all other categorical features are sufficiently
 independent to use as predictors. In conclusion, multicollinearity does
@@ -226,7 +222,6 @@ performance.
 Let's start by creating the two stratified datasets, where we take the
 age of 60 to split our sample in two groups. As seen in our EDA,
 individuals aged over 60 have a significantly higher risk of stroke.
-
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show the code"
@@ -239,7 +234,6 @@ high_risk_age_tb <- encoded_stroke_tb %>%
 ```
 
 Let's look at stroke occurrences in our three datasets:
-
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show the code"
@@ -248,31 +242,37 @@ Let's look at stroke occurrences in our three datasets:
 encoded_stroke_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
-  mutate(proportion = round(count / sum(count), 2))
+  mutate(proportion = round(count / sum(count), 2)) %>%
+  kable(col.names = c("Stroke", "Count", "Proportion"), 
+        caption = "Stroke Occurrence and Proportion") %>%
+  kable_styling(full_width = FALSE)
 
 low_risk_age_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
-  mutate(proportion = round(count / sum(count), 2))
+  mutate(proportion = round(count / sum(count), 2)) %>%
+  kable(col.names = c("Stroke", "Count", "Proportion"), 
+        caption = "Stroke Occurrence and Proportion") %>%
+  kable_styling(full_width = FALSE)
 
 high_risk_age_tb %>%
   group_by(stroke) %>%
   summarize(count = n()) %>%
-  mutate(proportion = round(count / sum(count), 2))
+  mutate(proportion = round(count / sum(count), 2)) %>%
+  kable(col.names = c("Stroke", "Count", "Proportion"), 
+        caption = "Stroke Occurrence and Proportion") %>%
+  kable_styling(full_width = FALSE)
 ```
 
 To address this issue, we use dataset balancing techniques to adjust the
-proportions of stroke and no-stroke cases. Given that the dataset
-contains only 5,110 individuals, we chose upsampling the minority class
-to retain all available data, which would otherwise be reduced through
-downsampling. By upsampling, we enhance the representation of stroke
+proportions of stroke and no-stroke cases.By upsampling, we enhance the representation of stroke
 cases, helping the model learn more effectively and improve both
 prediction accuracy and recall, particularly for the minority class
 (here when strokes occur).
 
 ```{r, warning=FALSE}
-#|code-fold: true
-#|code-summary: "Click to show the code"
+#| code-fold: true
+#| code-summary: "Click to show the code"
 
 # Use upSample to balance the dataset
 balanced_stroke_tb <- upSample(
@@ -286,9 +286,6 @@ high_risk_age_data <- upSample(
   y = high_risk_age_tb$stroke, 
   yname = "stroke"
 )
-
-# Check the distribution to confirm balancing
-table(balanced_stroke_tb$stroke)
 ```
 
 ### Scaling
@@ -808,8 +805,6 @@ classification_report_test <- data.frame(
   Value = c(precision, recall, f1_score, specificity, accuracy)
 )
 
-# Print Results
-write.csv(classification_report_test, "/Users/batta/Documents/University/dsiba_2024/DSIBA_StrokePredictionAnalysis/data/datasets/metric_tb.csv")
 print(conf_matrix_test)
 print(classification_report_test)
 ```
