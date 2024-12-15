@@ -9,35 +9,45 @@ bibliography: appendix.qmd
 
 Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities*. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
 
-This project on strokes is driven by several key motivations. One of the most compelling reasons is that, according to the American Heart Association, approximately 80% of strokes are preventable through appropriate preventive measures. This statistic motivates us to identify and analyze risk factors, as we have the potential to significantly reduce the incidence of this disease. 
+This project on strokes is driven by several key motivations. One of the most compelling reasons is that, according to the American Heart Association, approximately 80% of strokes are preventable through appropriate preventive measures*. This statistic motivates us to identify and analyze risk factors, as we have the potential to significantly reduce the incidence of this disease. 
 
-This project aims to explore associations between key risk factors and stroke incidence using data analysis and predictive modeling.
 
-To be more specific, the goals of this project are to:
+*Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. https://doi.org/10.1016/j.ncl.2008.07.003 
 
-- Build a predictive model to identify patients at risk of experiencing a stroke.
-
-- Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence.
-
-- Create visualizations to illustrate the results and enhance the understanding of stroke risk factors.
-
-*Rebbeca A. Grysiewicz, Kurian Thomas, Dilip K. Pandey, Epidemiology of Ischemic and Hemorrhagic Stroke: Incidence, Prevalence, Mortality, and Risk Factors, Neurologic Clinics, Volume 26, Issue 4, 2008, Pages 871-895, ISSN 0733-8619, https://doi.org/10.1016/j.ncl.2008.07.003.
-(https://www.sciencedirect.com/science/article/pii/S0733861908001047)
+*American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes 
 
 ## Related Work
 
-- Arboix A. Cardiovascular risk factors for acute stroke: Risk profiles in the different subtypes of ischemic stroke. World J Clin Cases. 2015 May 16;3(5):418-29. doi: 10.12998/wjcc.v3.i5.418. PMID: 25984516; PMCID: PMC4419105. 
+- Arboix, A. (2015). Cardiovascular risk factors for acute stroke: Risk profiles in the different subtypes of ischemic stroke. World Journal of Clinical Cases, 3(5), 418-429. https://doi.org/10.12998/wjcc.v3.i5.418
 
-- Rebbeca A. Grysiewicz, Kurian Thomas, Dilip K. Pandey, Epidemiology of Ischemic and Hemorrhagic Stroke: Incidence, Prevalence, Mortality, and Risk Factors, Neurologic Clinics, Volume 26, Issue 4, 2008, Pages 871-895, ISSN 0733-8619, https://doi.org/10.1016/j.ncl.2008.07.003.
-(https://www.sciencedirect.com/science/article/pii/S0733861908001047)
+- Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. https://doi.org/10.1016/j.ncl.2008.07.003
+
+- Yi, X., Luo, H., Zhou, J., and al. (2020). Prevalence of stroke and stroke related risk factors: A population-based cross-sectional survey in southwestern China. BMC Neurology, 20, 5. https://doi.org/10.1186/s12883-019-1592-z
+
+- Kelly-Hayes, M. (2010). Influence of age and health behaviors on stroke risk: Lessons from longitudinal studies. Journal of the American Geriatrics Society, 58(s2), S325-S328. https://doi.org/10.1111/j.1532-5415.2010.02915.x
+
+
+##Research goals
+
+Given that the goals of our project are:
+
+1) Build a predictive model to identify patients at risk of experiencing a stroke.
+
+2) Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence.
+
+3) Create visualizations to illustrate the results and enhance the understanding of stroke risk factors
+
+We will implement a logistic regression model as our predictive tool. This model will help us determine the likelihood of stroke occurrence based on the identified risk factors. 
 
 ## Research Questions
 
-1. What are the most significant risk factors associated with stroke?
-2. How accurately can a machine learning model predict an individual’s likelihood of having a stroke based on these factors?
-3. How do specific risk factors, such as age, heart disease, and glucose levels, interact to influence stroke risk?
+Our first research question focuses on determining: 
 
-These questions focus on data features such as age, gender, hypertension, diabetes, and lifestyle factors like smoking status, offering insights into stroke risk patterns.
+- What are the most significant risk factors associated with stroke?
+
+Furthermore, as we develop a logistic regression model, we also seek to assess its predictive accuracy. Therefore, our second research question is:
+
+- How accurately can a logistic regression model predict the occurrence of having a stroke? 
 
 ### Adjustments or Refinements
 
