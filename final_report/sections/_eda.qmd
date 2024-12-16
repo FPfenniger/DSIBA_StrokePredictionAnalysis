@@ -280,6 +280,218 @@ kable(correlation_table, caption = "Correlation Coefficients with Stroke")
 
 The second part of our EDA examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
 
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(scales)
+
+# Define the variables and their labels for categories
+var_categories <- list(
+  "smoking_status" = c("Unknown", "Never smoked", "Formerly smoked", "Smokes"),
+  "hypertension" = c("No", "Yes"),
+  "heart_disease" = c("No", "Yes"),
+  "ever_married" = c("No", "Yes"),
+  "work_type" = c("Govt_job", "Never_worked", "Private", "Self-employed", "children")
+)
+
+# Filter data and select variables
+filtered_data <- outlier_stroke_tb %>%
+  filter(gender != "Other") %>%
+  select(stroke, names(var_categories)) %>%
+  mutate(stroke = factor(stroke, levels = c(0, 1), labels = c("No Stroke","Stroke")))
+
+# Pivot to long format
+long_data <- filtered_data %>%
+  pivot_longer(cols = all_of(names(var_categories)), names_to = "variable", values_to = "category")
+
+# Compute ordering based on Stroke proportion
+order_data <- long_data %>%
+  group_by(variable, category, stroke) %>%
+  summarize(n = n(), .groups = "drop") %>%
+  group_by(variable, category) %>%
+  mutate(prop = n/sum(n)) %>%
+  ungroup() %>%
+  filter(stroke == "Stroke")
+
+# Order categories within each variable by ascending stroke proportion
+order_data <- order_data %>%
+  group_by(variable) %>%
+  arrange(prop, .by_group = TRUE) %>%
+  mutate(cat_rank = row_number()) %>%
+  ungroup()
+
+# Order variables by their average stroke proportion
+var_order_data <- order_data %>%
+  group_by(variable) %>%
+  summarize(var_prop = mean(prop), .groups = "drop") %>%
+  arrange(var_prop) %>%
+  mutate(var_rank = row_number())
+
+# Join ranks back to long_data
+long_data <- long_data %>%
+  left_join(order_data %>% select(variable, category, cat_rank), by = c("variable", "category")) %>%
+  left_join(var_order_data %>% select(variable, var_rank), by = "variable")
+
+# Create a combined variable:category label
+long_data <- long_data %>%
+  mutate(var_cat = paste(variable, category, sep = ": ")) %>%
+  arrange(var_rank, cat_rank)
+
+# Set factor levels for var_cat
+long_data$var_cat <- factor(long_data$var_cat, levels = unique(long_data$var_cat))
+
+# Create the plot
+# Using aes_string ensures 'stroke' is treated as a column name string.
+p <- ggplot(long_data, aes_string(x = "var_cat", fill = "stroke")) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Distribution Across Risk Factors",
+    x = NULL,      
+    y = "Proportion",
+    fill = "Stroke Status"
+  ) +
+  scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+  scale_y_continuous(labels = percent) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+  ) +
+  coord_flip()
+
+# Add variable label at the end of each bar
+label_data <- long_data %>%
+  distinct(var_cat, variable) %>%
+  mutate(xpos = 1.02)
+
+p <- p + geom_text(
+  data = label_data,
+  aes_string(x = "var_cat", y = "xpos", label = "variable"),
+  hjust = 0, size = 3, color = "black"
+)
+
+# Convert to Plotly
+combined_plot <- ggplotly(p) %>%
+  layout(
+    margin = list(t = 50),
+    showlegend = TRUE,
+    legend = list(title = list(text = "<b>Stroke Status</b>"))
+  )
+
+combined_plot
+```
+
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(scales)
+
+# Define the variables and their labels for categories
+var_categories <- list(
+  "smoking_status" = c("Unknown", "Never smoked", "Formerly smoked", "Smokes"),
+  "hypertension" = c("No", "Yes"),
+  "heart_disease" = c("No", "Yes"),
+  "ever_married" = c("No", "Yes"),
+  "work_type" = c("Govt_job", "Never_worked", "Private", "Self-employed", "children")
+)
+
+# Filter data and select variables
+filtered_data <- outlier_stroke_tb %>%
+  filter(gender != "Other") %>%
+  select(stroke, names(var_categories)) %>%
+  mutate(stroke = factor(stroke, levels = c(0, 1), labels = c("No Stroke","Stroke")))
+
+# Pivot to long format
+long_data <- filtered_data %>%
+  pivot_longer(cols = all_of(names(var_categories)), names_to = "variable", values_to = "category")
+
+# Compute ordering based on Stroke proportion
+order_data <- long_data %>%
+  group_by(variable, category, stroke) %>%
+  summarize(n = n(), .groups = "drop") %>%
+  group_by(variable, category) %>%
+  mutate(prop = n/sum(n)) %>%
+  ungroup() %>%
+  filter(stroke == "Stroke")
+
+# Order categories within each variable by ascending stroke proportion
+order_data <- order_data %>%
+  group_by(variable) %>%
+  arrange(prop, .by_group = TRUE) %>%
+  mutate(cat_rank = row_number()) %>%
+  ungroup()
+
+# Order variables by their average stroke proportion
+var_order_data <- order_data %>%
+  group_by(variable) %>%
+  summarize(var_prop = mean(prop), .groups = "drop") %>%
+  arrange(var_prop) %>%
+  mutate(var_rank = row_number())
+
+# Join ranks back to long_data
+long_data <- long_data %>%
+  left_join(order_data %>% select(variable, category, cat_rank), by = c("variable", "category")) %>%
+  left_join(var_order_data %>% select(variable, var_rank), by = "variable")
+
+# Create a combined variable:category label
+long_data <- long_data %>%
+  mutate(var_cat = paste(variable, category, sep = ": ")) %>%
+  arrange(var_rank, cat_rank)
+
+# Set factor levels for var_cat
+long_data$var_cat <- factor(long_data$var_cat, levels = unique(long_data$var_cat))
+
+# Create the plot
+p <- ggplot(long_data, aes(x = var_cat, fill = stroke)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Distribution Across Risk Factors",
+    x = NULL,        # After flipping, categories appear along y-axis
+    y = "Proportion",
+    fill = "Stroke Status"
+  ) +
+  scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+  scale_y_continuous(labels = percent) +
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+  ) +
+  coord_flip()
+
+# Extract variable for labeling
+label_data <- long_data %>%
+  distinct(var_cat, variable) %>%
+  mutate(xpos = 1.02) # Position to the right of 100%
+
+# Add variable name label at the end of each bar
+p <- p + geom_text(
+  data = label_data,
+  aes(x = var_cat, y = xpos, label = variable),
+  hjust = 0, size = 3, color = "black"
+)
+
+# Convert to Plotly
+combined_plot <- ggplotly(p) %>%
+  layout(
+    margin = list(t = 50),
+    showlegend = TRUE,
+    legend = list(title = list(text = "<b>Stroke Status</b>"))
+  )
+
+combined_plot
+```
+
+
+
+
+
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
