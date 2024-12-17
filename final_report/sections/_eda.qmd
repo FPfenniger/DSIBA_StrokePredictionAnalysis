@@ -38,8 +38,6 @@ numerical_data <- outlier_stroke_tb %>%
   select(all_of(numerical_variables))
 ```
 
-remember standardised histograms? Reintroduce them.
-
 ## Descriptive Statistics
 
 We start our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the count, mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
@@ -74,26 +72,26 @@ outlier_stroke_tb <- outlier_stroke_tb %>%
 # Calculate total count for proportion calculation
 total_count <- nrow(outlier_stroke_tb)
 
-# Create summary table 
+# Create summary table
 summary_table <- bind_rows(
   lapply(variables_to_summarize, function(var) {
     outlier_stroke_tb %>%
-      group_by(.data[[var]]) %>%
+      group_by(across(all_of(var))) %>%
       summarize(
         Count = n(),
         Proportion = n() / total_count,
         .groups = "drop"
       ) %>%
-      rename(Type = .data[[var]]) %>%
+      rename(Type = !!sym(var)) %>%
       mutate(
         Variable = var,
         Type = as.character(Type),
-        Proportion = round(Proportion * 100, 2)  
+        Proportion = round(Proportion * 100, 2)
       )
   })
 ) %>%
-  select(Variable, Type, Count, Proportion) %>%  
-  arrange(Variable, Type)                        
+  select(Variable, Type, Count, Proportion) %>%
+  arrange(Variable, Type)                  
 
 # Display the combined table with kable
 knitr::kable(summary_table, caption = "Summary of Categorical Variables with Proportion", row.names = FALSE)
@@ -105,8 +103,9 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 
 First, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
 
-
-```{r}
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 library(ggplot2)
 library(plotly)
 library(dplyr)
@@ -215,9 +214,6 @@ combined_subplots
 ```
 
 
-
-
-
 Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
 
 -   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
@@ -293,7 +289,6 @@ kable(correlation_table, caption = "Correlation Coefficients with Stroke")
 
 The second part of our EDA examines the distribution of the categorical variables and their relationship with the target variable in a stacked bar chart:
 
-ToDo: scales should be applied to tooltip (still between 0 and 1)
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -395,7 +390,6 @@ combined_plot <- ggplotly(p) %>%
 # Display the combined horizontal bar chart
 combined_plot
 ```
-
 
 Relevant differences in the proportions of stroke cases can be observed across the levels of the following categorical variables:
 
