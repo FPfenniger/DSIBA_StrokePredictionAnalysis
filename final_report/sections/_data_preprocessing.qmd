@@ -9,7 +9,7 @@ The data utilized for this project originates from the [**Stroke Prediction Data
 
 # Data Structure
 
-```{r}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 # Load necessary libraries
 library(knitr)
 library(kableExtra)
@@ -17,16 +17,16 @@ library(dplyr)
 # Read the dataset
 stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
 str(stroke_tb)
+```
 
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 # Convert to a tibble
 stroke_tb_tibble <- as_tibble(stroke_tb)
 
 # Display the tibble
 print(stroke_tb_tibble)
-
-# Display the entire dataset using kable
-kable(stroke_tb, format = "html") %>%
-  kable_styling(full_width = F)
 ```
 
 In total, there are 12 variables including our binary target variable `stroke`.
@@ -106,9 +106,14 @@ Our dataset contains 5110 observations with 12 attributes. Here's a summary of t
 #|code-summary: "Click to show code"
 stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
 
-# Display the entire dataset using kable
-kable(stroke_tb, format = "html") %>%
-  kable_styling(full_width = F)
+# Load required libraries
+library(knitr)
+library(kableExtra)
+
+# Display the dataset in a scrollable table
+kable(stroke_tb, format = "html", caption = "Scrollable Table of Stroke Data") %>%
+  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover")) %>%
+  scroll_box(height = "500px", width = "100%")
 ```
 
 ## Relevant metadata:

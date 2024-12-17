@@ -5,7 +5,7 @@ format: html
 
 # Exploratory Data Analysis
 
-```{r, message = FALSE}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 library(tidyverse)
@@ -13,9 +13,20 @@ library(plotly)
 library(knitr)
 library(caret)
 library(vcd)
+library(ggplot2)
+library(reshape2)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(knitr)
+library(dplyr)
+library(ggplot2)
+library(plotly)
+library(tidyr)
+library(scales)  # for percentage labels
 ```
 
-```{r, message = FALSE}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 outlier_stroke_tb <- 
@@ -26,7 +37,7 @@ preprocessed_stroke_tb <-
   read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
 ```
 
-```{r, message = FALSE}
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
@@ -106,9 +117,6 @@ First, we visualized all numerical variables in a histogram grouped by stroke oc
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-library(ggplot2)
-library(plotly)
-library(dplyr)
 
 # Function to calculate proportion of people with stroke by bins and create a line plot
 create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
@@ -218,7 +226,7 @@ Based on the summary table for numerical variables and the histogram, we can obs
 
 -   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
 -   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
--   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6.
+-   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. This is slightly higher than the average population according to a study by the World Health Organization (WHO).
 
 For completeness we added some violin plots of the numerical variables.
 
@@ -268,7 +276,6 @@ The variable `age` shows a weak positive relationship with the target variable `
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-library(knitr)
 
 # Calculate correlation coefficients for each variable with stroke
 cor_age <- cor(as.numeric(outlier_stroke_tb$age), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
@@ -292,12 +299,6 @@ The second part of our EDA examines the distribution of the categorical variable
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-library(dplyr)
-library(ggplot2)
-library(plotly)
-library(tidyr)
-library(scales)  # for percentage labels
 
 # Define the variables and their labels for categories
 var_categories <- list(
@@ -414,9 +415,6 @@ In the bivariate analysis we examined correlations between our features. We used
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
-library(ggplot2)
-library(reshape2)
 
 # Calculate the correlation matrix
 cormat <- cor(numerical_data, use = "complete.obs")
