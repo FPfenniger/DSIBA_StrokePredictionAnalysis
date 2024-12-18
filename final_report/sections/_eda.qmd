@@ -514,7 +514,7 @@ long_data <- long_data %>%
 p <- ggplot(long_data, aes(x = variable_category, fill = stroke)) +
   geom_bar(position = "fill") +
   labs(
-    title = "Distribution Across Risk Factors",
+    title = "Categorical Variables",
     x = NULL,      # After flipping, becomes y-axis
     y = "Proportion",
     fill = "Stroke Status"
