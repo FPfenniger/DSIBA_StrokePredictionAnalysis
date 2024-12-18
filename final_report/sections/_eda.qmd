@@ -23,7 +23,7 @@ library(dplyr)
 library(ggplot2)
 library(plotly)
 library(tidyr)
-library(scales)  # for percentage labels
+library(scales)
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -48,6 +48,20 @@ numerical_variables <- c("age", "avg_glucose_level", "bmi")
 numerical_data <- outlier_stroke_tb %>%
   select(all_of(numerical_variables))
 ```
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Numerical variables
+categorical_variables <- c("age", "avg_glucose_level", "bmi")
+
+# Create a tibble with the numerical variables
+numerical_data <- outlier_stroke_tb %>%
+  select(all_of(numerical_variables))
+```
+
+
 
 ## Descriptive Statistics
 
