@@ -97,123 +97,7 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 
 ### Numerical variables
 
-First, we visualized all numerical variables in a histogram grouped by stroke occurrence to get an overview of the distribution of the data and their relationship with the target variable.
-
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
-# Function to calculate proportion of people with stroke by bins and create a line plot
-create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
-  original_data <- data[[variable]]
-  stroke_data <- data[[stroke_variable]]
-
-  # Define bin edges
-  range_vals <- range(original_data, na.rm = TRUE)
-  breaks <- seq(floor(range_vals[1]), ceiling(range_vals[2]) + binwidth, by = binwidth)
-
-  # Cut the data into bins
-  binned_data <- data.frame(value = original_data, stroke = stroke_data) %>%
-    mutate(bin = cut(value, breaks = breaks, include.lowest = TRUE, right = FALSE))
-
-  # Compute proportion stroke in each bin
-  prop_data <- binned_data %>%
-    group_by(bin) %>%
-    summarize(
-      n = n(),
-      stroke_n = sum(stroke == 1, na.rm = TRUE),
-      prop_stroke = stroke_n / n,
-      .groups = "drop"
-    )
-
-  # Calculate bin midpoints
-  bin_mids <- sapply(strsplit(gsub("\\[|\\]|\\(|\\)", "", levels(prop_data$bin)), ","), 
-                     function(x) mean(as.numeric(x)))
-  prop_data <- prop_data %>%
-    mutate(bin_mid = bin_mids[as.numeric(bin)])
-
-  # Create a line plot using plotly with the same shade of blue as the histogram
-  line_plot <- plot_ly(
-    data = prop_data,
-    x = ~bin_mid,
-    y = ~prop_stroke,
-    type = 'scatter',
-    mode = 'lines+markers',
-    line = list(color = '#1f77b4'),
-    marker = list(color = '#1f77b4')
-  ) %>%
-    layout(
-      yaxis = list(title = "Proportion Stroke", rangemode='tozero'),
-      showlegend = FALSE,
-      title = paste("Proportion Stroke by", gsub("_", " ", variable))
-    )
-
-  return(line_plot)
-}
-
-# Function to create the histogram as a Plotly object
-create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
-  original_data <- data[[variable]]
-  stroke_data <- data[[stroke_variable]]
-  stroke_factor <- factor(stroke_data, levels = c(0, 1), labels = c("No Stroke", "Stroke"))
-
-  plot_data <- data.frame(data = original_data, stroke = stroke_factor)
-
-  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
-    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
-    labs(
-      y = "Frequency",
-      fill = "Stroke Status",
-      title = paste("Distribution of", gsub("_", " ", variable))
-    ) +
-    scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
-    theme_minimal() +
-    theme(
-      axis.title.x = element_blank(),
-      plot.title = element_text(hjust = 0.5),
-      legend.position = ifelse(show_legend, "right", "none")
-    )
-
-  ggplotly(p) %>% layout(showlegend = show_legend)
-}
-
-# Assuming outlier_stroke_tb is defined and stroke is 0/1
-line_age <- create_proportion_line(outlier_stroke_tb, "age", "stroke", binwidth = 5) %>%
-  layout(xaxis = list(title = ""), yaxis = list(title = "Proportion Stroke"))
-hist_age <- create_histogram(outlier_stroke_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
-  layout(xaxis = list(title = "Age"), yaxis = list(title = "Frequency"))
-
-line_glucose <- create_proportion_line(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
-  layout(xaxis = list(title = ""), yaxis = list(title = "Proportion Stroke"))
-hist_glucose <- create_histogram(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
-  layout(xaxis = list(title = "Average Glucose Level"), yaxis = list(title = "Frequency"))
-
-line_bmi <- create_proportion_line(outlier_stroke_tb, "bmi", "stroke", binwidth = 5) %>%
-  layout(xaxis = list(title = ""), yaxis = list(title = "Proportion Stroke"))
-hist_bmi <- create_histogram(outlier_stroke_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
-  layout(xaxis = list(title = "BMI"), yaxis = list(title = "Frequency"))
-
-# Stack line above histogram for each variable with height adjustments
-age_subplot <- subplot(line_age, hist_age, nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7))
-glucose_subplot <- subplot(line_glucose, hist_glucose, nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7))
-bmi_subplot <- subplot(line_bmi, hist_bmi, nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7))
-
-# Combine all three sets into a single row
-combined_subplots <- subplot(age_subplot, glucose_subplot, bmi_subplot, nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE) %>%
-  layout(title = "Histograms and Stroke Proportion by Numerical Variables")
-
-# Display the combined subplots
-combined_subplots
-```
-
-
-Based on the summary table for numerical variables and the histogram, we can observe the following descriptive characteristics:
-
--   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
--   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
--   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. This is slightly higher than the average population according to a study by the World Health Organization (WHO).
-
-For completeness we added some violin plots of the numerical variables.
+First, we visualized all numerical variables in a violin plot to get an overview of the distribution of the data and their relationship with the target variable.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -248,13 +132,140 @@ combined_plot <- subplot(
   plot_age, plot_glucose, plot_bmi,
   nrows = 1, titleX = TRUE, titleY = TRUE
 ) %>%
-  layout(title = "Violin Plots of Numerical Variables by Stroke")
+  layout(title = "Distribution and Proportions of Key Variables II")
 
 # Display the combined plot
 combined_plot
 ```
 
-The histogram and violin charts have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
+Based on the summary table for numerical variables and the violin plot, we can observe the following descriptive characteristics:
+
+-   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
+-   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
+-   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. This is slightly higher than the average population according to a study by the World Health Organization (WHO).
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+suppressWarnings({
+  # Function to calculate proportion of people with stroke by bins and create a line plot
+  create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+
+    # Define bin edges
+    range_vals <- range(original_data, na.rm = TRUE)
+    breaks <- seq(floor(range_vals[1]), ceiling(range_vals[2]) + binwidth, by = binwidth)
+
+    # Cut the data into bins
+    binned_data <- data.frame(value = original_data, stroke = stroke_data) %>%
+      mutate(bin = cut(value, breaks = breaks, include.lowest = TRUE, right = FALSE))
+
+    # Compute proportion stroke in each bin
+    prop_data <- binned_data %>%
+      group_by(bin) %>%
+      summarize(
+        n = n(),
+        stroke_n = sum(stroke == 1, na.rm = TRUE),
+        prop_stroke = stroke_n / n,
+        .groups = "drop"
+      )
+
+    # Calculate bin midpoints
+    bin_mids <- sapply(strsplit(gsub("\\[|\\]|\\(|\\)", "", levels(prop_data$bin)), ","), 
+                       function(x) mean(as.numeric(x)))
+    prop_data <- prop_data %>%
+      mutate(bin_mid = bin_mids[as.numeric(bin)])
+
+    # Create a line plot using plotly
+    line_plot <- plot_ly(
+      data = prop_data,
+      x = ~bin_mid,
+      y = ~prop_stroke,
+      type = 'scatter',
+      mode = 'lines+markers',
+      line = list(color = '#1f77b4'),
+      marker = list(color = '#1f77b4')
+    ) %>%
+      layout(
+        yaxis = list(title = "Stroke (proportion)", rangemode = 'tozero'),
+        showlegend = FALSE,
+        title = paste("Proportion Stroke by", gsub("_", " ", variable))
+      )
+
+    return(line_plot)
+  }
+
+  # Function to create the histogram as a Plotly object
+  create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+    stroke_factor <- factor(stroke_data, levels = c(0, 1), labels = c("No Stroke", "Stroke"))
+
+    plot_data <- data.frame(data = original_data, stroke = stroke_factor)
+
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+      labs(
+        y = "Stroke (count)",
+        fill = "Stroke Status",
+        title = paste("Distribution of", gsub("_", " ", variable))
+      ) +
+      scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+      theme_minimal() +
+      theme(
+        axis.title.x = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = ifelse(show_legend, "right", "none")
+      )
+
+    ggplotly(p) %>% layout(showlegend = show_legend)
+  }
+
+  # Assuming outlier_stroke_tb is defined and stroke is 0/1
+  line_age <- create_proportion_line(outlier_stroke_tb, "age", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_age <- create_histogram(outlier_stroke_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
+    layout(xaxis = list(title = "Age"), yaxis = list(title = "Stroke (count)"))
+
+  line_glucose <- create_proportion_line(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_glucose <- create_histogram(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(xaxis = list(title = "Average Glucose Level"), yaxis = list(title = "Stroke (count)"))
+
+  line_bmi <- create_proportion_line(outlier_stroke_tb, "bmi", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_bmi <- create_histogram(outlier_stroke_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(xaxis = list(title = "BMI"), yaxis = list(title = "Stroke (count)"))
+
+  # Stack line above histogram for each variable with height adjustments
+  age_subplot <- subplot(
+    line_age, hist_age, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  glucose_subplot <- subplot(
+    line_glucose, hist_glucose, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  bmi_subplot <- subplot(
+    line_bmi, hist_bmi, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+
+  # Combine all three sets into a single row
+  combined_subplots <- subplot(
+    age_subplot, glucose_subplot, bmi_subplot, 
+    nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
+  ) %>%
+    layout(title = "Distribution and Proportions of Numerical Variables I")
+
+  # Display the combined subplots
+  combined_subplots
+})
+```
+
+The violin plots and histograms and have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
 
 The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.24). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
