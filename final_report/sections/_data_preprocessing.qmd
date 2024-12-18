@@ -3,30 +3,31 @@ title: "_data_cleaning"
 format: html
 ---
 
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+library(naniar)
+library(tidyverse)
+library(caret)
+library(plotly)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+```
+
 # Data Source
 
 The data utilized for this project originates from the [**Stroke Prediction Dataset**](https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset/data) available on [**Kaggle**](https://www.kaggle.com/), which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting occurrences of strokes based on features like age, gender, and medical history. Unfortunately, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
 
 # Data Structure
 
-```{r, echo = FALSE, message = FALSE, warning = FALSE}
-# Load necessary libraries
-library(knitr)
-library(kableExtra)
-library(dplyr)
-# Read the dataset
-stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
-str(stroke_tb)
-```
-
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-# Convert to a tibble
-stroke_tb_tibble <- as_tibble(stroke_tb)
+# Load necessary libraries
 
-# Display the tibble
-print(stroke_tb_tibble)
+# Read the dataset
+stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
+stroke_tb_tibble <- as_tibble(stroke_tb)
+knitr::kable(head(stroke_tb))
 ```
 
 In total, there are 12 variables including our binary target variable `stroke`.
@@ -101,20 +102,6 @@ Our dataset contains 5110 observations with 12 attributes. Here's a summary of t
 -   Values: 0 (No), 1 (Yes)
 -   Description: The target variable indicating whether the individual has had a stroke
 
-```{r, warning=FALSE}
-#|code-fold: true 
-#|code-summary: "Click to show code"
-stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
-
-# Load required libraries
-library(knitr)
-library(kableExtra)
-
-# Display the dataset in a scrollable table
-kable(stroke_tb, format = "html", caption = "Scrollable Table of Stroke Data") %>%
-  kable_styling(full_width = FALSE, position = "center", bootstrap_options = c("striped", "hover")) %>%
-  scroll_box(height = "500px", width = "100%")
-```
 
 ## Relevant metadata:
 
@@ -124,23 +111,6 @@ kable(stroke_tb, format = "html", caption = "Scrollable Table of Stroke Data") %
 
 # Data Cleaning & Wrangeling
 
-```{r, warning=FALSE}
-library(naniar)
-library(tidyverse)
-library(caret)
-library(plotly)
-library(knitr)
-```
-
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-stroke_tb <- read.csv("../../data/datasets/stroke_dataset.csv") 
-
-kable(stroke_tb)
-
-str(stroke_tb)
-```
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -194,7 +164,7 @@ cleaned_stroke_tb <- replace_with_na(
   ) %>%
   select(-id)  # Remove the 'id' column
 
-kable(cleaned_stroke_tb)
+knitr::kable(head(cleaned_stroke_tb))
 
 # Identify categorical variables (character or factor)
 categorical_variables <- names(cleaned_stroke_tb)[sapply(cleaned_stroke_tb, function(x) is.character(x) || is.integer(x))]
@@ -229,7 +199,7 @@ preprocessed_stroke_tb <- cleaned_stroke_tb %>%
     smoking_status = ifelse(is.na(smoking_status), smoking_status_mode, smoking_status)
   )
 
-kable(preprocessed_stroke_tb)
+knitr::kable(head(preprocessed_stroke_tb))
 
 write.csv(preprocessed_stroke_tb, "../../data/datasets/preprocessed_stroke_tb.csv", row.names = FALSE)
 ```

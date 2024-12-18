@@ -6,8 +6,6 @@ format: html
 # Exploratory Data Analysis
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
 library(tidyverse)
 library(plotly)
 library(knitr)

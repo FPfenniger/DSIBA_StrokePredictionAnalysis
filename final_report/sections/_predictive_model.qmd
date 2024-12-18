@@ -561,7 +561,7 @@ minority class, we ensure that the model learns from stroke cases as
 well, enhancing its ability to detect strokes and providing a more
 balanced and meaningful predictive performance.
 
-To address this issue, we use Random Upsampling, which involves randomly
+To address this issue, we use **Random Upsampling**, which involves randomly
 duplicating observations from the minority class. This technique is
 straightforward and effective, as it increases the number of minority
 class instances without introducing bias.
@@ -670,7 +670,7 @@ Important assumptions of logistic regression include:
 First of all we introduce the metrics we will be using to evaluate our
 models.
 
--   Confusion matrix: The confusion matrix compares the actual values of
+-   **Confusion matrix**: The confusion matrix compares the actual values of
     the target variable with the predicted values and serves as a basis
     for our evaluation. It is a 2x2 matrix that contains the following
     values: True Positives (predicting correctly a stroke), True
@@ -679,7 +679,7 @@ models.
     Negatives (predicting no stroke when there is one). The confusion
     matrix is used to calculate the following metrics:
 
--   Precision: Precision is the ratio of correctly predicted positive
+-   **Precision**: Precision is the ratio of correctly predicted positive
     observations to the total predicted positive observations. The
     formula for precision is given by:
 
@@ -687,7 +687,7 @@ $$
 Precision = \frac{TP}{TP + FP}
 $$
 
--   Recall: Recall is the ratio of correctly predicted positive
+-   **Recall**: Recall is the ratio of correctly predicted positive
     observations to the all observations in actual class. In our case
     and general in healthcare research, recall should be prioritized as
     undetected strokes are generally more fatal than false alarms. The
@@ -697,7 +697,7 @@ $$
 Recall = \frac{TP}{TP + FN}
 $$
 
--   F1 Score: The F1 score is the harmonic mean of Precision and Recall
+-   **F1 Score**: The F1 score is the harmonic mean of Precision and Recall
     and often used in unbalanced dataset like ours as it considers false
     positives and false negatives. The formula for F1 score ranges from
     0 to 1 and is given by:
@@ -714,14 +714,14 @@ $$
 Specificity = \frac{TN}{TN + FP}
 $$
 
--   Accuracy: Accuracy is the ratio of correctly predicted observations
+-   **Accuracy**: Accuracy is the ratio of correctly predicted observations
     to the total observations. The formula for accuracy is given by:
 
 $$
 Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
 $$
 
--   ROC Curve and AUC: The *receiver operating characteristic* curve is
+-   **ROC Curve and AUC**: The receiver operating characteristic curve is
     a graphical representation of the true positive rate (recall)
     against the false positive rate (specificity). Concretely, it shows
     the tradeoff between sensitivity and specificity. The diagonal line
@@ -733,7 +733,7 @@ $$
     while an AUC of 0.5 indicates a model that performs no better than
     random chance.
 
--   Odds ratio: The odds ratio is the exponentiated coefficient of a
+-   **Odds ratio**: The odds ratio is the exponentiated coefficient of a
     logistic regression model. It represents the change in odds of the
     target variable for a one-unit change in the predictor variable. An
     odds ratio greater than 1 indicates a positive relationship between
@@ -912,8 +912,8 @@ print(classification_report_test)
 ```
 
 As anticipated, our naive model performs poorly on the test set. The
-model predicts “No” for all instances, resulting in Precision, Recall,
-and F1 scores of 0.
+model predicts “No” for all instances, resulting in **Precision**, **Recall**,
+and **F1 scores** of 0.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1002,6 +1002,9 @@ generate_importance_table <- function(model, model_name = "Logistic Model", cont
 generate_importance_table(logistic_model_1, "Logistic Model 1", continuous_vars, train_sds)
 
 ```
+
+**Key Findings**
+
 
 ## Balanced Model
 
@@ -1155,24 +1158,30 @@ print(conf_matrix_test)
 print(classification_report_test)
 ```
 
-A Precision of 0.753 indicates that 75.3% of the model’s positive
-predictions are correct, while a Recall of 0.830 demonstrates the
+A **Precision** of 0.753 indicates that 75.3% of the model’s positive
+predictions are correct, while a **Recall** of 0.830 demonstrates the
 model’s ability to accurately identify 83.0% of actual positive cases.
-This balance between Precision and Recall is encapsulated in the F1
-score of 0.790, which serves as a robust measure of the model’s
+This balance between Precision and Recall is encapsulated in the **F1 score** of 0.790, which serves as a robust measure of the model’s
 predictive accuracy.
 
-Additionally, the model achieves an Accuracy of 77.9%, highlighting
+Additionally, the model achieves an **Accuracy** of 77.9%, highlighting
 reliable classification performance. The Specificity of 0.728 signifies
 that 72.8% of actual negative cases are correctly identified. Together,
 these metrics suggest that the model is well-suited for effectively
 distinguishing between positive and negative outcomes.
 
-The confusion matrix offers further insight into the model’s
-performance. Out of a total of 1,934 observations, the model correctly
-predicted 803 true positives and 704 true negatives. It misclassified
-263 cases as false positives and 164 cases as false negatives. The
-relatively low number of false negatives corresponds with the high
+The **confusion matrix further** offers further insight into the model’s
+performance. Out of a total of 1,934 observations:
+
+-   **True Positives (TP)**: 803  cases were correctly classified as
+    positive.
+-   **True Negatives (TN):** 704 cases were accurately identified as
+    negative.
+-   **False Positives (FP):** 263 cases were incorrectly flagged as
+    positive.
+-   **False Negatives (FN):** 164 cases were missed.
+
+The relatively low number of false negatives corresponds with the high
 Recall value, highlighting the model’s effectiveness in identifying
 positive cases.
 
@@ -1199,7 +1208,7 @@ ggplot(data = data.frame(
   theme_minimal()
 ```
 
-The ***ROC curve demonstrates the model’s strong discriminative ability,
+The **ROC curve** demonstrates the model’s strong discriminative ability,
 with an AUC (Area Under the Curve) of 0.839. This means that the model
 has an 83.9% probability of correctly distinguishing between positive
 and negative cases. The steep rise in the ROC curve reflects an
@@ -1227,6 +1236,8 @@ train_sds   <- sapply(train_balanced[continuous_vars], sd, na.rm = TRUE)
 
 generate_importance_table(logistic_model_2, "Logistic Model 2", continuous_vars, train_sds)
 ```
+
+**Key Findings**
 
 -   `Hypertension` has the strongest positive effect on the outcome with
     an odds ratio of 1.707 (p \< 0.0001), indicating individuals with
