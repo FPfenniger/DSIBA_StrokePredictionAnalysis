@@ -106,6 +106,14 @@ BMI is a measure of body fat based on weight in relation to height. The WHO defi
 	•	Obesity Class III: BMI 40.0 and above
 
 
+glucose level
+ 
+heart_disease
+smoking_status
+hypertension
+ever_married
+work_type
+
 
 
 ### Numerical variables
@@ -145,7 +153,7 @@ combined_plot <- subplot(
   plot_age, plot_glucose, plot_bmi,
   nrows = 1, titleX = TRUE, titleY = TRUE
 ) %>%
-  layout(title = "Distribution and Proportions of Key Variables II")
+  layout(title = "Numerical Variables I")
 
 # Display the combined plot
 combined_plot
@@ -273,7 +281,7 @@ suppressWarnings({
     age_subplot, glucose_subplot, bmi_subplot, 
     nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
   ) %>%
-    layout(title = "Distribution and Proportions of Numerical Variables I")
+    layout(title = "Numerical Variables II")
 
   # Display the combined subplots
   combined_subplots
@@ -430,7 +438,10 @@ In contrast, the following variables appear to be not relevant, as there are no 
 
 -   `Residence_type`
 
-Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates for further exploration and modeling among the categorical variables. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk. These predictors may even become more relevant when examined in a balanced dataset, which our initial hypotheses would suggest.
+Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidatesamong the categorical variables for further exploration and modeling. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. 
+Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk. These predictors may even become more relevant when examined in a balanced dataset, which our initial hypotheses would suggest.
+
+Connect to literature research
 
 ## Bivariate Analysis
 

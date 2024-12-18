@@ -34,8 +34,11 @@ the Modeling part).
 #| code-summary: "Click to show code"
 # Import of the dataset
 outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
-# Structure of the dataset
-knitr::kable(head(outlier_stroke_tb))
+
+# Display the dataset with up to 10 observations per page
+kable(outlier_stroke_tb, format = "html") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE) %>%
+  scroll_box(height = "300px")
 ```
 
 ### Feature Encoding
@@ -99,8 +102,6 @@ encoded_stroke_tb <- cbind(
   smoking_status_matrix,
   work_type_matrix
 )
-
-str(encoded_stroke_tb)
 ```
 
 And we turn the binary variables into factors with the appropriate
@@ -124,8 +125,6 @@ colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
 kable(encoded_stroke_tb, format = "html") %>%
   kable_styling(bootstrap_options = "striped", full_width = FALSE) %>%
   scroll_box(height = "300px")
-
-str(encoded_stroke_tb)
 ```
 
 ### Multicollinearity
@@ -139,15 +138,9 @@ $$
 \chi^2 = \sum \frac{(O_i - E_i)^2}{E_i}
 $$
 
-Where: - O_i = Observed frequency - E_i = Expected frequency
-
-$$
-\textbf{Where:}
-\begin{description}
-    \item[$O_i$] Observed frequency
-    \item[$E_i$] Expected frequency
-\end{description}
-$$
+Where: 
+- O_i = Observed frequency 
+- E_i = Expected frequency
 
 To assess the significance of the test results, we additionally compute
 **Cramér's V** for effect size, defined as:
@@ -156,9 +149,10 @@ $$
 V = \sqrt{\frac{\chi^2}{n \cdot \text{min}(r-1, c-1)}}
 $$
 
-Where: - chi\^2 = Chi-squared statistic - n = Total number of
-observations - r, c = Number of rows and columns in the contingency
-table, respectively.
+Where: 
+- chi\^2 = Chi-squared statistic 
+- n = Total number of observations 
+- r, c = Number of rows and columns in the contingency table
 
 We set the threshold for interpreting effect sizes at 0.3.
 
@@ -173,8 +167,9 @@ $$
 P = \frac{{\binom{a+b}{a} \cdot \binom{c+d}{c}}}{{\binom{n}{a+c}}}
 $$
 
-Where: - a, b, c, d = Counts in the contingency table cells. - n = Total
-number of observations.
+Where: 
+- a, b, c, d = Counts in the contingency table cells. 
+- n = Total number of observations.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -225,8 +220,6 @@ age, rendering this variable a weak predictor.
 # Drop work_typechildren
 encoded_stroke_tb <- encoded_stroke_tb %>% 
   select(-work_typechildren)
-
-str(encoded_stroke_tb)
 ```
 
 Since all other effect sizes are below 0.3, we can confidently conclude
