@@ -35,7 +35,7 @@ the Modeling part).
 # Import of the dataset
 outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
 # Structure of the dataset
-knitr::kable(outlier_stroke_tb)
+knitr::kable(head(outlier_stroke_tb))
 ```
 
 ### Feature Encoding

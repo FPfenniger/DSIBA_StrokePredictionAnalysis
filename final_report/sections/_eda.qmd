@@ -53,15 +53,13 @@ numerical_data <- outlier_stroke_tb %>%
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-# Numerical variables
-categorical_variables <- c("age", "avg_glucose_level", "bmi")
+# Categorical variables
+categorical_variables <- c("stroke", "gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
 
-# Create a tibble with the numerical variables
-numerical_data <- outlier_stroke_tb %>%
-  select(all_of(numerical_variables))
+# Create a tibble with the categorical variables
+categorical_data <- outlier_stroke_tb %>%
+  select(all_of(categorical_variables))
 ```
-
-
 
 ## Descriptive Statistics
 
@@ -71,11 +69,10 @@ We start our EDA with a summary of the numerical and categorical variables in ou
 #| code-fold: true
 #| code-summary: "Click to show code"
 # Generate summary of selected numerical variables
-summary_table <- summary(outlier_stroke_tb[, c("age", "avg_glucose_level", "bmi")])
+summary_table <- summary(numerical_data)
 
-# Convert the summary to a data frame & display it with kable
-summary_table <- as.data.frame.matrix(summary_table)
-knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.names = FALSE)
+# Show the summary table
+knitr::kable(summary_table, caption = "Summary of Numerical Variables")
 ```
 
 For the categorical variables, we present the total number and proportion of each category’s occurrences. We combined all categorical variables into one table for a better overview.
@@ -83,44 +80,28 @@ For the categorical variables, we present the total number and proportion of eac
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-# List of categorical variables
-variables_to_summarize <- c("stroke", "gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
 
 # Convert binary integer variables to factors
-outlier_stroke_tb <- outlier_stroke_tb %>%
+categorical_data <- categorical_data %>%
   mutate(
-    stroke = as.factor(stroke),
-    hypertension = as.factor(hypertension),
-    heart_disease = as.factor(heart_disease)
+    across(c("stroke", "hypertension", "heart_disease"), as.factor)
   )
 
-# Calculate total count for proportion calculation
-total_count <- nrow(outlier_stroke_tb)
+# Calculate total count for proportion calculation and create summary table
+summary_table <- categorical_data %>%
+  pivot_longer(cols = all_of(categorical_variables), names_to = "Variable", values_to = "Type") %>%
+  group_by(Variable, Type) %>%
+  summarize(
+    Count = n(),
+    Proportion = round((n() / nrow(categorical_data)) * 100, 2),
+    .groups = "drop"
+  ) %>%
+  arrange(Variable, Type)
 
-# Create summary table
-summary_table <- bind_rows(
-  lapply(variables_to_summarize, function(var) {
-    outlier_stroke_tb %>%
-      group_by(across(all_of(var))) %>%
-      summarize(
-        Count = n(),
-        Proportion = n() / total_count,
-        .groups = "drop"
-      ) %>%
-      rename(Type = !!sym(var)) %>%
-      mutate(
-        Variable = var,
-        Type = as.character(Type),
-        Proportion = round(Proportion * 100, 2)
-      )
-  })
-) %>%
-  select(Variable, Type, Count, Proportion) %>%
-  arrange(Variable, Type)                  
-
-# Display the combined table with kable
+# Show the summary table
 knitr::kable(summary_table, caption = "Summary of Categorical Variables with Proportion", row.names = FALSE)
 ```
+
 
 ## Univariate Analysis
 
@@ -233,6 +214,7 @@ combined_subplots <- subplot(age_subplot, glucose_subplot, bmi_subplot, nrows = 
 
 # Display the combined subplots
 combined_subplots
+
 ```
 
 
@@ -293,7 +275,9 @@ The variable `age` shows a weak positive relationship with the target variable `
 
 # Calculate correlation coefficients for each variable with stroke
 cor_age <- cor(as.numeric(outlier_stroke_tb$age), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+
 cor_glucose <- cor(as.numeric(outlier_stroke_tb$avg_glucose_level), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
+
 cor_bmi <- cor(as.numeric(outlier_stroke_tb$bmi), as.numeric(outlier_stroke_tb$stroke), method = "pearson")
 
 # Create a correlation table
@@ -314,6 +298,14 @@ The second part of our EDA examines the distribution of the categorical variable
 #| code-fold: true
 #| code-summary: "Click to show code"
 
+# Load necessary libraries
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(knitr)
+library(scales)
+
 # Define the variables and their labels for categories
 var_categories <- list(
   "smoking_status" = c("Unknown", "Never smoked", "Formerly smoked", "Smokes"),
@@ -326,25 +318,33 @@ var_categories <- list(
 # Filter data and select variables of interest
 filtered_data <- outlier_stroke_tb %>%
   filter(gender != "Other") %>%
-  select(stroke, names(var_categories))
-
-# Convert stroke to a factor with labels
-filtered_data <- filtered_data %>%
-  mutate(stroke = factor(stroke, levels = c(0, 1), labels = c("No Stroke", "Stroke")))
+  select(stroke, all_of(names(var_categories))) %>%
+  # Convert 'stroke' to a factor with labels
+  mutate(
+    stroke = factor(stroke, levels = c(0, 1), labels = c("No Stroke", "Stroke")),
+    # Convert all categorical variables to character for consistency
+    across(all_of(names(var_categories)), as.character)
+  )
 
 # Pivot data to long format
 long_data <- filtered_data %>%
-  pivot_longer(cols = all_of(names(var_categories)), 
-               names_to = "variable", values_to = "category")
+  pivot_longer(
+    cols = all_of(names(var_categories)), 
+    names_to = "variable", 
+    values_to = "category"
+  )
 
 # Compute the proportion of "Stroke" for each variable-category combination
 order_data <- long_data %>%
-  group_by(variable, category, stroke) %>%
-  summarize(n = n(), .groups = "drop") %>%
   group_by(variable, category) %>%
-  mutate(prop = n / sum(n)) %>%
-  ungroup() %>%
-  filter(stroke == "Stroke")
+  summarize(
+    stroke_count = sum(stroke == "Stroke", na.rm = TRUE),
+    total = n(),
+    prop = stroke_count / total,
+    .groups = "drop"
+  ) %>%
+  # Keep only rows where stroke_count > 0 to avoid unnecessary categories
+  filter(stroke_count > 0)
 
 # For each variable, reorder categories by ascending proportion of Stroke
 order_data <- order_data %>%
@@ -363,18 +363,15 @@ var_order_data <- order_data %>%
 # Join category and variable ranks back to long_data
 long_data <- long_data %>%
   left_join(order_data %>% select(variable, category, cat_rank), by = c("variable", "category")) %>%
-  left_join(var_order_data %>% select(variable, var_rank), by = "variable")
-
-# Create a combined label "Variable: Category"
-long_data <- long_data %>%
+  left_join(var_order_data %>% select(variable, var_rank), by = "variable") %>%
+  # Create a combined label "Variable: Category"
   mutate(variable_category = paste(variable, category, sep = ": "))
 
 # Arrange by var_rank (variable-level order), then cat_rank (category-level order)
 long_data <- long_data %>%
-  arrange(var_rank, cat_rank)
-
-# Set factor levels according to this ordering
-long_data$variable_category <- factor(long_data$variable_category, levels = unique(long_data$variable_category))
+  arrange(var_rank, cat_rank) %>%
+  # Set factor levels according to this ordering
+  mutate(variable_category = factor(variable_category, levels = unique(variable_category)))
 
 # Create the plot
 p <- ggplot(long_data, aes(x = variable_category, fill = stroke)) +
