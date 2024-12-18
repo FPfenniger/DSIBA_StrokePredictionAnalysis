@@ -214,7 +214,6 @@ combined_subplots <- subplot(age_subplot, glucose_subplot, bmi_subplot, nrows = 
 
 # Display the combined subplots
 combined_subplots
-
 ```
 
 

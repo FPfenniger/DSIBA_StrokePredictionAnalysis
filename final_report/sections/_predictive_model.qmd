@@ -1199,7 +1199,7 @@ ggplot(data = data.frame(
   theme_minimal()
 ```
 
-The ROC curve demonstrates the model’s strong discriminative ability,
+The ***ROC curve demonstrates the model’s strong discriminative ability,
 with an AUC (Area Under the Curve) of 0.839. This means that the model
 has an 83.9% probability of correctly distinguishing between positive
 and negative cases. The steep rise in the ROC curve reflects an
@@ -1228,20 +1228,20 @@ train_sds   <- sapply(train_balanced[continuous_vars], sd, na.rm = TRUE)
 generate_importance_table(logistic_model_2, "Logistic Model 2", continuous_vars, train_sds)
 ```
 
--   Hypertension has the strongest positive effect on the outcome with
+-   `Hypertension` has the strongest positive effect on the outcome with
     an odds ratio of 1.707 (p \< 0.0001), indicating individuals with
     hypertension are 1.7 times more likely to experience the event.
 
--   Heart Disease and Smoking Status (Smokes or Formerly Smoked) are
+-   `Heart Disease` and `Smoking Status` (Smokes or Formerly Smoked) are
     also significant predictors, increasing the odds of the outcome.
 
--   Age has a modest but statistically significant positive effect (odds
+-   `Age` has a modest but statistically significant positive effect (odds
     ratio: 1.08), indicating a gradual increase in risk with age.
 
--   Predictors like BMI and Residence Type: Urban were not statistically
+-   Predictors like `BMI` and `Residence Type`: Urban were not statistically
     significant (p \> 0.05).
 
--   Negative coefficients for Work Type: Government Job and
+-   Negative coefficients for `Work Type`: Government Job and
     Self-Employed indicate that individuals in these categories are less
     likely to experience a stroke.
 
@@ -1400,30 +1400,30 @@ print(classification_report_test)
 ```
 
 The model demonstrated strong classification performance, achieving an
-Accuracy of 78.2% and an F1 Score of 0.795, which indicates a balanced
-trade-off between Precision and Recall. Notably, a Recall of 0.842
+**Accuracy** of 78.2% and an **F1 Score** of 0.795, which indicates a balanced
+trade-off between Precision and Recall. Notably, a **Recall** of 0.842
 signifies that the model correctly identifies 84.2% of true positive
 cases, which is essential for minimizing the number of at-risk
-individuals who are missed. However, a Precision of 0.752 implies that
+individuals who are missed. However, a **Precision** of 0.752 implies that
 24.8% of the positive predictions are false positives. This trade-off is
 often acceptable in scenarios where sensitivity is prioritized over
 precision.
 
-The Specificity of 0.723 indicates the model’s moderate ability to
+The **Specificity** of 0.723 indicates the model’s moderate ability to
 correctly identify negative cases. Overall, these metrics demonstrate
 that the model effectively balances sensitivity and specificity, making
 it suitable for identifying subtle risks within the low-risk age group.
 
-The confusion matrix further contextualizes the model's predictive
+The **confusion matrix further** contextualizes the model's predictive
 performance:
 
--   True Positives (TP): 613 cases were correctly classified as
+-   **True Positives (TP)**: 613 cases were correctly classified as
     positive.
--   True Negatives (TN): 526 cases were accurately identified as
+-   **True Negatives (TN):** 526 cases were accurately identified as
     negative.
--   False Positives (FP): 202 cases were incorrectly flagged as
+-   **False Positives (FP):** 202 cases were incorrectly flagged as
     positive.
--   False Negatives (FN): 115 cases were missed.
+-   **False Negatives (FN):** 115 cases were missed.
 
 The relatively low number of false negatives aligns with the high Recall
 value, emphasizing the model’s strength in detecting true positive
@@ -1453,7 +1453,7 @@ ggplot(data = data.frame(
   theme_minimal()
 ```
 
-The ROC curve, with an associated AUC value of 0.844, confirms the
+**The ROC curve**, with an associated AUC value of 0.844, confirms the
 model’s excellent discriminative ability. An AUC of 0.844 indicates that
 the model has an 84.4% probability of distinguishing between positive
 and negative cases. The steep initial rise of the ROC curve demonstrates
@@ -1475,32 +1475,36 @@ train_sds   <- sapply(train_low_risk[continuous_vars], sd, na.rm = TRUE)
 generate_importance_table(logistic_model_3, "Logistic Model 3", continuous_vars, train_sds)
 ```
 
-`Hypertension` remains the most significant predictor, with an odds
-ratio of 2.256 (p \< 0.0001), indicating that individuals with
-hypertension are more than twice as likely to experience the event.
+**Key Findings**
 
-`Smoking Status` (both current and former) continues to be a critical
-risk factor: - Current smokers have a 1.507-fold increased risk (p \<
-0.0001). - Former smokers also retain an elevated risk (odds ratio:
-1.467, p \< 0.0001), suggesting a lingering impact of smoking history.
+-   `Hypertension` remains the most significant predictor, with an odds
+    ratio of 2.256 (p \< 0.0001), indicating that individuals with
+    hypertension are more than twice as likely to experience the event.
 
-`Age` contributes to the risk, with an odds ratio of 1.108 (p \<
-0.0001), reflecting the gradual increase in risk even within the
-low-risk age group.
+-   `Smoking Status` (both current and former) continues to be a
+    critical risk factor: - Current smokers have a 1.507-fold increased
+    risk (p \< 0.0001). - Former smokers also retain an elevated risk
+    (odds ratio: 1.467, p \< 0.0001), suggesting a lingering impact of
+    smoking history.
 
-`BMI` shows a slight but significant positive association (odds ratio:
-1.012, p = 0.014), highlighting the importance of weight management.
+-   `Age` contributes to the risk, with an odds ratio of 1.108 (p \<
+    0.0001), reflecting the gradual increase in risk even within the
+    low-risk age group.
 
-Conversely, individuals who are `self-employed` or in `government jobs`
-exhibit a protective effect, with reduced odds of the outcome (odds
-ratios: 0.707 and 0.571, respectively).
+-   `BMI` shows a slight but significant positive association (odds
+    ratio: 1.012, p = 0.014), highlighting the importance of weight
+    management.
 
-Being `married` also shows a protective association (odds ratio: 0.697,
-p = 0.0004), which may reflect social or lifestyle factors.
+-   Conversely, individuals who are `self-employed` or in
+    `government jobs` exhibit a protective effect, with reduced odds of
+    the outcome (odds ratios: 0.707 and 0.571, respectively).
 
-Predictors such as `heart disease` and `average glucose level` were not
-statistically significant in this stratified model, suggesting these
-factors may be less influential in a low-risk age group.
+-   Being `married` also shows a protective association (odds ratio:
+    0.697, p = 0.0004), which may reflect social or lifestyle factors.
+
+-   Predictors such as `heart disease` and `average glucose level` were
+    not statistically significant in this stratified model, suggesting
+    these factors may be less influential in a low-risk age group.
 
 ## High-Risk Age Model
 
@@ -1684,7 +1688,7 @@ Let's analyze the results of the high-risk age group model:
     the model’s predictive power is less robust compared to the low-risk
     age group model.
 
-**Summary:**
+**Summary**
 
 The model performs reasonably well in identifying negative cases but
 struggles with sensitivity, which could be problematic when prioritizing
@@ -1720,9 +1724,9 @@ ggplot(data = data.frame(
 **The ROC curve** illustrates the model's discriminative ability, with
 an AUC of 0.665.
 
--   AUC = 0.665: This indicates that the model has a 66.5% probability
-    of distinguishing between positive and negative cases, which is only
-    slightly better than random chance.
+This indicates that the model has a 66.5% probability of distinguishing
+between positive and negative cases, which is only slightly better than
+random chance.
 
 The relatively shallow ascent of the ROC curve reflects limited
 sensitivity and highlights challenges in effectively identifying
@@ -1744,41 +1748,38 @@ generate_importance_table(logistic_model_4, "Logistic Model 4", continuous_vars,
 
 **Key Findings**
 
--   **Heart Disease and Hypertension as Significant Risk Factors:**
+-   Heart Disease and Hypertension as Significant Risk Factors:
 
-    -   **Heart Disease:** An odds ratio of 1.437 (p = 0.004) indicates
+    -   `Heart Disease:` An odds ratio of 1.437 (p = 0.004) indicates
         a 43.7% increased risk for individuals with this condition.
 
-    -   **Hypertension:** An odds ratio of 1.327 (p = 0.012) emphasizes
+    -   `Hypertension:` An odds ratio of 1.327 (p = 0.012) emphasizes
         its importance in the high-risk age group.
 
--   **Residence Type**
+-   Urban `Residence Type:` Demonstrated a positive association with
+    an odds ratio of 1.211 (p = 0.046), suggesting a slight increase in
+    risk for individuals residing in urban areas. This finding may
+    reflect lifestyle or environmental factors associated with urban
+    living. However, research and our exploratory data analysis (EDA)
+    suggest that residence type is not a significant predictor,
+    indicating that this variable may be overemphasized.
 
-    -   **Urban Residence:** Demonstrated a positive association with an
-        odds ratio of 1.211 (p = 0.046), suggesting a slight increase in
-        risk for individuals residing in urban areas. This finding may
-        reflect lifestyle or environmental factors associated with urban
-        living. However, research and our exploratory data analysis
-        (EDA) suggest that residence type is not a significant
-        predictor, indicating that this variable may be overemphasized.
-
--   **Average Glucose Level:** Showed a small but statistically
+-   `Average Glucose Level:` Showed a small but statistically
     significant positive association with an odds ratio of 1.006 (p \<
     0.001), indicating that higher glucose levels contribute to
     increased risk
 
--   **Body Mass Index (BMI):**
+-   `Body Mass Index (BMI):`
 
-    -   Demonstrated a protective effect with an odds ratio of 0.961 (p
-        \< 0.001). This result could reflect non-linear relationships
-        between weight and risk or confounding factors in the high-risk
-        group.
+    Demonstrated a protective effect with an odds ratio of 0.961 (p \<
+    0.001). This result could reflect non-linear relationships between
+    weight and risk or confounding factors in the high-risk group.
 
--   **Work Type and Marital Status:**
+-   `Work Type` and Marital Status:
 
-    -   **Self-Employed:** An odds ratio of 0.803 (p = 0.039) indicates
+    -   Self-Employed: An odds ratio of 0.803 (p = 0.039) indicates
         a 20% reduction in risk.
 
-    -   **Ever Married:** An odds ratio of 0.493 (p \< 0.001) suggests a
+    -   `Ever Married:` An odds ratio of 0.493 (p \< 0.001) suggests a
         50.7% lower risk, potentially due to social and emotional
         support associated with marital status.
