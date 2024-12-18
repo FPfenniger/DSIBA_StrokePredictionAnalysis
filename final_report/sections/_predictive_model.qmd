@@ -446,9 +446,7 @@ summary_table <- as.data.frame.matrix(summary_table)
 knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.names = FALSE)
 ```
 
-```{r, message = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
+```{r}
 suppressWarnings({
   # Function to calculate proportion of people with stroke by bins and create a line plot
   create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
@@ -564,6 +562,7 @@ suppressWarnings({
   # Display the combined subplots
   combined_subplots
 })
+
 ```
 
 
@@ -590,7 +589,9 @@ Additionally, we examine the distribution of the most important
 categorical variables, `heart_disease` and `hypertension`, within the
 high-risk age group.
 
-```{r}
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -605,7 +606,6 @@ var_categories <- list(
 
 # Filter data and select variables of interest
 filtered_data <- high_risk_age_tb %>%
-  filter(gender != "Other") %>%
   select(stroke, all_of(names(var_categories))) %>%
   # Convert 'stroke' to a factor with labels
   mutate(
@@ -665,26 +665,24 @@ long_data <- long_data %>%
 p <- ggplot(long_data, aes(x = variable_category, fill = stroke)) +
   geom_bar(position = "fill") +
   labs(
-    title = "Distribution Across Risk Factors",
     x = NULL,      # After flipping, becomes y-axis
     y = "Proportion",
-    fill = "Stroke Status"
+    fill = NULL     # Remove legend title
   ) +
   scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
   scale_y_continuous(labels = percent) + # Convert proportion to percentage
   theme_minimal() +
   theme(
     plot.title.position = "plot",
-    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+    axis.title.x = element_text(hjust = 0.5)
   ) +
   coord_flip()
 
 # Convert to Plotly
 combined_plot <- ggplotly(p) %>%
   layout(
-    margin = list(t = 50),
-    showlegend = TRUE,
-    legend = list(title = list(text = "High-Risk Age Group: Over 60 Years Old"))
+    title = list(text = "High-Risk Age Group: Over 60 Years Old", x = 0.5), # Title centered
+    margin = list(t = 50)
   )
 
 # Display the combined horizontal bar chart
@@ -1979,7 +1977,7 @@ generate_importance_table(logistic_model_4, "Logistic Model 4", continuous_vars,
 
 -   `Work Type` and `Marital Status`:
 
-    -   Self-Employed: An odds ratio of 0.803 (p = 0.039) indicates
+    -   `Self-Employed:` An odds ratio of 0.803 (p = 0.039) indicates
         a 20% reduction in risk.
 
     -   `Ever Married:` An odds ratio of 0.493 (p \< 0.001) suggests a

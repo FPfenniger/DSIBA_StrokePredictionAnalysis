@@ -95,25 +95,32 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 
 ## Univariate Analysis
 
-Body Mass Index (BMI) Classifications:
+Since our dataset comprises a variety of health-related metrics, we will briefly describe the meaning of each below:
 
-BMI is a measure of body fat based on weight in relation to height. The WHO defines the following BMI categories:
-	•	Underweight: BMI less than 18.5
-	•	Normal weight: BMI 18.5–24.9
-	•	Pre-obesity (Overweight): BMI 25.0–29.9
-	•	Obesity Class I: BMI 30.0–34.9
-	•	Obesity Class II: BMI 35.0–39.9
-	•	Obesity Class III: BMI 40.0 and above
+`Body Mass Index (BMI)` is a standardized measure used to assess body fat based on an individual’s weight relative to their height. It is calculated by dividing a person’s weight in kilograms by the square of their height in meters (kg/m²). BMI serves as a useful screening tool to categorize individuals into different weight status groups, which are associated with various health risks (World Health Organization [WHO], 2008)[^6].
+
+The BMI classifications are as follows:
+
+- Underweight: BMI less than 18.5 kg/m²
+- Normal weight: BMI between 18.5 and 24.9 kg/m²
+- Pre-obesity (Overweight): BMI between 25.0 and 29.9 kg/m²
+- Obesity Class I: BMI between 30.0 and 34.9 kg/m²
+- Obesity Class II: BMI between 35.0 and 39.9 kg/m²
+- Obesity Class III: BMI of 40.0 kg/m² and above
 
 
-glucose level
+**Diabetic Range**
+
+Diabetes mellitus is a chronic medical condition characterized by elevated `avg_glucose_levels`. Accurate classification of blood glucose levels is essential for the diagnosis and management of diabetes. According to the American Diabetes Association (ADA, 2023), the diagnostic criteria for diabetes based on blood glucose levels are as follows:
+
+- Fasting Blood Glucose: A level of 126 mg/dL (7.0 mmol/L) or higher after at least 8 hours of fasting.
+- Postprandial Blood Glucose: A level of 140 mg/dL (7.8 mmol/L) or higher two hours after eating.
+
+These thresholds are utilized to identify individuals who may require medical intervention to manage their blood glucose levels and reduce the risk of diabetes-related complications (ADA, 2023)[^8].
  
-heart_disease
-smoking_status
-hypertension
-ever_married
-work_type
+[^7]: World Health Organization. Regional Office for the Western Pacific. (2000). The Asia-Pacific perspective: Redefining obesity and its treatment. Sydney: Health Communications Australia. Retrieved from https://iris.who.int/handle/10665/206936
 
+[^8]: American Diabetes Association. (2023). Standards of Medical Care in Diabetes—2023. Diabetes Care, 46(Supplement 1), S1–S264. Retrieved from https://diabetesjournals.org/care/article/46/Supplement_1/S1/148054/Introduction-and-Methodology-Standards-of-Care-in
 
 
 ### Numerical variables
@@ -167,11 +174,18 @@ Based on the summary table for numerical variables and the violin plot, we can o
 
 The dataset population exhibits higher levels of `avg_glucose_level` and `bmi` than recommended by WHO.
 
+
+
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
 
 suppressWarnings({
+  library(plotly)
+  library(ggplot2)
+  library(dplyr)
+  library(plotly)
+  
   # Function to calculate proportion of people with stroke by bins and create a line plot
   create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
     original_data <- data[[variable]]
@@ -212,9 +226,22 @@ suppressWarnings({
       marker = list(color = '#1f77b4')
     ) %>%
       layout(
-        yaxis = list(title = "Stroke (proportion)", rangemode = 'tozero'),
+        yaxis = list(
+          title = "Stroke (proportion)",
+          rangemode = 'tozero',
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        xaxis = list(
+          title = "",
+          tickfont = list(size = 10)
+        ),
         showlegend = FALSE,
-        title = paste("Proportion Stroke by", gsub("_", " ", variable))
+        title = list(
+          text = paste("Proportion Stroke by", gsub("_", " ", variable)),
+          font = list(size = 14)
+        ),
+        font = list(size = 10)  # General font size
       )
 
     return(line_plot)
@@ -236,31 +263,113 @@ suppressWarnings({
         title = paste("Distribution of", gsub("_", " ", variable))
       ) +
       scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
-      theme_minimal() +
+      theme_minimal(base_size = 10) +  # Set base font size for ggplot
       theme(
+        plot.title = element_text(hjust = 0.5, size = 12),          # Smaller plot title
+        axis.title.y = element_text(size = 10),                     # Smaller y-axis title
+        axis.text.y = element_text(size = 8),                       # Smaller y-axis text
+        axis.text.x = element_text(size = 8),                       # Smaller x-axis text if needed
+        legend.title = element_text(size = 10),                     # Smaller legend title
+        legend.text = element_text(size = 8),                       # Smaller legend text
         axis.title.x = element_blank(),
-        plot.title = element_text(hjust = 0.5),
         legend.position = ifelse(show_legend, "right", "none")
       )
 
-    ggplotly(p) %>% layout(showlegend = show_legend)
+    ggplotly(p) %>% 
+      layout(
+        showlegend = show_legend,
+        title = list(font = list(size = 14)),
+        xaxis = list(
+          title = ifelse(show_legend, "", "Age"),  # Adjust as needed
+          tickfont = list(size = 10)
+        ),
+        yaxis = list(
+          title = "Stroke (count)", 
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        legend = list(
+          title = list(text = ""),  # Remove legend title
+          font = list(size = 10)    # Smaller legend text
+        ),
+        font = list(
+          size = 10  # General font size
+        )
+      )
   }
 
   # Assuming outlier_stroke_tb is defined and stroke is 0/1
   line_age <- create_proportion_line(outlier_stroke_tb, "age", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_age <- create_histogram(outlier_stroke_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
-    layout(xaxis = list(title = "Age"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "Age",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      legend = list(
+        font = list(size = 10)
+      )
+    )
 
   line_glucose <- create_proportion_line(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_glucose <- create_histogram(outlier_stroke_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
-    layout(xaxis = list(title = "Average Glucose Level"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "Average Glucose Level",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
 
   line_bmi <- create_proportion_line(outlier_stroke_tb, "bmi", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_bmi <- create_histogram(outlier_stroke_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
-    layout(xaxis = list(title = "BMI"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "BMI",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
 
   # Stack line above histogram for each variable with height adjustments
   age_subplot <- subplot(
@@ -281,12 +390,19 @@ suppressWarnings({
     age_subplot, glucose_subplot, bmi_subplot, 
     nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
   ) %>%
-    layout(title = "Numerical Variables II")
+    layout(
+      title = list(
+        text = "Numerical Variables II",
+        font = list(size = 16)
+      ),
+      font = list(size = 10)  # General font size for combined plot
+    )
 
   # Display the combined subplots
   combined_subplots
 })
 ```
+
 
 The violin plots and histograms have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels in the diabetic range and in the age range of 60 to 80 years.
 
@@ -417,7 +533,7 @@ combined_plot <- ggplotly(p) %>%
   layout(
     margin = list(t = 50),
     showlegend = TRUE,
-    legend = list(title = list(text = "<b>Stroke Status</b>"))
+    legend = list(title = list(text = ""))
   )
 
 # Display the combined horizontal bar chart
@@ -441,7 +557,23 @@ In contrast, the following variables appear to be not relevant, as there are no 
 Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidatesamong the categorical variables for further exploration and modeling. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. 
 Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk. These predictors may even become more relevant when examined in a balanced dataset, which our initial hypotheses would suggest.
 
-Connect to literature research
+The initial observations align with existing research highlighting the significance of these factors in strokes. For instance, a study by Ute Mons et al. (2015)[^9] demonstrated that smoking significantly increases the risk of cardiovascular events, including stroke, among older adults.
+Additionally, research has shown that smoking cessation can substantially lower the risk of recurrent vascular events and all-cause mortality after a first cardiovascular event[^10].
+Regarding numerical variables, the exploratory data analysis indicates that age and avg_glucose_level have a positive relationship with stroke occurrence. This is consistent with literature suggesting that elevated fasting blood glucose levels are associated with an increased risk of ischemic stroke [^11].
+Furthermore, age is a well-established risk factor for stroke, with older individuals facing higher susceptibility [^12].
+
+These insights underscore the importance of considering both categorical and numerical variables in developing predictive models for stroke risk assessment.
+
+Certainly! Here are the four references formatted in APA style with footnote markers, similar to your example:
+
+[^9]: Mons, U., Müezzinler, A., Gellert, C., Schöttker, B., Abnet, C. C., Bobak, M., … & Brenner, H. (2015). Impact of smoking and smoking cessation on cardiovascular events and mortality among older adults: Meta-analysis of individual participant data from prospective cohort studies of the CHANCES consortium. BMJ, 350, h1551. https://doi.org/10.1136/bmj.h1551
+
+[^10]: Lee, S.-R., Choi, E.-K., Han, K.-D., Cha, M.-J., & Oh, S. (2019). Quit smoking to reduce stroke risk if you have irregular heartbeat. European Society of Cardiology. https://www.escardio.org/The-ESC/Press-Office/Press-releases/Quit-smoking-to-reduce-stroke-risk-if-you-have-irregular-heartbeat
+
+[^11]: Sacco, R. L., Benjamin, E. J., Broderick, J. P., Dyken, M., Easton, J. D., Feinberg, W. M., … & Wolf, P. A. (1997). Risk factors. Stroke, 28(7), 1507–1517. https://doi.org/10.1161/01.STR.28.7.1507
+
+[^12]: Boden-Albala, B., Sacco, R. L., Lee, H. S., Grahame-Clarke, C., Rundek, T., Elkind, M. V., … & Paik, M. C. (2008). Diabetes, fasting glucose levels, and risk of ischemic stroke and vascular events: Findings from the Northern Manhattan Study (NOMAS). Diabetes Care, 31(6), 1132–1137. https://doi.org/10.2337/dc08-0026
+
 
 ## Bivariate Analysis
 
