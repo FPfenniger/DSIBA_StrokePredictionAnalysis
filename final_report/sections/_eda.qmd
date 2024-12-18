@@ -53,7 +53,7 @@ categorical_data <- outlier_stroke_tb %>%
 
 ## Descriptive Statistics
 
-We start our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the count, mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
+We start our EDA with a summary of the numerical and categorical variables in our dataset. The summary includes the mean, standard deviation, minimum, 1st quartile, median, 3rd quartile, and maximum values for numerical variables.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -94,6 +94,19 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 
 
 ## Univariate Analysis
+
+Body Mass Index (BMI) Classifications:
+
+BMI is a measure of body fat based on weight in relation to height. The WHO defines the following BMI categories:
+	•	Underweight: BMI less than 18.5
+	•	Normal weight: BMI 18.5–24.9
+	•	Pre-obesity (Overweight): BMI 25.0–29.9
+	•	Obesity Class I: BMI 30.0–34.9
+	•	Obesity Class II: BMI 35.0–39.9
+	•	Obesity Class III: BMI 40.0 and above
+
+
+
 
 ### Numerical variables
 
@@ -142,7 +155,9 @@ Based on the summary table for numerical variables and the violin plot, we can o
 
 -   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
 -   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
--   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. This is slightly higher than the average population according to a study by the World Health Organization (WHO).
+-   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. 
+
+The dataset population exhibits higher levels of `avg_glucose_level` and `bmi` than recommended by WHO.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -265,9 +280,7 @@ suppressWarnings({
 })
 ```
 
-The violin plots and histograms and have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels and in the age range of 60 to 80 years.
-
-The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.24). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
+The violin plots and histograms have been grouped by stroke occurrence. This allows us to observe the distribution of the data for each variable in relation to the target variable `stroke`. Based on the charts, `age` and `avg_glucose_level` exhibit notable differences in the proportions of stroke cases across their value ranges. Stroke cases are more frequent at higher glucose levels in the diabetic range and in the age range of 60 to 80 years.
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -289,6 +302,8 @@ correlation_table <- data.frame(
 # Display the correlation table with kable
 kable(correlation_table, caption = "Correlation Coefficients with Stroke")
 ```
+
+The variable `age` shows a weak positive relationship with the target variable `stroke` (correlation coefficient of 0.24). `avg_glucose_level` shows an even weaker positive relationship with the target variable (correlation coefficient of 0.13). In contrast, `bmi` and `stroke` show no relationship with a correlation coefficient of 0.04.
 
 ### Categorical variables
 
