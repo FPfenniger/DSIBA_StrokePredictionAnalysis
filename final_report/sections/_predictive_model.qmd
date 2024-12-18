@@ -23,7 +23,7 @@ library(plotly)
 
 # Final Data Preparation
 
-In the following chapter we will prepare the data for the modeling
+In the following chapter, we will prepare the data for the modeling
 phase. We will start by encoding the categorical variables, checking
 them for multicollinearity, balancing the dataset, and finally scaling
 the continuous variables (which is done after the train-test split in
@@ -139,6 +139,7 @@ $$
 $$
 
 Where: 
+
 - O_i = Observed frequency 
 - E_i = Expected frequency
 
@@ -150,6 +151,7 @@ V = \sqrt{\frac{\chi^2}{n \cdot \text{min}(r-1, c-1)}}
 $$
 
 Where: 
+
 - chi\^2 = Chi-squared statistic 
 - n = Total number of observations 
 - r, c = Number of rows and columns in the contingency table
@@ -168,6 +170,7 @@ P = \frac{{\binom{a+b}{a} \cdot \binom{c+d}{c}}}{{\binom{n}{a+c}}}
 $$
 
 Where: 
+
 - a, b, c, d = Counts in the contingency table cells. 
 - n = Total number of observations.
 
@@ -289,56 +292,123 @@ knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.name
 ```{r, warning=FALSE}
 #| code-fold: true
 #| code-summary: "Click to show the code"
-# Function to create the histogram
-create_histogram <- function(data, variable, stroke_variable, binwidth = 5) {
-  # Extract the variable and stroke data
-  original_data <- data[[variable]]
-  stroke_data <- data[[stroke_variable]]
-  
-  # Calculate mean and standard deviation for reference lines
-  mean_val <- mean(original_data, na.rm = TRUE)
-  sd_val <- sd(original_data, na.rm = TRUE)
-  mean_line <- mean_val
-  sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
-  
-  # Combine data and stroke status into a data frame
-  plot_data <- data.frame(data = original_data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
-  
-  # Generate the ggplot stacked histogram with mean and SD lines
-  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
-    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
-    labs(title = paste("Distribution of", variable), 
-         x = variable,  
-         y = "Frequency", 
-         fill = "Stroke Status") +
-    geom_vline(xintercept = mean_line, color = "blue", linetype = "dashed", linewidth = 1) +
-    geom_vline(xintercept = sd_lines[1], color = "red", linetype = "dotted", linewidth = 0.8) +
-    geom_vline(xintercept = sd_lines[2], color = "red", linetype = "dotted", linewidth = 0.8) +
-    scale_fill_manual(values = c("No Stroke" = "#1f77b4", "Stroke" = "#ff7f0e")) +
-    theme_minimal()
-  
-  # Convert to interactive Plotly plot
-  ggplotly(p)
-}
+suppressWarnings({
+  # Function to calculate proportion of people with stroke by bins and create a line plot
+  create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
 
-# Generate histograms for the low-risk age group
-hist_age <- create_histogram(low_risk_age_tb, "age", "stroke", binwidth = 5)
-hist_glucose <- create_histogram(low_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5)
-hist_bmi <- create_histogram(low_risk_age_tb, "bmi", "stroke", binwidth = 5)
+    # Define bin edges
+    range_vals <- range(original_data, na.rm = TRUE)
+    breaks <- seq(floor(range_vals[1]), ceiling(range_vals[2]) + binwidth, by = binwidth)
 
-# Combine histograms into a grid layout
-combined_histograms <- subplot(
-  hist_age, hist_glucose, hist_bmi,
-  nrows = 1, titleX = TRUE, titleY = TRUE
-) %>%
-  layout(
-    title = "Histograms of Numerical Variables by Stroke Status (Low-Risk Age Group: Under 60 Years Old)",
-    legend = list(orientation = "h", x = 0.5, y = -0.2, xanchor = "center")  # Adjust legend placement
+    # Cut the data into bins
+    binned_data <- data.frame(value = original_data, stroke = stroke_data) %>%
+      mutate(bin = cut(value, breaks = breaks, include.lowest = TRUE, right = FALSE))
+
+    # Compute proportion stroke in each bin
+    prop_data <- binned_data %>%
+      group_by(bin) %>%
+      summarize(
+        n = n(),
+        stroke_n = sum(stroke == 1, na.rm = TRUE),
+        prop_stroke = stroke_n / n,
+        .groups = "drop"
+      )
+
+    # Calculate bin midpoints
+    bin_mids <- sapply(strsplit(gsub("\\[|\\]|\\(|\\)", "", levels(prop_data$bin)), ","), 
+                       function(x) mean(as.numeric(x)))
+    prop_data <- prop_data %>%
+      mutate(bin_mid = bin_mids[as.numeric(bin)])
+
+    # Create a line plot using plotly
+    line_plot <- plot_ly(
+      data = prop_data,
+      x = ~bin_mid,
+      y = ~prop_stroke,
+      type = 'scatter',
+      mode = 'lines+markers',
+      line = list(color = '#1f77b4'),
+      marker = list(color = '#1f77b4')
+    ) %>%
+      layout(
+        yaxis = list(title = "Stroke (proportion)", rangemode = 'tozero'),
+        showlegend = FALSE,
+        title = paste("Proportion Stroke by", gsub("_", " ", variable))
+      )
+
+    return(line_plot)
+  }
+
+  # Function to create the histogram as a Plotly object
+  create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+    stroke_factor <- factor(stroke_data, levels = c(0, 1), labels = c("No Stroke", "Stroke"))
+
+    plot_data <- data.frame(data = original_data, stroke = stroke_factor)
+
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+      labs(
+        y = "Stroke (count)",
+        fill = "Stroke Status",
+        title = paste("Distribution of", gsub("_", " ", variable))
+      ) +
+      scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+      theme_minimal() +
+      theme(
+        axis.title.x = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = ifelse(show_legend, "right", "none")
+      )
+
+    ggplotly(p) %>% layout(showlegend = show_legend)
+  }
+
+  # Assuming low_risk_age_tb is defined and stroke is 0/1
+  line_age <- create_proportion_line(low_risk_age_tb, "age", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_age <- create_histogram(low_risk_age_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
+    layout(xaxis = list(title = "Age"), yaxis = list(title = "Stroke (count)"))
+
+  line_glucose <- create_proportion_line(low_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_glucose <- create_histogram(low_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(xaxis = list(title = "Average Glucose Level"), yaxis = list(title = "Stroke (count)"))
+
+  line_bmi <- create_proportion_line(low_risk_age_tb, "bmi", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_bmi <- create_histogram(low_risk_age_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(xaxis = list(title = "BMI"), yaxis = list(title = "Stroke (count)"))
+
+  # Stack line above histogram for each variable with height adjustments
+  age_subplot <- subplot(
+    line_age, hist_age, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  glucose_subplot <- subplot(
+    line_glucose, hist_glucose, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  bmi_subplot <- subplot(
+    line_bmi, hist_bmi, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
   )
 
-# Display the combined histograms
-combined_histograms
+  # Combine all three sets into a single row
+  combined_subplots <- subplot(
+    age_subplot, glucose_subplot, bmi_subplot, 
+    nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
+  ) %>%
+    layout(title = "Low-Risk Age Group: Under 60 Years Old")
+
+  # Display the combined subplots
+  combined_subplots
+})
 ```
+
 
 Looking at the summary of numerical variables and the histograms for
 individuals below 60 years old, we observe the following:
@@ -376,68 +446,126 @@ summary_table <- as.data.frame.matrix(summary_table)
 knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.names = FALSE)
 ```
 
-```{r, warning=FALSE}
+```{r, message = FALSE}
 #| code-fold: true
-#| code-summary: "Click to show the code"
-# Function to create the histogram
-create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
-  # Extract the variable and stroke data
-  original_data <- data[[variable]]
-  stroke_data <- data[[stroke_variable]]
-  
-  # Calculate mean and standard deviation for reference lines
-  mean_val <- mean(original_data, na.rm = TRUE)
-  sd_val <- sd(original_data, na.rm = TRUE)
-  mean_line <- mean_val
-  sd_lines <- c(mean_val - sd_val, mean_val + sd_val)
-  
-  # Combine data and stroke status into a data frame
-  plot_data <- data.frame(data = original_data, stroke = factor(stroke_data, labels = c("No Stroke", "Stroke")))
-  
-  # Generate the ggplot stacked histogram with mean and SD lines
-  p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
-    geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
-    labs(title = paste("Distribution of", variable), 
-         x = variable,  # Placeholder for the correct x label
-         y = "Frequency", fill = "Stroke Status") +
-    geom_vline(xintercept = mean_line, color = "blue", linetype = "dashed", linewidth = 1) +
-    geom_vline(xintercept = sd_lines[1], color = "red", linetype = "dotted", linewidth = 0.8) +
-    geom_vline(xintercept = sd_lines[2], color = "red", linetype = "dotted", linewidth = 0.8) +
-    scale_fill_manual(values = c("No Stroke" = "#1f77b4", "Stroke" = "#ff7f0e")) +  # Custom colors
-    theme_minimal()
-  
-  # Set x-axis label according to the variable
-  if(variable == "avg_glucose_level") {
-    p <- p + labs(x = "Average Glucose Level")
-  } else if(variable == "age") {
-    p <- p + labs(x = "Age")
-  } else if(variable == "bmi") {
-    p <- p + labs(x = "BMI")
+#| code-summary: "Click to show code"
+suppressWarnings({
+  # Function to calculate proportion of people with stroke by bins and create a line plot
+  create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+
+    # Define bin edges
+    range_vals <- range(original_data, na.rm = TRUE)
+    breaks <- seq(floor(range_vals[1]), ceiling(range_vals[2]) + binwidth, by = binwidth)
+
+    # Cut the data into bins
+    binned_data <- data.frame(value = original_data, stroke = stroke_data) %>%
+      mutate(bin = cut(value, breaks = breaks, include.lowest = TRUE, right = FALSE))
+
+    # Compute proportion stroke in each bin
+    prop_data <- binned_data %>%
+      group_by(bin) %>%
+      summarize(
+        n = n(),
+        stroke_n = sum(stroke == 1, na.rm = TRUE),
+        prop_stroke = stroke_n / n,
+        .groups = "drop"
+      )
+
+    # Calculate bin midpoints
+    bin_mids <- sapply(strsplit(gsub("\\[|\\]|\\(|\\)", "", levels(prop_data$bin)), ","), 
+                       function(x) mean(as.numeric(x)))
+    prop_data <- prop_data %>%
+      mutate(bin_mid = bin_mids[as.numeric(bin)])
+
+    # Create a line plot using plotly
+    line_plot <- plot_ly(
+      data = prop_data,
+      x = ~bin_mid,
+      y = ~prop_stroke,
+      type = 'scatter',
+      mode = 'lines+markers',
+      line = list(color = '#1f77b4'),
+      marker = list(color = '#1f77b4')
+    ) %>%
+      layout(
+        yaxis = list(title = "Stroke (proportion)", rangemode = 'tozero'),
+        showlegend = FALSE,
+        title = paste("Proportion Stroke by", gsub("_", " ", variable))
+      )
+
+    return(line_plot)
   }
 
-  # Convert to interactive Plotly plot
-  ggplotly(p) %>%
-    layout(showlegend = show_legend) # Control legend visibility
-}
+  # Function to create the histogram as a Plotly object
+  create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+    stroke_factor <- factor(stroke_data, levels = c(0, 1), labels = c("No Stroke", "Stroke"))
 
-# Generate histograms for individuals over 60
-hist_age <- create_histogram(high_risk_age_tb, "age", "stroke", binwidth = 5, show_legend = TRUE)
-hist_glucose <- create_histogram(high_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE)
-hist_bmi <- create_histogram(high_risk_age_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE)
+    plot_data <- data.frame(data = original_data, stroke = stroke_factor)
 
-# Combine histograms into a grid layout (1 row)
-combined_histograms <- subplot(
-  hist_age, hist_glucose, hist_bmi,
-  nrows = 1, titleX = TRUE, titleY = TRUE
-) %>%
-  layout(
-    title = "Histograms of Numerical Variables by Stroke Status (Individuals Over 60 Years)",
-    showlegend = TRUE  # Ensure unified legend is displayed
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+      labs(
+        y = "Stroke (count)",
+        fill = "Stroke Status",
+        title = paste("Distribution of", gsub("_", " ", variable))
+      ) +
+      scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+      theme_minimal() +
+      theme(
+        axis.title.x = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        legend.position = ifelse(show_legend, "right", "none")
+      )
+
+    ggplotly(p) %>% layout(showlegend = show_legend)
+  }
+
+  # Assuming high_risk_age_tb is defined and stroke is 0/1
+  line_age <- create_proportion_line(high_risk_age_tb, "age", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_age <- create_histogram(high_risk_age_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
+    layout(xaxis = list(title = "Age"), yaxis = list(title = "Stroke (count)"))
+
+  line_glucose <- create_proportion_line(high_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_glucose <- create_histogram(high_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(xaxis = list(title = "Average Glucose Level"), yaxis = list(title = "Stroke (count)"))
+
+  line_bmi <- create_proportion_line(high_risk_age_tb, "bmi", "stroke", binwidth = 5) %>%
+    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+  hist_bmi <- create_histogram(high_risk_age_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(xaxis = list(title = "BMI"), yaxis = list(title = "Stroke (count)"))
+
+  # Stack line above histogram for each variable with height adjustments
+  age_subplot <- subplot(
+    line_age, hist_age, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  glucose_subplot <- subplot(
+    line_glucose, hist_glucose, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  bmi_subplot <- subplot(
+    line_bmi, hist_bmi, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
   )
 
-# Display the combined histograms
-combined_histograms
+  # Combine all three sets into a single row
+  combined_subplots <- subplot(
+    age_subplot, glucose_subplot, bmi_subplot, 
+    nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
+  ) %>%
+    layout(title = "High-Risk Age Group: Under 60 Years Old")
+
+  # Display the combined subplots
+  combined_subplots
+})
 ```
+
 
 Examining the summary of numerical variables and the histograms for
 individuals aged 60 and over, we observe the following changes:
