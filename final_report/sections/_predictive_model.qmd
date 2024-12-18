@@ -559,7 +559,7 @@ suppressWarnings({
     age_subplot, glucose_subplot, bmi_subplot, 
     nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
   ) %>%
-    layout(title = "High-Risk Age Group: Under 60 Years Old")
+    layout(title = "High-Risk Age Group: Over 60 Years Old")
 
   # Display the combined subplots
   combined_subplots
@@ -584,39 +584,113 @@ high-risk group exhibit comparable patterns and distributions to those
 in the full dataset. However, there is a stronger association between
 these features and stroke status. The features are more predictive of
 stroke in this age group, aligning with our exploratory data analysis
-(EDA). Additionally, we examine the distribution of the most important
+(EDA). 
+
+Additionally, we examine the distribution of the most important
 categorical variables, `heart_disease` and `hypertension`, within the
 high-risk age group.
 
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show the code"
-# Updated list of categorical variables for the analysis
-variables_to_summarize <- c("hypertension", "heart_disease")
-readable_names <- c("Hypertension", "Heart Disease")
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(scales)
 
-# Function to create a bar chart based on the selected variable
-create_bar_chart <- function(data, variable, readable_name) {
-  # Generate the bar plot
-  p <- ggplot(data, aes_string(x = variable, fill = "as.factor(stroke)")) +
-    geom_bar(position = "fill") +
-    labs(fill = "STROKE", y = "Proportion", 
-         title = paste("Proportion of Stroke by", readable_name, "For 60 and Over Years Old")) +
-    theme_minimal() +
-    scale_fill_manual(values = c("0" = "#1f77b4", "1" = "#ff7f0e")) # Custom colors
+# Define the variables and their labels for categories
+var_categories <- list(
+  "hypertension" = c("No", "Yes"),
+  "heart_disease" = c("No", "Yes")
+)
 
-  # Convert ggplot to an interactive plotly object
-  ggplotly(p)
-}
+# Filter data and select variables of interest
+filtered_data <- high_risk_age_tb %>%
+  filter(gender != "Other") %>%
+  select(stroke, all_of(names(var_categories))) %>%
+  # Convert 'stroke' to a factor with labels
+  mutate(
+    stroke = factor(stroke, levels = c(0, 1), labels = c("No Stroke", "Stroke")),
+    # Convert all categorical variables to character for consistency
+    across(all_of(names(var_categories)), as.character)
+  )
 
-# Generating and displaying individual plots for individuals over 60
-for (i in seq_along(variables_to_summarize)) {
-  var <- variables_to_summarize[i]
-  readable_name <- readable_names[i]  # Get the corresponding readable name
-  bar_plot <- create_bar_chart(high_risk_age_tb, var, readable_name)
-  print(bar_plot)
-}
+# Pivot data to long format
+long_data <- filtered_data %>%
+  pivot_longer(
+    cols = all_of(names(var_categories)), 
+    names_to = "variable", 
+    values_to = "category"
+  )
+
+# Compute the proportion of "Stroke" for each variable-category combination
+order_data <- long_data %>%
+  group_by(variable, category) %>%
+  summarize(
+    stroke_count = sum(stroke == "Stroke", na.rm = TRUE),
+    total = n(),
+    prop = stroke_count / total,
+    .groups = "drop"
+  ) %>%
+  # Keep only rows where stroke_count > 0 to avoid unnecessary categories
+  filter(stroke_count > 0)
+
+# For each variable, reorder categories by ascending proportion of Stroke
+order_data <- order_data %>%
+  group_by(variable) %>%
+  arrange(prop, .by_group = TRUE) %>%
+  mutate(cat_rank = row_number()) %>%
+  ungroup()
+
+# Compute a variable-level order by mean stroke proportion
+var_order_data <- order_data %>%
+  group_by(variable) %>%
+  summarize(var_prop = mean(prop), .groups = "drop") %>%
+  arrange(var_prop) %>%
+  mutate(var_rank = row_number())
+
+# Join category and variable ranks back to long_data
+long_data <- long_data %>%
+  left_join(order_data %>% select(variable, category, cat_rank), by = c("variable", "category")) %>%
+  left_join(var_order_data %>% select(variable, var_rank), by = "variable") %>%
+  # Create a combined label "Variable: Category"
+  mutate(variable_category = paste(variable, category, sep = ": "))
+
+# Arrange by var_rank (variable-level order), then cat_rank (category-level order)
+long_data <- long_data %>%
+  arrange(var_rank, cat_rank) %>%
+  # Set factor levels according to this ordering
+  mutate(variable_category = factor(variable_category, levels = unique(variable_category)))
+
+# Create the plot
+p <- ggplot(long_data, aes(x = variable_category, fill = stroke)) +
+  geom_bar(position = "fill") +
+  labs(
+    title = "Distribution Across Risk Factors",
+    x = NULL,      # After flipping, becomes y-axis
+    y = "Proportion",
+    fill = "Stroke Status"
+  ) +
+  scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+  scale_y_continuous(labels = percent) + # Convert proportion to percentage
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    plot.title = element_text(size = 16, face = "bold", hjust = 0.5)
+  ) +
+  coord_flip()
+
+# Convert to Plotly
+combined_plot <- ggplotly(p) %>%
+  layout(
+    margin = list(t = 50),
+    showlegend = TRUE,
+    legend = list(title = list(text = "High-Risk Age Group: Over 60 Years Old"))
+  )
+
+# Display the combined horizontal bar chart
+combined_plot
 ```
+
 
 -   `hypertension`: Similar to the group of individuals below 60 years
     old, those with hypertension exhibit a higher proportion of stroke
@@ -752,12 +826,12 @@ Logistic regression is a statistical method used for modeling the
 relationship between a set of predictor variables and a binary outcome
 variable (0/1). Unlike linear regression, logistic regression estimates
 the probability of the occurrence of an event by fitting the data to a
-**logistic curve**.
+logistic curve.
 
 The response variable is binary, such as "yes/no," "success/failure," or
 "disease/no disease."
 
-The logistic regression model is expressed as:
+**The logistic regression model is expressed as:**
 
 $$
 p = \frac{e^{\beta_0 + \beta_1X_1 + \dots + \beta_nX_n}}{1 + e^{\beta_0 + \beta_1X_1 + \dots + \beta_nX_n}}
@@ -779,7 +853,7 @@ The model is estimated using **maximum likelihood estimation (MLE)**,
 which identifies the coefficients that maximize the likelihood of
 observing the given data.
 
-Important assumptions of logistic regression include:
+**Important assumptions of logistic regression include:**
 
 -   Independence of errors
 -   Absence of multicollinearity
@@ -791,7 +865,7 @@ Important assumptions of logistic regression include:
 First of all we introduce the metrics we will be using to evaluate our
 models.
 
--   **Confusion matrix**: The confusion matrix compares the actual values of
+-   **Confusion matrix:** The confusion matrix compares the actual values of
     the target variable with the predicted values and serves as a basis
     for our evaluation. It is a 2x2 matrix that contains the following
     values: True Positives (predicting correctly a stroke), True
@@ -800,7 +874,7 @@ models.
     Negatives (predicting no stroke when there is one). The confusion
     matrix is used to calculate the following metrics:
 
--   **Precision**: Precision is the ratio of correctly predicted positive
+-   **Precision:** Precision is the ratio of correctly predicted positive
     observations to the total predicted positive observations. The
     formula for precision is given by:
 
@@ -808,7 +882,7 @@ $$
 Precision = \frac{TP}{TP + FP}
 $$
 
--   **Recall**: Recall is the ratio of correctly predicted positive
+-   **Recall:** Recall is the ratio of correctly predicted positive
     observations to the all observations in actual class. In our case
     and general in healthcare research, recall should be prioritized as
     undetected strokes are generally more fatal than false alarms. The
@@ -818,7 +892,7 @@ $$
 Recall = \frac{TP}{TP + FN}
 $$
 
--   **F1 Score**: The F1 score is the harmonic mean of Precision and Recall
+-   **F1 Score:** The F1 score is the harmonic mean of Precision and Recall
     and often used in unbalanced dataset like ours as it considers false
     positives and false negatives. The formula for F1 score ranges from
     0 to 1 and is given by:
@@ -827,7 +901,7 @@ $$
 F1 = 2×\frac{Precision × Recall}{Precision + Recall}
 $$
 
--   Specificity: Specificity is the ratio of correctly predicted
+-   **Specificity:** Specificity is the ratio of correctly predicted
     negative observations to the total actual negative observations. The
     formula for specificity is given by:
 
@@ -835,7 +909,7 @@ $$
 Specificity = \frac{TN}{TN + FP}
 $$
 
--   **Accuracy**: Accuracy is the ratio of correctly predicted observations
+-   **Accuracy:** Accuracy is the ratio of correctly predicted observations
     to the total observations. The formula for accuracy is given by:
 
 $$
@@ -854,7 +928,7 @@ $$
     while an AUC of 0.5 indicates a model that performs no better than
     random chance.
 
--   **Odds ratio**: The odds ratio is the exponentiated coefficient of a
+-   **Odds ratio:** The odds ratio is the exponentiated coefficient of a
     logistic regression model. It represents the change in odds of the
     target variable for a one-unit change in the predictor variable. An
     odds ratio greater than 1 indicates a positive relationship between
@@ -1123,8 +1197,6 @@ generate_importance_table <- function(model, model_name = "Logistic Model", cont
 generate_importance_table(logistic_model_1, "Logistic Model 1", continuous_vars, train_sds)
 
 ```
-
-**Key Findings**
 
 
 ## Balanced Model
@@ -1820,8 +1892,6 @@ Let's analyze the results of the high-risk age group model:
     the model’s predictive power is less robust compared to the low-risk
     age group model.
 
-**Summary**
-
 The model performs reasonably well in identifying negative cases but
 struggles with sensitivity, which could be problematic when prioritizing
 the identification of high-risk individuals. The higher number of false
@@ -1880,7 +1950,7 @@ generate_importance_table(logistic_model_4, "Logistic Model 4", continuous_vars,
 
 **Key Findings**
 
--   Heart Disease and Hypertension as Significant Risk Factors:
+-   `Heart Disease` and `Hypertension` as Significant Risk Factors:
 
     -   `Heart Disease:` An odds ratio of 1.437 (p = 0.004) indicates
         a 43.7% increased risk for individuals with this condition.
@@ -1907,7 +1977,7 @@ generate_importance_table(logistic_model_4, "Logistic Model 4", continuous_vars,
     0.001). This result could reflect non-linear relationships between
     weight and risk or confounding factors in the high-risk group.
 
--   `Work Type` and Marital Status:
+-   `Work Type` and `Marital Status`:
 
     -   Self-Employed: An odds ratio of 0.803 (p = 0.039) indicates
         a 20% reduction in risk.
