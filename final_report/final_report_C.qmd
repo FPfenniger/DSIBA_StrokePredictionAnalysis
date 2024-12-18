@@ -47,5 +47,5 @@ library(caret)
 {{< include sections/_data_cleaning.qmd >}}
 {{< include sections/_eda.qmd >}}
 {{< include sections/_predictive_model.qmd >}}
-{{< include sections/_model_evaluation.qmd >}}
-{{< include sections/_conclusion.qmd >}}
+{{< include sections/_final_analysis.qmd >}}
+{{< include sections/_appendix.qmd >}}

@@ -3,6 +3,8 @@ title: "_data_cleaning"
 format: html
 ---
 
+# Data cleaning
+
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 library(naniar)
 library(tidyverse)
@@ -13,11 +15,11 @@ library(kableExtra)
 library(dplyr)
 ```
 
-# Data Source
+## Data Source
 
 The data utilized for this project originates from the [**Stroke Prediction Dataset**](https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset/data) available on [**Kaggle**](https://www.kaggle.com/), which is a public platform that hosts a variety of datasets curated by data scientists and researchers. This specific dataset includes health-related variables that are relevant for predicting occurrences of strokes based on features like age, gender, and medical history. Unfortunately, we do not have more information on how the data was collected. The source is confidential and the use of it is only permitted for educational purposes.
 
-# Data Structure
+## Data Structure
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -109,7 +111,7 @@ Our dataset contains 5110 observations with 12 attributes. Here's a summary of t
 
 -   Last update of the dataset was 4 years ago
 
-# Data Cleaning & Wrangeling
+## Data Cleaning & Wrangeling
 
 
 ```{r, warning=FALSE}
@@ -212,17 +214,54 @@ We notice that there is only three non-binary quantitative variables: `age`, `av
 #| code-fold: true
 #| code-summary: "Click to show code"
 
-variables <- c("age", "avg_glucose_level", "bmi")
+# Reshape the data to long format
+long_data <- preprocessed_stroke_tb %>%
+  select(all_of(numerical_variables)) %>%
+  pivot_longer(
+    cols = everything(), 
+    names_to = "Variable", 
+    values_to = "Value"
+  )
 
-# Loop through each variable and render the plots
-for (var in variables) {
-  p <- ggplot(preprocessed_stroke_tb, aes_string(y = var)) +
-    geom_boxplot(outlier.color = "red", outlier.size = 2) +
-    labs(title = paste("Boxplot of", var), y = var, x = "") 
+# Map colors to variables
+variable_colors <- c("age" = "blue", "avg_glucose_level" = "orange", "bmi" = "green")
+
+# Initialize an empty list to store individual plots
+plots <- list()
+
+# Loop through each variable and create separate boxplots
+for (var in numerical_variables) {
+  plot <- plot_ly(
+    data = long_data %>% filter(Variable == var),
+    x = ~Variable,
+    y = ~Value,
+    type = "box",
+    name = var,
+    marker = list(color = variable_colors[var])
+  ) %>%
+    layout(
+      yaxis = list(title = var) # Assign y-axis title to the variable
+    )
   
-  # Explicitly print the plot
-  print(ggplotly(p))
+  # Add the plot to the list
+  plots <- c(plots, list(plot))
 }
+
+# Combine all plots into a single subplot with separate y-axes
+combined_plot <- subplot(
+  plots,
+  nrows = 1, # All in one row
+  shareX = TRUE, # Share x-axis
+  titleX = TRUE, # Display x-axis title
+  titleY = FALSE # Allow individual y-axes
+) %>%
+  layout(
+    title = "Boxplots of Numerical Variables",
+    showlegend = FALSE
+  )
+
+# Display the combined plot
+combined_plot
 ```
 
 ```{r, warning=FALSE}

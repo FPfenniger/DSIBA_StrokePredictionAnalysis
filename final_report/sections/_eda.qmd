@@ -25,8 +25,6 @@ library(scales)
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
 outlier_stroke_tb <- 
   read.csv("../../data/datasets/outlier_stroke_tb.csv")
 balanced_stroke_tb <-
@@ -36,9 +34,6 @@ preprocessed_stroke_tb <-
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
 # Numerical variables
 numerical_variables <- c("age", "avg_glucose_level", "bmi")
 
@@ -48,9 +43,6 @@ numerical_data <- outlier_stroke_tb %>%
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
-
 # Categorical variables
 categorical_variables <- c("stroke", "gender", "ever_married", "work_type", "Residence_type", "smoking_status", "hypertension", "heart_disease")
 
@@ -294,13 +286,11 @@ The second part of our EDA examines the distribution of the categorical variable
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
-
 # Load necessary libraries
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(plotly)
-library(knitr)
 library(scales)
 
 # Define the variables and their labels for categories
