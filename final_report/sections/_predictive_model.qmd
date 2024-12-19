@@ -1,10 +1,10 @@
 ---
-title: "predictive_model"
 format: html
 editor: 
   markdown: 
     wrap: 72
 ---
+# Predictive Model
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 #| code-fold: true
@@ -21,7 +21,7 @@ library(kableExtra)
 library(plotly)
 ```
 
-# Final Data Preparation
+## Final Data Preparation
 
 In the following chapter, we will prepare the data for the modeling
 phase. We will start by encoding the categorical variables, checking
@@ -33,7 +33,7 @@ the Modeling part).
 #| code-fold: true
 #| code-summary: "Click to show code"
 # Import of the dataset
-outlier_stroke_tb <- read.csv("../../data/datasets/outlier_stroke_tb.csv")
+outlier_stroke_tb <- read.csv("../data/datasets/outlier_stroke_tb.csv")
 
 # Display the dataset with up to 10 observations per page
 kable(outlier_stroke_tb, format = "html") %>%
@@ -159,7 +159,7 @@ Where:
 We set the threshold for interpreting effect sizes at 0.3.
 
 If there are zero counts in the contingency table, we apply the
-\*Fisher's Exact Test\*\*. This test is suitable for small sample sizes
+**Fisher's Exact Test**. This test is suitable for small sample sizes
 and contingency tables with low expected frequencies. Fisher’s Exact
 Test calculates the exact probability of observing the given contingency
 table under the null hypothesis of independence, utilizing the
@@ -197,6 +197,7 @@ for (index1 in 1:(length(cat_variables) - 1)) {
     
     cramers_v <- assocstats(contingency_table)$cramer
     
+    # Display only if Cramér's V > 0.3 and p-value < 0.05
     if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
       cat("Relationship between", var1, "and", var2, "\n")
       cat("P-value:", chi_square_result$p.value, "\n")
@@ -422,7 +423,7 @@ individuals below 60 years old, we observe the following:
     right-skewed bimodal distribution. The mean of average glucose level
     slightly decrease to 100.36 mg/dL (versus 106.18 mg/dL) and the same
     goes for the median, which drops to 90.39 mg/dL (versus 91.89
-    mg/dL).
+    mg/dL). We can clearly see, that stroke occurrence is more common in the diabetic range. 
 
 Overall, the distribution of the numerical variables for individuals
 under 60 years old is similar to the full dataset, but with a lower
@@ -446,7 +447,9 @@ summary_table <- as.data.frame.matrix(summary_table)
 knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.names = FALSE)
 ```
 
-```{r}
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 suppressWarnings({
   # Function to calculate proportion of people with stroke by bins and create a line plot
   create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
@@ -807,7 +810,7 @@ Where:
 The scaling will be done after the train-test split to avoid data
 leakage.
 
-# Modeling
+## Modeling
 
 We divide our analysis into four different datasets and predictive
 models: the original dataset, the balanced original dataset, the
@@ -816,9 +819,9 @@ logistic regression model for each dataset, before evaluating them on
 the test set. We will then compare the performance of the models and
 discuss potential strengths and weaknesses.
 
-## Model and Evaluation Metrics
+### Model and Evaluation Metrics
 
-### Logistic Regression
+#### Logistic Regression
 
 Logistic regression is a statistical method used for modeling the
 relationship between a set of predictor variables and a binary outcome
@@ -858,7 +861,7 @@ observing the given data.
 -   Lack of influential outliers
 -   Linearity of independent variables and log odds
 
-### Evaluation Metrics
+#### Evaluation Metrics
 
 First of all we introduce the metrics we will be using to evaluate our
 models.
@@ -935,7 +938,7 @@ $$
     the importance and direction of each feature in predicting the
     target variable.
 
-## Naive Model
+### Naive Model
 
 We divide our analysis into four different datasets and predictive
 models: the original dataset, the balanced original dataset, the
@@ -944,7 +947,7 @@ logistic regression model for each dataset, before evaluating them on
 the test set. We will then compare the performance of the models and
 discuss potential strengths and weaknesses.
 
-### Train-test split
+#### Train-test split
 
 In order to evaluate the performance of our model, we split the original
 dataset into a training and a test set. We allocate 80% of the data for
@@ -1014,7 +1017,7 @@ for (var in continuous_vars) {
 }
 ```
 
-### Model
+#### Model
 
 With the `caret` package, we specify our first logistic model by
 specifying (method= "glm") and (family = "binomial") to train a logistic
@@ -1051,7 +1054,7 @@ logistic_model_1 <- train(
 )
 ```
 
-### Evaluation and Discussion
+#### Evaluation and Discussion
 
 We start by evaluating the model on the test set.
 
@@ -1196,12 +1199,13 @@ generate_importance_table(logistic_model_1, "Logistic Model 1", continuous_vars,
 
 ```
 
+We don't discuss the metrics as the model proved useless. A deeper discussion of the predictors will be done for the other models and in the final analysis part.
 
-## Balanced Model
+### Balanced Model
 
 We repeat the same process for our balanced baseline model.
 
-### Train-test split
+#### Train-test split
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -1264,7 +1268,7 @@ for (var in continuous_vars) {
 }
 ```
 
-### Model
+#### Model
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -1297,7 +1301,7 @@ logistic_model_2 <- train(
 )
 ```
 
-### Evaluation and Discussion
+#### Evaluation and Discussion
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1356,7 +1360,7 @@ This balance between Precision and Recall is encapsulated in the **F1 score** of
 predictive accuracy.
 
 Additionally, the model achieves an **Accuracy** of 77.9%, highlighting
-reliable classification performance. The Specificity of 0.728 signifies
+reliable classification performance. The **Specificity** of 0.728 signifies
 that 72.8% of actual negative cases are correctly identified. Together,
 these metrics suggest that the model is well-suited for effectively
 distinguishing between positive and negative outcomes.
@@ -1402,9 +1406,7 @@ ggplot(data = data.frame(
 The **ROC curve** demonstrates the model’s strong discriminative ability,
 with an AUC (Area Under the Curve) of 0.839. This means that the model
 has an 83.9% probability of correctly distinguishing between positive
-and negative cases. The steep rise in the ROC curve reflects an
-effective balance between sensitivity (true positive rate) and
-specificity (true negative rate).
+and negative cases.
 
 Finally, we examine the effects of the predictors on the outcome. By
 analyzing the odds ratios, we can assess both the importance and
@@ -1443,18 +1445,18 @@ generate_importance_table(logistic_model_2, "Logistic Model 2", continuous_vars,
 -   Predictors like `BMI` and `Residence Type`: Urban were not statistically
     significant (p \> 0.05).
 
--   Negative coefficients for `Work Type`: Government Job and
-    Self-Employed indicate that individuals in these categories are less
-    likely to experience a stroke.
+-   Negative coefficients for `Work Type` and `Ever_Married`: Government Job,
+    Self-Employment and Marriage indicate that individuals in these categories are less
+    likely to experience a stroke and serve as protective factors.
 
-## Low-Risk Age Model
+### Low-Risk Age Model
 
 In this section , we build our first stratified model for the low-risk
 age group. Here we first split the original dataset into test and
 training set and perform then the previously mentionned preprocessing
 steps for the training set.
 
-### Train-test split
+#### Train-test split
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -1515,7 +1517,7 @@ for (var in continuous_vars) {
 }
 ```
 
-### Model
+#### Model
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -1548,7 +1550,7 @@ logistic_model_3 <- train(
 )
 ```
 
-### Evaluation and Discussion
+#### Evaluation and Discussion
 
 ```{r, message = FALSE}
 #| code-fold: true
@@ -1708,14 +1710,14 @@ generate_importance_table(logistic_model_3, "Logistic Model 3", continuous_vars,
     not statistically significant in this stratified model, suggesting
     these factors may be less influential in a low-risk age group.
 
-## High-Risk Age Model
+### High-Risk Age Model
 
 Our final model includes all individuals aged 60 and above. Due to the
 low variance in age and the fact that the stratification process
 inherently accounts for `age`, we have removed the age feature entirely
 from the dataset.
 
-### Train-test split
+#### Train-test split
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -1782,7 +1784,7 @@ for (var in continuous_vars) {
 }
 ```
 
-### Model
+#### Model
 
 ```{r, warning=FALSE}
 #| code-fold: true
@@ -1815,7 +1817,7 @@ logistic_model_4 <- train(
 )
 ```
 
-### Evaluation and Discussion
+#### Evaluation and Discussion
 
 ```{r, message = FALSE}
 #| code-fold: true

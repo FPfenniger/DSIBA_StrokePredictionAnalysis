@@ -1,10 +1,9 @@
 ---
-title: "_eda"
 format: html
 ---
-
 # Exploratory Data Analysis
 
+We decided to split our EDA into three distinct parts. Part I treats descriptive statistics and the general structure of our dataset. Part II focuses on a univariate analysis of the features and their correlations with the target variable `stroke`. Part III will be dedicated to a short bivariate analysis of the features and an examination of multicollinearity. For the visualizations, we opted for interactivity and chose to use `plotly`.
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 library(tidyverse)
 library(plotly)
@@ -26,11 +25,11 @@ library(scales)
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
 outlier_stroke_tb <- 
-  read.csv("../../data/datasets/outlier_stroke_tb.csv")
+  read.csv("../data/datasets/outlier_stroke_tb.csv")
 balanced_stroke_tb <-
-  read.csv("../../data/datasets/balanced_stroke_tb.csv")
+  read.csv("../data/datasets/balanced_stroke_tb.csv")
 preprocessed_stroke_tb <-
-  read.csv("../../data/datasets/preprocessed_stroke_tb.csv")
+  read.csv("../data/datasets/preprocessed_stroke_tb.csv")
 ```
 
 ```{r, echo = FALSE, message = FALSE, warning = FALSE}
@@ -95,9 +94,10 @@ knitr::kable(summary_table, caption = "Summary of Categorical Variables with Pro
 
 ## Univariate Analysis
 
-Since our dataset comprises a variety of health-related metrics, we will briefly describe the meaning of each below:
+Since our dataset comprises a variety of health-related metrics, we will briefly describe important ranges:
 
-`Body Mass Index (BMI)` is a standardized measure used to assess body fat based on an individual’s weight relative to their height. It is calculated by dividing a person’s weight in kilograms by the square of their height in meters (kg/m²). BMI serves as a useful screening tool to categorize individuals into different weight status groups, which are associated with various health risks (World Health Organization [WHO], 2008)[^6].
+**Body Mass Index (BMI)**
+`Body Mass Index (BMI)` is a standardized measure used to assess body fat based on an individual’s weight relative to their height. It is calculated by dividing a person’s weight in kilograms by the square of their height in meters (kg/m²). BMI serves as a useful screening tool to categorize individuals into different weight status groups, which are associated with various health risks (World Health Organization [WHO], 2008)[^7].
 
 The BMI classifications are as follows:
 
@@ -110,8 +110,7 @@ The BMI classifications are as follows:
 
 
 **Diabetic Range**
-
-Diabetes mellitus is a chronic medical condition characterized by elevated `avg_glucose_levels`. Accurate classification of blood glucose levels is essential for the diagnosis and management of diabetes. According to the American Diabetes Association (ADA, 2023), the diagnostic criteria for diabetes based on blood glucose levels are as follows:
+Diabetes mellitus is a chronic medical condition characterized by elevated `avg_glucose_level`. Accurate classification of blood glucose levels is essential for the diagnosis and management of diabetes. According to the American Diabetes Association (ADA, 2023), the diagnostic criteria for diabetes based on blood glucose levels are as follows:
 
 - Fasting Blood Glucose: A level of 126 mg/dL (7.0 mmol/L) or higher after at least 8 hours of fasting.
 - Postprandial Blood Glucose: A level of 140 mg/dL (7.8 mmol/L) or higher two hours after eating.
@@ -121,7 +120,6 @@ These thresholds are utilized to identify individuals who may require medical in
 [^7]: World Health Organization. Regional Office for the Western Pacific. (2000). The Asia-Pacific perspective: Redefining obesity and its treatment. Sydney: Health Communications Australia. Retrieved from https://iris.who.int/handle/10665/206936
 
 [^8]: American Diabetes Association. (2023). Standards of Medical Care in Diabetes—2023. Diabetes Care, 46(Supplement 1), S1–S264. Retrieved from https://diabetesjournals.org/care/article/46/Supplement_1/S1/148054/Introduction-and-Methodology-Standards-of-Care-in
-
 
 ### Numerical variables
 
@@ -168,14 +166,11 @@ combined_plot
 
 Based on the summary table for numerical variables and the violin plot, we can observe the following descriptive characteristics:
 
--   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years but a peak around 57 years, a second peak around 78 years, and a standard deviation of 22.61 years.
+-   `age`: The dataset includes individuals with ages ranging from 0.08 to 82 years, with an average age of 43.23 years and a standard deviation of 22.61 years.
 -   `avg_glucose_level`: We can observe a right-skewed bimodal distribution with a mean of 106.15 and a standard deviation of 45.28. The average glucose levels range from 55.12 to 271.74 mg/dL.
 -   `bmi`: The histogram shows a right-skewed distribution with a mean of 28.86 and a standard deviation of 7.85. The BMI values range from 10.3 to 97.6. 
 
-The dataset population exhibits higher levels of `avg_glucose_level` and `bmi` than recommended by WHO.
-
-
-
+The dataset population exhibits higher levels of `avg_glucose_level` and `bmi` than recommended by WHO. Let's have a closer look at the distribution and stroke occurrence. 
 ```{r, message = FALSE}
 #| code-fold: true
 #| code-summary: "Click to show code"
@@ -554,17 +549,15 @@ In contrast, the following variables appear to be not relevant, as there are no 
 
 -   `Residence_type`
 
-Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidatesamong the categorical variables for further exploration and modeling. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. 
+Based on the univariate analysis, `heart_disease`, `smoking_status`, `hypertension`, `ever_married`, and `work_type` could be potential candidates among the categorical variables for modeling. These variables exhibit notable differences in the proportions of stroke cases across their levels, suggesting they may be important predictors of stroke risk. 
 Among the numerical variables, `age` and `avg_glucose_level` show a weak to very weak positive relationship with the target variable `stroke`, suggesting they may also be important predictors of stroke risk. These predictors may even become more relevant when examined in a balanced dataset, which our initial hypotheses would suggest.
 
 The initial observations align with existing research highlighting the significance of these factors in strokes. For instance, a study by Ute Mons et al. (2015)[^9] demonstrated that smoking significantly increases the risk of cardiovascular events, including stroke, among older adults.
 Additionally, research has shown that smoking cessation can substantially lower the risk of recurrent vascular events and all-cause mortality after a first cardiovascular event[^10].
-Regarding numerical variables, the exploratory data analysis indicates that age and avg_glucose_level have a positive relationship with stroke occurrence. This is consistent with literature suggesting that elevated fasting blood glucose levels are associated with an increased risk of ischemic stroke [^11].
+Regarding numerical variables, the exploratory data analysis indicates that `age` and `avg_glucose_level` have a positive relationship with stroke occurrence. This is consistent with literature suggesting that elevated fasting blood glucose levels are associated with an increased risk of ischemic stroke [^11].
 Furthermore, age is a well-established risk factor for stroke, with older individuals facing higher susceptibility [^12].
+Surprinsingly, `bmi` seems to be no important predictor and has practically no association with stroke occurrence. 
 
-These insights underscore the importance of considering both categorical and numerical variables in developing predictive models for stroke risk assessment.
-
-Certainly! Here are the four references formatted in APA style with footnote markers, similar to your example:
 
 [^9]: Mons, U., Müezzinler, A., Gellert, C., Schöttker, B., Abnet, C. C., Bobak, M., … & Brenner, H. (2015). Impact of smoking and smoking cessation on cardiovascular events and mortality among older adults: Meta-analysis of individual participant data from prospective cohort studies of the CHANCES consortium. BMJ, 350, h1551. https://doi.org/10.1136/bmj.h1551
 

@@ -1,16 +1,15 @@
 ---
-title: "Final Analysis"
 format: html
 ---
-
 # Final Analysis
+
 In this final section, we will present the results of our analysis and discuss the implications of our findings. We start with a results section, where we discuss the performance of the models we trained. We then move on to a conclusions section, where we discuss the implications of our findings and how they relate to our research questions. Finally, we present some final thoughts on the project.
 
 ## Results
 In this section we discuss and summarize the performance of each model and what potential implications they have for our research questions, before answering them directly in the next section.
 
 ### Naive Model
-Our naive model, which simply predicted the most common outcome (No stroke), performed quite badly. With a recall of zero, this model recognizes no Strokes and cannot predict stroke occurrence. This is not surprising, as the data is imbalanced and the model is not trained to recognize the minority class. No insights can be gathered from this model and in a real-world setting, it would be useless.
+Our naive model, which simply predicted the most common outcome (No stroke), performed quite badly. With a recall of zero, this model recognizes no strokes and cannot predict stroke occurrence. This is not surprising, as the data is imbalanced and the model is not trained to recognize the minority class. No insights can be gathered from this model and in a real-world setting, it would be useless.
 
 ### Balanced Model
 The balanced model performed much better than the naive model. Particularly the high recall, makes us confident that this model could be useful in a real-world setting. 
@@ -37,7 +36,7 @@ The poor performance of the high-risk age model can primarily be attributed to t
 
 The comparative evaluation of the stratified logistic regression models across **low-risk**, **high-risk**, and the **balanced group** provided valuable insights into model performance, predictor significance, and the challenges of predicting risk across different populations.
 
-#### Model Performance Overview
+### Model Performance Overview
 
 1. **Low-Risk Age Group Models**  
    The models for the low-risk age groups demonstrated **strong performance**, with high sensitivity (**Recall > 84%**), precision, and balanced overall accuracy (**>78%**). The discriminative ability was also excellent, with **AUC values > 0.84**. These models effectively identified key risk factors while minimizing false negatives, making them reliable for early risk screening in younger, healthier populations.
@@ -48,35 +47,40 @@ The comparative evaluation of the stratified logistic regression models across *
 3. **Balanced (Overall) Model**  
    The overall model, which combined all age groups, achieved a moderate balance between the two extremes. With an **Accuracy of 77.9%**, an **F1 score of 0.79**, and an **AUC of 0.839**, the balanced model demonstrated reliable performance across both low- and high-risk individuals. While it does not perform as well as the stratified low-risk model, it provides a reasonable compromise for applications where age stratification is not feasible.
 
-#### Insights on Key Predictors
+### Insights on Key Predictors
 
 Across all models, several predictors consistently emerged as significant, while others revealed varying effects depending on the age group:
 
 1. Hypertension and Heart Disease
+
    These were the most prominent predictors across all groups, particularly in older individuals. In the high-risk model, hypertension increased the odds of the outcome by approximately 1.3x, while heart disease had an odds ratio of **1.44**. This aligns with their known role as primary health risk factors.
 
 2. Smoking Status  
+
    - In the low-risk model, both current and former smoking significantly increased risk, with odds ratios exceeding 1.4, indicating a strong association. This aligns well with research, that suggest that for younger individuals life style choices are more important. Hemorrhagic strokes are relatively more common, often linked to trauma, aneurysms, or substance use. 
    - In the high-risk group, smoking effects diminished, likely due to the dominance of other comorbidities, such as hypertension and heart disease, in older individuals.Conversely, ischemic strokes are more common in older individuals, often due to atherosclerosis, hypertension, or heart disease.
 
 3. Age and Average Glucose Level
+
    - Age emerged as an important gradual risk factor in low-risk model and the balanced model as well.
    - Average glucose level had a consistently small but significant positive association across all models, reinforcing the role of metabolic health.
 
 4. Protective Predictors
-   Predictors such as being ever marriedand working in **self-employed** or **government jobs** consistently demonstrated a protective effect. For instance:
+
+   Predictors such as being ever married and working in **self-employed** or **government jobs** consistently demonstrated a protective effect. For instance:
    - Being **ever married** reduced risk significantly in the high-risk group (**OR = 0.49, p < 0.001**).  
    - Self-employed individuals also exhibited lower odds of the outcome (**OR ~ 0.70**).  
 
 These protective effects may reflect unmeasured social, economic, or lifestyle factors that warrant further exploration.
 
 5. BMI
+
    BMI demonstrated contradictory effects across models:
    - In low-risk groups, BMI had a slight positive association.  
    - In the high-risk model, BMI showed a **protective effect** (**OR = 0.96**), possibly due to non-linear relationships where low BMI could indicate frailty or underlying illness in older individuals.
 
 
-#### Key Challenges
+### Key Challenges
 
 1. Complex, Non-Linear Relationships
    The high-risk model underperformed due to its inability to capture the **non-linear and threshold effects** that are prevalent in older populations, such as interactions between hypertension, heart disease, and glucose levels.
@@ -84,18 +88,16 @@ These protective effects may reflect unmeasured social, economic, or lifestyle f
 2. Heterogeneity in the High-Risk Group  
    The high variability in health profiles and comorbidities within the high-risk group made it difficult for the model to identify consistent patterns, leading to lower Recall and discriminative ability.
 
-3. Balanced Model Trade-offs
-   While the balanced model performed reasonably well across both age groups, it did not capture age-specific nuances as effectively as the stratified low-risk model. This highlights the importance of tailoring models to subgroups to optimize predictive performance.
-
-4. External Validity, Generalizability & Missing Health Metrics
-   We suspect that important health metrics such as cholesterol levels, physical activity, and dietary habits, or alcohol consumption could further improve model performance and provide more comprehensive risk assessments. Future analysis should consider incorporating these variables to enhance predictive power. Our findings may be significantly limited in external validity because these metrics are missing
+3. External Validity, Generalizability & Missing Health Metrics
+   We suspect that important health metrics such as cholesterol levels, physical activity, and dietary habits, or alcohol consumption could further improve model performance and provide more comprehensive risk assessments. Future analysis should consider incorporating these variables to enhance predictive power. Our findings may be significantly limited in external validity because these metrics are missing. Current research highlights the importance of lifestyle factors, particularly for younger individuals. 
    
 ### Research Questions
 To end our predictive model analysis, we will now answer our research questions based on the insights gained from our models:
 
 1. What are the most significant risk factors associated with stroke?
-   - Hypertension, Heart Disease, Smoking, Age, and Average Glucose Level emerged as the most significant risk factors across all models. These factors consistently increased the odds of stroke occurrence, highlighting their critical role in predicting adverse health outcomes.
-    
+   - Hypertension, Heart Disease, Smoking, Age, and Average Glucose Level emerged as the most significant risk factors across all models. These factors consistently increased the odds of stroke occurrence, highlighting their critical role in predicting adverse health outcomes. Surprisingly, BMI showed no consistent effect on stroke risk in our analysis, which contradicts current research findings. 
+   
+   
 2. How accurately can a logistic regression model predict the occurrence of having a stroke?
-   - The logistic regression models demonstrated varying levels of predictive accuracy, with the low-risk age group model performing the best (AUC > 0.84). The balanced model also achieved a reasonable balance between sensitivity and specificity, with an AUC of 0.839. However, the high-risk age group model exhibited lower performance due to the complexity and heterogeneity of older populations. Overall, we are content with the predictive power of our models, however with further investigation and refinement such as regularization or ensemble methods, we could potentially improve the models even more, particularly for the high-risk age group.
+   - The logistic regression models demonstrated varying levels of predictive accuracy, with the low-risk age group model performing the best (AUC > 0.84). The balanced model also achieved a reasonable balance between sensitivity and specificity, with an AUC of 0.839. However, the high-risk age group model exhibited lower performance probably due to the complexity and heterogeneity of the older population. Overall, we are content with the predictive power of our models, however with further investigation and refinement such as regularization or ensemble methods, we could potentially improve the models even more, particularly for the high-risk age group.
 
