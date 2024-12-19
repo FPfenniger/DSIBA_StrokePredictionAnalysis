@@ -211,7 +211,9 @@ write.csv(preprocessed_stroke_tb, "../data/datasets/preprocessed_stroke_tb.csv",
 
 We notice that there is only three non-binary quantitative variables: `age`, `avg_glucose_level` and `bmi`. To visualize outliers in each of these variables, we use boxplots. The points outside the range defined by the whiskers were identified as outliers.
 
-```{r}
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
 # Define y-axis labels for each variable
 y_axis_labels <- c("age" = "in years", 
                    "avg_glucose_level" = "in mg/dL", 
