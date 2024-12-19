@@ -1,0 +1,52 @@
+---
+format: html
+---
+# Introduction
+
+## Overview and Motivation
+
+Stroke is a leading global health issue, causing long-term disability and claiming millions of lives each year. According to the World Health Organization (WHO), approximately 15 million people worldwide experience a stroke annually, with 5 million deaths and an additional 5 million left with permanent disabilities[^1]. A stroke is a medical emergency that occurs when blood flow to a part of the brain is interrupted, depriving brain cells of oxygen and nutrients and causing them to die. This disruption can be caused by a blockage (ischemic stroke) or by bleeding in the brain (hemorrhagic stroke). The impact is particularly significant given that strokes can lead to loss of mobility, speech, and cognitive function, affecting individuals’ quality of life and creating burdens for families and communities.
+
+Motivated by the pressing need to combat this crisis, our project aims to identify and analyze the risk factors contributing to stroke incidence. Notably, the American Heart Association reports that approximately 80% of strokes are preventable through appropriate preventive measures[^2]. This statistic underscores the potential for impactful change; by understanding the key risk factors, we can develop targeted strategies to significantly reduce stroke occurrence and enhance public health. By focusing our research on these factors, we hope to uncover insights that could help in this regard.
+
+[^1]: Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. <https://doi.org/10.1016/j.ncl.2008.07.003>
+
+[^2]: American Heart Association. “New guideline: Preventing a first stroke may be possible with screening, lifestyle changes”. <https://newsroom.heart.org/news/new-guideline-preventing-a-first-stroke-may-be-possible-with-screening-lifestyle-changes>
+
+Our project has several goals, as outlined below :
+
+1)  Develop a predictive model for stroke occurrence based on risk factors
+
+2)  Conduct exploratory data analysis to understand the trends and relationships between risk factors and stroke incidence
+
+3)  Create visualizations to illustrate the results and enhance the understanding of stroke risk factors
+
+We will implement a **logistic regression model** as our predictive tool to address our first project goal. Logistic regression is ideal for predicting stroke occurrence because it models the probability of a binary outcome (stroke/no stroke) based on multiple factors. This model will help us determine the likelihood of stroke occurrence based on the identified risk factors. By analyzing these relationships, we aim to accurately predict which individuals are at a higher risk of experiencing a stroke.
+
+## Related Work
+
+While we did not directly base our work on the studies reviewed, we found inspiration in their findings. For example, Arboix (2015)[^3] highlights the heterogeneity of ischemic stroke by identifying distinct cardiovascular risk factor profiles for cardioembolic, lacunar, and atherothrombotic subtypes, emphasizing the need for a nuanced understanding of risk factors to enhance prevention efforts. Heart Disease and hypertension seem to be important risk factors and we expect similar findings in our dataset. The study suggest it to be the most common risk factor across all ischemic stroke subtypes. Similarly, Grysiewicz et al. (2008)[^4] provide an overall epidemiological overview by examining the incidence, prevalence, mortality, and various risk factors associated with stroke. These perspectives motivated us as we explored sources of stroke risk factors and their relationships within our dataset. Additionally, the research by Yi et al. (2020)[^5] informed our approach by illustrating how population-specific surveys can uncover important insights into stroke prevalence and risk factors. Lastly, Kelly-Hayes (2010)[^6] highlights the long-term impact of age and health behaviors on stroke risk, further inspiring us to consider these dimensions in our analysis. Especially age emerged in this study as an important predictor of stroke occurrence. Although our project is grounded in our dataset and specific analysis, these studies served as valuable sources of inspiration as we defined our research objectives. 
+
+[^3]: Arboix, A. (2015). Cardiovascular risk factors for acute stroke: Risk profiles in the different subtypes of ischemic stroke. World Journal of Clinical Cases, 3(5), 418-429. <https://doi.org/10.12998/wjcc.v3.i5.418>
+
+[^4]: Grysiewicz, R. A., Thomas, K., & Pandey, D. K. (2008). Epidemiology of ischemic and hemorrhagic stroke: Incidence, prevalence, mortality, and risk factors. Neurologic Clinics, 26(4), 871-895. <https://doi.org/10.1016/j.ncl.2008.07.003>
+
+[^5]: Yi, X., Luo, H., Zhou, J., and al. (2020). Prevalence of stroke and stroke related risk factors: A population-based cross-sectional survey in southwestern China. BMC Neurology, 20, 5. <https://doi.org/10.1186/s12883-019-1592-z>
+
+[^6]: Kelly-Hayes, M. (2010). Influence of age and health behaviors on stroke risk: Lessons from longitudinal studies. Journal of the American Geriatrics Society, 58(s2), S325-S328. <https://doi.org/10.1111/j.1532-5415.2010.02915.x>
+
+## Research Questions
+
+Our first research question focuses on determining:
+
+-   What are the most significant risk factors associated with stroke?
+
+Furthermore, as we develop a logistic regression model, we also seek to assess its predictive accuracy. Therefore, our second research question is:
+
+-   How accurately can a logistic regression model predict the occurrence of having a stroke?
+
+In the initial phase of our project, we began with a broad inquiry into the risk factors associated with strokes. Our primary aim was to identify relevant variables within the data that could help us understand the factors contributing to stroke risk. 
+
+To address our first research question regarding the most significant risk factors associated with strokes, we conducted an exploratory data analysis (EDA). This analysis allowed us to visualize data distributions, identify potential relationships between variables, and uncover patterns that informed our understanding of stroke risk factors. 
+
+Our exploratory data analysis revealed relatively modest associations between stroke and most risk factors. To deepen our investigation, we directed our focus toward developing logistic regression models for two specific populations within our dataset: those under 60 years old and those 60 years and older. This approach enabled us to create a more refined analysis of risk factors for each age group. Additionally, due to the dataset's low proportion of stroke cases, upsampling was necessary to prevent bias in the predictive model.
