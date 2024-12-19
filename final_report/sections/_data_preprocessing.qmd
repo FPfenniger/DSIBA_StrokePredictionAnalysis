@@ -211,9 +211,11 @@ write.csv(preprocessed_stroke_tb, "../data/datasets/preprocessed_stroke_tb.csv",
 
 We notice that there is only three non-binary quantitative variables: `age`, `avg_glucose_level` and `bmi`. To visualize outliers in each of these variables, we use boxplots. The points outside the range defined by the whiskers were identified as outliers.
 
-```{r, warning=FALSE}
-#| code-fold: true
-#| code-summary: "Click to show code"
+```{r}
+# Define y-axis labels for each variable
+y_axis_labels <- c("age" = "in years", 
+                   "avg_glucose_level" = "in mg/dL", 
+                   "bmi" = "in kg/m²")
 
 # Reshape the data to long format
 long_data <- preprocessed_stroke_tb %>%
@@ -241,7 +243,11 @@ for (var in numerical_variables) {
     marker = list(color = variable_colors[var])
   ) %>%
     layout(
-      yaxis = list(title = var) # Assign y-axis title to the variable
+      yaxis = list(
+        title = y_axis_labels[var],  # Assign custom y-axis title
+        titlefont = list(size = 14) # Optional: Adjust font size
+      ),
+      xaxis = list(title = "")
     )
   
   # Add the plot to the list
@@ -251,10 +257,10 @@ for (var in numerical_variables) {
 # Combine all plots into a single subplot with separate y-axes
 combined_plot <- subplot(
   plots,
-  nrows = 1, # All in one row
-  shareX = TRUE, # Share x-axis
-  titleX = TRUE, # Display x-axis title
-  titleY = FALSE # Allow individual y-axes
+  nrows = 1,         # All in one row
+  shareX = TRUE,     # Share x-axis
+  titleX = TRUE,     # Display x-axis title
+  titleY = TRUE     # Allow individual y-axes
 ) %>%
   layout(
     title = "Boxplots of Numerical Variables",
@@ -264,6 +270,7 @@ combined_plot <- subplot(
 # Display the combined plot
 combined_plot
 ```
+
 
 Additionally, we sum up the outliers for each numerical variable:
 ```{r, warning=FALSE}
