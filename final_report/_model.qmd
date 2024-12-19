@@ -1,0 +1,2199 @@
+---
+format: html
+editor: 
+  markdown: 
+    wrap: 72
+---
+# Predictive Model
+
+```{r, echo = FALSE, message = FALSE, warning = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(caret)
+library(tidyverse)
+library(vcd)
+library(knitr)
+library(janitor)
+library(caret)  
+library(MLmetrics)  
+library(pROC)
+library(kableExtra)
+library(plotly)
+```
+
+## Final Data Preparation
+
+In the following chapter, we will prepare the data for the modeling
+phase. We will start by encoding the categorical variables, checking
+them for multicollinearity, balancing the dataset, and finally scaling
+the continuous variables (which is done after the train-test split in
+the Modeling part).
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Import of the dataset
+outlier_stroke_tb <- read.csv("../data/datasets/outlier_stroke_tb.csv")
+
+# Display the dataset with up to 10 observations per page
+kable(outlier_stroke_tb, format = "html") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+### Feature Encoding
+
+For categorical feature encoding, we transform categorical variables
+into dummy variables for use in our predictive model. To avoid the dummy
+variable trap, we drop the first level of each categorical variable and
+use it as a reference level. First, binary variables are encoded as 0
+and 1.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Initialize the dataset
+encoded_stroke_tb <- outlier_stroke_tb
+
+# Encode binary variables
+encoded_stroke_tb$gender <- factor(
+  ifelse(encoded_stroke_tb$gender == "Female", "1", 
+         ifelse(encoded_stroke_tb$gender == "Male", "0", NA))
+)
+
+encoded_stroke_tb$ever_married <- factor(
+  ifelse(encoded_stroke_tb$ever_married == "Yes", "1", 
+         ifelse(encoded_stroke_tb$ever_married == "No", "0", NA))
+)
+
+encoded_stroke_tb$Residence_type <- factor(
+  ifelse(encoded_stroke_tb$Residence_type == "Urban", "1", 
+         ifelse(encoded_stroke_tb$Residence_type == "Rural", "0", NA))
+)
+```
+
+In the next step, we encode the remaining categorical variables,
+`smoking_status` and `work_type`, which have multiple categories. For
+each, we define one reference category. Using the model.matrix()
+function, we create dummy variables and drop the first level to avoid
+multicollinearity. Specifically, we set “never smoked” as the reference
+level for `smoking_status` and “Private” as the reference level for
+`work_type`.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# smoking_status
+smoking_status_matrix <- model.matrix(~ smoking_status - 1, data = outlier_stroke_tb)
+colnames(smoking_status_matrix) <- gsub("smoking_status", "smoking_status", colnames(smoking_status_matrix))
+# Exclude reference level "never smoked"
+smoking_status_matrix <- smoking_status_matrix[, -grep("never smoked", colnames(smoking_status_matrix))]
+
+# work_type
+work_type_matrix <- model.matrix(~ work_type - 1, data = outlier_stroke_tb)
+colnames(work_type_matrix) <- gsub("work_type", "work_type", colnames(work_type_matrix))
+# Exclude reference level "Private"
+work_type_matrix <- work_type_matrix[, -grep("Private", colnames(work_type_matrix))]
+
+# Bind matrices to dataset
+encoded_stroke_tb <- cbind(
+  encoded_stroke_tb[, !(names(outlier_stroke_tb) %in% c("smoking_status", "work_type"))],
+  smoking_status_matrix,
+  work_type_matrix
+)
+```
+
+And we turn the binary variables into factors with the appropriate
+levels and apply the `make.names()` function to the column names to
+ensure they are valid.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Ensure binary variables are factors with correct levels
+binary_vars <- c("gender", "hypertension", "heart_disease", "ever_married", "Residence_type", "work_typechildren", "work_typeGovt_job", "work_typeSelf-employed", "stroke", "smoking_statusformerly smoked", "smoking_statussmokes")
+
+encoded_stroke_tb[binary_vars] <- lapply(encoded_stroke_tb[binary_vars], function(col) {
+  factor(col, levels = c("0", "1"))
+})
+
+# Apply make.names() to column names
+colnames(encoded_stroke_tb) <- make.names(colnames(encoded_stroke_tb))
+
+# Display the dataset with up to 10 observations per page
+kable(encoded_stroke_tb, format = "html") %>%
+  kable_styling(bootstrap_options = "striped", full_width = FALSE) %>%
+  scroll_box(height = "300px")
+```
+
+### Multicollinearity
+
+To examine associations between categorical variables, we use the
+**chi-squared test**. This statistical test determines whether there is
+a significant association between two categorical variables. The test
+statistic is computed as:
+
+$$
+\chi^2 = \sum \frac{(O_i - E_i)^2}{E_i}
+$$
+
+Where: 
+
+- O_i = Observed frequency 
+- E_i = Expected frequency
+
+To assess the significance of the test results, we additionally compute
+**Cramér's V** for effect size, defined as:
+
+$$
+V = \sqrt{\frac{\chi^2}{n \cdot \text{min}(r-1, c-1)}}
+$$
+
+Where: 
+
+- chi\^2 = Chi-squared statistic 
+- n = Total number of observations 
+- r, c = Number of rows and columns in the contingency table
+
+We set the threshold for interpreting effect sizes at 0.3.
+
+If there are zero counts in the contingency table, we apply the
+**Fisher's Exact Test**. This test is suitable for small sample sizes
+and contingency tables with low expected frequencies. Fisher’s Exact
+Test calculates the exact probability of observing the given contingency
+table under the null hypothesis of independence, utilizing the
+hypergeometric distribution:
+
+$$
+P = \frac{{\binom{a+b}{a} \cdot \binom{c+d}{c}}}{{\binom{n}{a+c}}}
+$$
+
+Where: 
+
+- a, b, c, d = Counts in the contingency table cells. 
+- n = Total number of observations.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+cat_variables = c("gender", "hypertension", "heart_disease", "ever_married", "Residence_type", "work_typechildren", "work_typeGovt_job", "work_typeSelf.employed", "smoking_statusformerly.smoked", "smoking_statussmokes")
+
+for (index1 in 1:(length(cat_variables) - 1)) {
+  var1 <- cat_variables[index1]
+  
+  for (index2 in (index1 + 1):length(cat_variables)) {
+    var2 <- cat_variables[index2]
+    
+    contingency_table <- table(encoded_stroke_tb[[var1]], encoded_stroke_tb[[var2]])
+    
+    # Run Fisher's Exact Test if there are zero counts, otherwise Chi-square Test
+    if (any(contingency_table == 0)) {
+      chi_square_result <- fisher.test(contingency_table, simulate.p.value = TRUE)
+    } else {
+      chi_square_result <- chisq.test(contingency_table)
+    }
+    
+    cramers_v <- assocstats(contingency_table)$cramer
+    
+    # Display only if Cramér's V > 0.3 and p-value < 0.05
+    if (cramers_v > 0.3 && chi_square_result$p.value < 0.05) {
+      cat("Relationship between", var1, "and", var2, "\n")
+      cat("P-value:", chi_square_result$p.value, "\n")
+      cat("Cramér's V:", cramers_v, "\n")
+      print(contingency_table)
+      cat("\n")
+    }
+  }
+}
+```
+
+The only relationship that appears problematic in terms of
+multicollinearity is between `ever_married` and `work_typechildren`.
+This is understandable, as children are not yet married, resulting in a
+strong correlation between `ever_married` (0) and `work_typechildren`
+(1). Therefore, for our predictive models, we will exclude
+`work_typechildren` because both evidence and our exploratory data
+analysis (EDA) indicate that stroke risk is strongly correlated with
+age, rendering this variable a weak predictor.
+
+```{r}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Drop work_typechildren
+encoded_stroke_tb <- encoded_stroke_tb %>% 
+  select(-work_typechildren)
+```
+
+Since all other effect sizes are below 0.3, we can confidently conclude
+that the remaining categorical features are sufficiently independent to
+serve as predictors. Therefore, multicollinearity does not appear to be
+an issue among the variables, allowing us to proceed. Additionally, the
+correlation matrix presented in the previous chapter shows low
+correlations between features. Consequently, we refrain from conducting
+a multivariate analysis, as the current results robustly indicate no
+multicollinearity among the features.
+
+### Balancing & Stratified Sampling
+
+During the exploratory data analysis (EDA), we identified `age` as the
+most significant predictor of stroke occurrence. To account for this, we
+will divide the dataset into two age groups: individuals under 60 years
+old (low-risk group) and individuals aged 60 and above (high-risk
+group). This stratification aims to uncover distinct patterns and risk
+factors for stroke within each age category. These stratified datasets
+will serve as the foundation for our two separate predictive models.
+
+Furthermore, our EDA revealed that `stroke` is a rare event in the
+dataset, occurring in only 4.9% of individuals. This class imbalance can
+negatively impact the model’s performance by causing it to favor the
+majority class (no stroke) and inadequately detect actual stroke cases.
+To mitigate this issue, we will upsample the minority class (stroke) to
+balance the dataset. This approach ensures that the model adequately
+learns from stroke cases, enhancing its ability to detect strokes and
+providing a more balanced and meaningful predictive performance
+
+#### Stratified Sampling
+
+We begin by creating two stratified datasets by splitting the sample
+based on the age threshold of 60 years. As observed in our exploratory
+data analysis (EDA), individuals aged over 60 have a significantly
+higher risk of stroke.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show the code"
+# Creation of Low-Risk Age Group
+low_risk_age_tb <- encoded_stroke_tb %>%
+  filter(age < 60)
+# Creation of High-Risk Age Group
+high_risk_age_tb <- encoded_stroke_tb %>%
+  filter(age >= 60)
+```
+
+##### Low-Risk Age Group
+
+To gain a fundamental understanding of the two stratified datasets, we
+conduct a brief analysis of how feature distributions and their
+relationships to `stroke` differ from those in the original dataset. We
+begin with the Low-Risk Age Group:
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Generate summary of selected numerical variables
+summary_table <- summary(low_risk_age_tb[, c("age", "avg_glucose_level", "bmi")])
+
+# Convert the summary to a data frame & display it with kable
+summary_table <- as.data.frame.matrix(summary_table)
+knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.names = FALSE)
+```
+
+```{r}
+suppressWarnings({
+  library(plotly)
+  library(ggplot2)
+  library(dplyr)
+  library(plotly)
+  
+  # Function to calculate proportion of people with stroke by bins and create a line plot
+  create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+
+    # Define bin edges
+    range_vals <- range(original_data, na.rm = TRUE)
+    breaks <- seq(floor(range_vals[1]), ceiling(range_vals[2]) + binwidth, by = binwidth)
+
+    # Cut the data into bins
+    binned_data <- data.frame(value = original_data, stroke = stroke_data) %>%
+      mutate(bin = cut(value, breaks = breaks, include.lowest = TRUE, right = FALSE))
+
+    # Compute proportion stroke in each bin
+    prop_data <- binned_data %>%
+      group_by(bin) %>%
+      summarize(
+        n = n(),
+        stroke_n = sum(stroke == 1, na.rm = TRUE),
+        prop_stroke = stroke_n / n,
+        .groups = "drop"
+      )
+
+    # Calculate bin midpoints
+    bin_mids <- sapply(strsplit(gsub("\\[|\\]|\\(|\\)", "", levels(prop_data$bin)), ","), 
+                       function(x) mean(as.numeric(x)))
+    prop_data <- prop_data %>%
+      mutate(bin_mid = bin_mids[as.numeric(bin)])
+
+    # Create a line plot using plotly
+    line_plot <- plot_ly(
+      data = prop_data,
+      x = ~bin_mid,
+      y = ~prop_stroke,
+      type = 'scatter',
+      mode = 'lines+markers',
+      line = list(color = '#1f77b4'),
+      marker = list(color = '#1f77b4')
+    ) %>%
+      layout(
+        yaxis = list(
+          title = "Stroke (proportion)",
+          rangemode = 'tozero',
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        xaxis = list(
+          title = "",
+          tickfont = list(size = 10)
+        ),
+        showlegend = FALSE,
+        title = list(
+          text = paste("Proportion Stroke by", gsub("_", " ", variable)),
+          font = list(size = 14)
+        ),
+        font = list(size = 10)  # General font size
+      )
+
+    return(line_plot)
+  }
+
+  # Function to create the histogram as a Plotly object
+  create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+    stroke_factor <- factor(stroke_data, levels = c(0, 1), labels = c("No Stroke", "Stroke"))
+
+    plot_data <- data.frame(data = original_data, stroke = stroke_factor)
+
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+      labs(
+        y = "Stroke (count)",
+        fill = "Stroke Status",
+        title = paste("Distribution of", gsub("_", " ", variable))
+      ) +
+      scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+      theme_minimal(base_size = 10) +  # Set base font size for ggplot
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 12),          # Smaller plot title
+        axis.title.y = element_text(size = 10),                     # Smaller y-axis title
+        axis.text.y = element_text(size = 8),                       # Smaller y-axis text
+        axis.text.x = element_text(size = 8),                       # Smaller x-axis text if needed
+        legend.title = element_text(size = 10),                     # Smaller legend title
+        legend.text = element_text(size = 8),                       # Smaller legend text
+        axis.title.x = element_blank(),
+        legend.position = ifelse(show_legend, "right", "none")
+      )
+
+    ggplotly(p) %>% 
+      layout(
+        showlegend = show_legend,
+        title = list(font = list(size = 14)),
+        xaxis = list(
+          title = ifelse(show_legend, "", "Age"),  # Adjust as needed
+          tickfont = list(size = 10)
+        ),
+        yaxis = list(
+          title = "Stroke (count)", 
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        legend = list(
+          title = list(text = ""),  # Remove legend title
+          font = list(size = 10)    # Smaller legend text
+        ),
+        font = list(
+          size = 10  # General font size
+        )
+      )
+  }
+
+  # Assuming low_risk_age_tb is defined and stroke is 0/1
+  line_age <- create_proportion_line(low_risk_age_tb, "age", "stroke", binwidth = 5) %>%
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+  hist_age <- create_histogram(low_risk_age_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
+    layout(
+      xaxis = list(
+        title = "Age",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      legend = list(
+        font = list(size = 10)
+      )
+    )
+
+  line_glucose <- create_proportion_line(low_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+  hist_glucose <- create_histogram(low_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(
+      xaxis = list(
+        title = "Average Glucose Level",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+
+  line_bmi <- create_proportion_line(low_risk_age_tb, "bmi", "stroke", binwidth = 5) %>%
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+  hist_bmi <- create_histogram(low_risk_age_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(
+      xaxis = list(
+        title = "BMI",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+
+  # Stack line above histogram for each variable with height adjustments
+  age_subplot <- subplot(
+    line_age, hist_age, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  glucose_subplot <- subplot(
+    line_glucose, hist_glucose, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  bmi_subplot <- subplot(
+    line_bmi, hist_bmi, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+
+  # Combine all three sets into a single row
+  combined_subplots <- subplot(
+    age_subplot, glucose_subplot, bmi_subplot, 
+    nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
+  ) %>%
+    layout(
+      title = list(
+        text = "Low-Risk Age Group: Over 60 Year Old",
+        font = list(size = 16)
+      ),
+      font = list(size = 10)  # General font size for combined plot
+    )
+
+  # Display the combined subplots
+  combined_subplots
+})
+```
+
+
+
+
+Looking at the summary of numerical variables and the histograms for
+individuals below 60 years old, we observe the following:
+
+-   `age`: The dataset includes individuals aged between 0.08 to 59
+    years, with an average age of 33.13 years (compared to 43.35 years
+    old for the full dataset). The mean decreased to 35 years old
+    (versus 45 years old for the full dataset).
+
+-   `avg_glucose_level`: The histogram of this variable still exhibits a
+    right-skewed bimodal distribution. The mean of average glucose level
+    slightly decrease to 100.36 mg/dL (versus 106.18 mg/dL) and the same
+    goes for the median, which drops to 90.39 mg/dL (versus 91.89
+    mg/dL). We can clearly see, that stroke occurrence is more common in the diabetic range. 
+
+Overall, the distribution of the numerical variables for individuals
+under 60 years old is similar to the full dataset, but with a lower
+average age and average glucose level. All numerical features show an
+even weaker association with stroke status in this age group than in the
+original dataset. This might significantly impact our predictive model,
+as the features are less predictive of stroke in this age group.
+Therefore, we refrain from further analysis of the low-risk age group,
+as the high-risk age group is more relevant.
+
+##### High-Risk Age Group
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Generate summary of selected numerical variables
+summary_table <- summary(high_risk_age_tb[, c("age", "avg_glucose_level", "bmi")])
+
+# Convert the summary to a data frame & display it with kable
+summary_table <- as.data.frame.matrix(summary_table)
+knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.names = FALSE)
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+suppressWarnings({
+  library(plotly)
+  library(ggplot2)
+  library(dplyr)
+  library(plotly)
+  
+  # Function to calculate proportion of people with stroke by bins and create a line plot
+  create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+
+    # Define bin edges
+    range_vals <- range(original_data, na.rm = TRUE)
+    breaks <- seq(floor(range_vals[1]), ceiling(range_vals[2]) + binwidth, by = binwidth)
+
+    # Cut the data into bins
+    binned_data <- data.frame(value = original_data, stroke = stroke_data) %>%
+      mutate(bin = cut(value, breaks = breaks, include.lowest = TRUE, right = FALSE))
+
+    # Compute proportion stroke in each bin
+    prop_data <- binned_data %>%
+      group_by(bin) %>%
+      summarize(
+        n = n(),
+        stroke_n = sum(stroke == 1, na.rm = TRUE),
+        prop_stroke = stroke_n / n,
+        .groups = "drop"
+      )
+
+    # Calculate bin midpoints
+    bin_mids <- sapply(strsplit(gsub("\\[|\\]|\\(|\\)", "", levels(prop_data$bin)), ","), 
+                       function(x) mean(as.numeric(x)))
+    prop_data <- prop_data %>%
+      mutate(bin_mid = bin_mids[as.numeric(bin)])
+
+    # Create a line plot using plotly
+    line_plot <- plot_ly(
+      data = prop_data,
+      x = ~bin_mid,
+      y = ~prop_stroke,
+      type = 'scatter',
+      mode = 'lines+markers',
+      line = list(color = '#1f77b4'),
+      marker = list(color = '#1f77b4')
+    ) %>%
+      layout(
+        yaxis = list(
+          title = "Stroke (proportion)",
+          rangemode = 'tozero',
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        xaxis = list(
+          title = "",
+          tickfont = list(size = 10)
+        ),
+        showlegend = FALSE,
+        title = list(
+          text = paste("Proportion Stroke by", gsub("_", " ", variable)),
+          font = list(size = 14)
+        ),
+        font = list(size = 10)  # General font size
+      )
+
+    return(line_plot)
+  }
+
+  # Function to create the histogram as a Plotly object
+  create_histogram <- function(data, variable, stroke_variable, binwidth = 5, show_legend = FALSE) {
+    original_data <- data[[variable]]
+    stroke_data <- data[[stroke_variable]]
+    stroke_factor <- factor(stroke_data, levels = c(0, 1), labels = c("No Stroke", "Stroke"))
+
+    plot_data <- data.frame(data = original_data, stroke = stroke_factor)
+
+    p <- ggplot(plot_data, aes(x = data, fill = stroke)) +
+      geom_histogram(binwidth = binwidth, color = "white", position = "stack") +
+      labs(
+        y = "Stroke (count)",
+        fill = "Stroke Status",
+        title = paste("Distribution of", gsub("_", " ", variable))
+      ) +
+      scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+      theme_minimal(base_size = 10) +  # Set base font size for ggplot
+      theme(
+        plot.title = element_text(hjust = 0.5, size = 12),          # Smaller plot title
+        axis.title.y = element_text(size = 10),                     # Smaller y-axis title
+        axis.text.y = element_text(size = 8),                       # Smaller y-axis text
+        axis.text.x = element_text(size = 8),                       # Smaller x-axis text if needed
+        legend.title = element_text(size = 10),                     # Smaller legend title
+        legend.text = element_text(size = 8),                       # Smaller legend text
+        axis.title.x = element_blank(),
+        legend.position = ifelse(show_legend, "right", "none")
+      )
+
+    ggplotly(p) %>% 
+      layout(
+        showlegend = show_legend,
+        title = list(font = list(size = 14)),
+        xaxis = list(
+          title = ifelse(show_legend, "", "Age"),  # Adjust as needed
+          tickfont = list(size = 10)
+        ),
+        yaxis = list(
+          title = "Stroke (count)", 
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        legend = list(
+          title = list(text = ""),  # Remove legend title
+          font = list(size = 10)    # Smaller legend text
+        ),
+        font = list(
+          size = 10  # General font size
+        )
+      )
+  }
+
+  # Assuming high_risk_age_tb is defined and stroke is 0/1
+  line_age <- create_proportion_line(high_risk_age_tb, "age", "stroke", binwidth = 5) %>%
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+  hist_age <- create_histogram(high_risk_age_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
+    layout(
+      xaxis = list(
+        title = "Age",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      legend = list(
+        font = list(size = 10)
+      )
+    )
+
+  line_glucose <- create_proportion_line(high_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+  hist_glucose <- create_histogram(high_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(
+      xaxis = list(
+        title = "Average Glucose Level",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+
+  line_bmi <- create_proportion_line(high_risk_age_tb, "bmi", "stroke", binwidth = 5) %>%
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+  hist_bmi <- create_histogram(high_risk_age_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
+    layout(
+      xaxis = list(
+        title = "BMI",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
+
+  # Stack line above histogram for each variable with height adjustments
+  age_subplot <- subplot(
+    line_age, hist_age, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  glucose_subplot <- subplot(
+    line_glucose, hist_glucose, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+  bmi_subplot <- subplot(
+    line_bmi, hist_bmi, 
+    nrows = 2, shareX = TRUE, titleY = TRUE, heights = c(0.3, 0.7)
+  )
+
+  # Combine all three sets into a single row
+  combined_subplots <- subplot(
+    age_subplot, glucose_subplot, bmi_subplot, 
+    nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
+  ) %>%
+    layout(
+      title = list(
+        text = "High-Risk Age Group: Over 60 Year Old",
+        font = list(size = 16)
+      ),
+      font = list(size = 10)  # General font size for combined plot
+    )
+
+  # Display the combined subplots
+  combined_subplots
+})
+```
+
+
+
+Examining the summary of numerical variables and the histograms for
+individuals aged 60 and over, we observe the following changes:
+
+-   `age`: The dataset includes individuals aged between 60 to 82 years,
+    with an average age of 70.9 years (compared 43.35 years old for the
+    full dataset).
+
+-   `avg_glucose_level`: The histogram of this variable continues to
+    display a right-skewed bimodal distribution. The mean of average
+    glucose level slightly increase to 121.9 mg/dL (versus 106.18
+    mg/dL).
+
+Similar to the low-risk age group, the numerical features in this
+high-risk group exhibit comparable patterns and distributions to those
+in the full dataset. However, there is a stronger association between
+these features and stroke status. The features are more predictive of
+stroke in this age group, aligning with our exploratory data analysis
+(EDA). 
+
+Additionally, we examine the distribution of the most important
+categorical variables, `heart_disease` and `hypertension`, within the
+high-risk age group.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(plotly)
+library(scales)
+
+# Define the variables and their labels for categories
+var_categories <- list(
+  "hypertension" = c("No", "Yes"),
+  "heart_disease" = c("No", "Yes")
+)
+
+# Filter data and select variables of interest
+filtered_data <- high_risk_age_tb %>%
+  select(stroke, all_of(names(var_categories))) %>%
+  # Convert 'stroke' to a factor with labels
+  mutate(
+    stroke = factor(stroke, levels = c(0, 1), labels = c("No Stroke", "Stroke")),
+    # Convert all categorical variables to character for consistency
+    across(all_of(names(var_categories)), as.character)
+  )
+
+# Pivot data to long format
+long_data <- filtered_data %>%
+  pivot_longer(
+    cols = all_of(names(var_categories)), 
+    names_to = "variable", 
+    values_to = "category"
+  )
+
+# Compute the proportion of "Stroke" for each variable-category combination
+order_data <- long_data %>%
+  group_by(variable, category) %>%
+  summarize(
+    stroke_count = sum(stroke == "Stroke", na.rm = TRUE),
+    total = n(),
+    prop = stroke_count / total,
+    .groups = "drop"
+  ) %>%
+  # Keep only rows where stroke_count > 0 to avoid unnecessary categories
+  filter(stroke_count > 0)
+
+# For each variable, reorder categories by ascending proportion of Stroke
+order_data <- order_data %>%
+  group_by(variable) %>%
+  arrange(prop, .by_group = TRUE) %>%
+  mutate(cat_rank = row_number()) %>%
+  ungroup()
+
+# Compute a variable-level order by mean stroke proportion
+var_order_data <- order_data %>%
+  group_by(variable) %>%
+  summarize(var_prop = mean(prop), .groups = "drop") %>%
+  arrange(var_prop) %>%
+  mutate(var_rank = row_number())
+
+# Join category and variable ranks back to long_data
+long_data <- long_data %>%
+  left_join(order_data %>% select(variable, category, cat_rank), by = c("variable", "category")) %>%
+  left_join(var_order_data %>% select(variable, var_rank), by = "variable") %>%
+  # Create a combined label "Variable: Category"
+  mutate(variable_category = paste(variable, category, sep = ": "))
+
+# Arrange by var_rank (variable-level order), then cat_rank (category-level order)
+long_data <- long_data %>%
+  arrange(var_rank, cat_rank) %>%
+  # Set factor levels according to this ordering
+  mutate(variable_category = factor(variable_category, levels = unique(variable_category)))
+
+# Create the plot
+p <- ggplot(long_data, aes(x = variable_category, fill = stroke)) +
+  geom_bar(position = "fill") +
+  labs(
+    x = NULL,      # After flipping, becomes y-axis
+    y = "Proportion",
+    fill = NULL     # Remove legend title
+  ) +
+  scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
+  scale_y_continuous(labels = percent) + # Convert proportion to percentage
+  theme_minimal() +
+  theme(
+    plot.title.position = "plot",
+    axis.title.x = element_text(hjust = 0.5)
+  ) +
+  coord_flip()
+
+# Convert to Plotly
+combined_plot <- ggplotly(p) %>%
+  layout(
+    title = list(text = "High-Risk Age Group: Over 60 Years Old", x = 0.5), # Title centered
+    margin = list(t = 50)
+  )
+
+# Display the combined horizontal bar chart
+combined_plot
+```
+
+
+-   `hypertension`: Similar to the group of individuals below 60 years
+    old, those with hypertension exhibit a higher proportion of stroke
+    (17.91%) compared to those without hypertension (11.85%).
+
+-   `heart_disease`: Likewise, individuals with heart disease in the
+    high-risk age group show a higher proportion of stroke (20.09%) than
+    those without heart disease (11.88%).
+
+In conclusion, the high-risk age group shows a higher proportion of
+stroke cases for individuals with hypertension and heart disease.
+
+This brief exploration of the two strata indicates that the high-risk
+age group is more relevant for our predictive model, as the features are
+more predictive of stroke in this age group. But the difference to the
+full dataset is not as pronounced as expected. This is likely to impact
+the performance of the future stratified models.
+
+#### Dataset Balancing
+
+Let's look at stroke occurrences in our three datasets:
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show the code"
+
+# Baseline Dataset
+encoded_stroke_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2)) %>%
+  kable(col.names = c("Stroke", "Count", "Proportion"), 
+        caption = "Baseline Dataset") %>%
+  kable_styling(full_width = FALSE)
+
+# Low-Risk Age Group
+low_risk_age_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2)) %>%
+  kable(col.names = c("Stroke", "Count", "Proportion"), 
+        caption = "Low-Risk Age Group") %>%
+  kable_styling(full_width = FALSE)
+
+# High-Risk Age Group
+high_risk_age_tb %>%
+  group_by(stroke) %>%
+  summarize(count = n()) %>%
+  mutate(proportion = round(count / sum(count), 2)) %>%
+  kable(col.names = c("Stroke", "Count", "Proportion"), 
+        caption = "High-Risk Age Group") %>%
+  kable_styling(full_width = FALSE)
+```
+
+We observe a significant imbalance in all datasets, necessitating
+corrective measures. This imbalance can adversely affect model
+performance by biasing it toward the majority class, leading to poor
+predictive accuracy for minority cases such as strokes. Without
+upsampling, the model may disproportionately favor “no stroke”
+predictions, resulting in high overall accuracy but failing to
+effectively identify actual stroke cases (low recall). By upsampling the
+minority class, we ensure that the model learns from stroke cases as
+well, enhancing its ability to detect strokes and providing a more
+balanced and meaningful predictive performance.
+
+To address this issue, we use **Random Upsampling**, which involves randomly
+duplicating observations from the minority class. This technique is
+straightforward and effective, as it increases the number of minority
+class instances without introducing bias.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show the code"
+
+# Use upSample to balance the dataset
+balanced_stroke_tb <- upSample(
+  x = encoded_stroke_tb[, names(encoded_stroke_tb) != "stroke"], 
+  y = encoded_stroke_tb$stroke, 
+  yname = "stroke"
+)
+
+# Balance the low-risk age strata
+low_risk_age_data <- upSample(
+  x = low_risk_age_tb[, names(low_risk_age_tb) != "stroke"], 
+  y = low_risk_age_tb$stroke, 
+  yname = "stroke"
+)
+
+# Balance the high-risk age strata
+high_risk_age_data <- upSample(
+  x = high_risk_age_tb[, names(high_risk_age_tb) != "stroke"], 
+  y = high_risk_age_tb$stroke, 
+  yname = "stroke"
+)
+```
+
+### Scaling
+
+Finally, as classification algorithms are often sensitive to feature
+scales, we standardize all continuous features in the dataset to prevent
+perturbations and improve model performance. Standardization rescales
+features to have a mean of 0 and a standard deviation of 1. The
+mathematical formula for standardization is as follows:
+
+$$
+z = \frac{x - \mu}{\sigma}
+$$
+
+Where:
+
+-   z is the standardized value,
+-   x is the original feature value,
+-   mu is the mean of the feature,
+-   sigma is the standard deviation of the feature.
+
+The scaling will be done after the train-test split to avoid data
+leakage.
+
+## Modeling
+
+We divide our analysis into four different datasets and predictive
+models: the original dataset, the balanced original dataset, the
+low-risk age group, and the high-risk age group. We will train a
+logistic regression model for each dataset, before evaluating them on
+the test set. We will then compare the performance of the models and
+discuss potential strengths and weaknesses.
+
+### Model and Evaluation Metrics
+
+#### Logistic Regression
+
+Logistic regression is a statistical method used for modeling the
+relationship between a set of predictor variables and a binary outcome
+variable (0/1). Unlike linear regression, logistic regression estimates
+the probability of the occurrence of an event by fitting the data to a
+logistic curve.
+
+The response variable is binary, such as "yes/no," "success/failure," or
+"disease/no disease."
+
+**The logistic regression model is expressed as:**
+
+$$
+p = \frac{e^{\beta_0 + \beta_1X_1 + \dots + \beta_nX_n}}{1 + e^{\beta_0 + \beta_1X_1 + \dots + \beta_nX_n}}
+$$
+
+Taking the natural logarithm of the odds gives the logit function:
+
+$$
+logit(p) = log(\frac{p}{1-p})
+$$
+
+Where:\
+- p is the probability of the event occurring.\
+- beta_0 is the intercept.\
+- betas are the coefficients of the predictor variables.\
+- X are the predictor variables.
+
+The model is estimated using **maximum likelihood estimation (MLE)**,
+which identifies the coefficients that maximize the likelihood of
+observing the given data.
+
+**Important assumptions of logistic regression include:**
+
+-   Independence of errors
+-   Absence of multicollinearity
+-   Lack of influential outliers
+-   Linearity of independent variables and log odds
+
+#### Evaluation Metrics
+
+First of all we introduce the metrics we will be using to evaluate our
+models.
+
+-   **Confusion matrix:** The confusion matrix compares the actual values of
+    the target variable with the predicted values and serves as a basis
+    for our evaluation. It is a 2x2 matrix that contains the following
+    values: True Positives (predicting correctly a stroke), True
+    Negatives (predicting correctly no stroke occurrence), False
+    Positives (predicting a stroke when there is none) and False
+    Negatives (predicting no stroke when there is one). The confusion
+    matrix is used to calculate the following metrics:
+
+-   **Precision:** Precision is the ratio of correctly predicted positive
+    observations to the total predicted positive observations. The
+    formula for precision is given by:
+
+$$
+Precision = \frac{TP}{TP + FP}
+$$
+
+-   **Recall:** Recall is the ratio of correctly predicted positive
+    observations to the all observations in actual class. In our case
+    and general in healthcare research, recall should be prioritized as
+    undetected strokes are generally more fatal than false alarms. The
+    formula for recall is given by:
+
+$$
+Recall = \frac{TP}{TP + FN}
+$$
+
+-   **F1 Score:** The F1 score is the harmonic mean of Precision and Recall
+    and often used in unbalanced dataset like ours as it considers false
+    positives and false negatives. The formula for F1 score ranges from
+    0 to 1 and is given by:
+
+$$
+F1 = 2×\frac{Precision × Recall}{Precision + Recall}
+$$
+
+-   **Specificity:** Specificity is the ratio of correctly predicted
+    negative observations to the total actual negative observations. The
+    formula for specificity is given by:
+
+$$
+Specificity = \frac{TN}{TN + FP}
+$$
+
+-   **Accuracy:** Accuracy is the ratio of correctly predicted observations
+    to the total observations. The formula for accuracy is given by:
+
+$$
+Accuracy = \frac{TP + TN}{TP + TN + FP + FN}
+$$
+
+-   **ROC Curve and AUC**: The receiver operating characteristic curve is
+    a graphical representation of the true positive rate (recall)
+    against the false positive rate (specificity). Concretely, it shows
+    the tradeoff between sensitivity and specificity. The diagonal line
+    represents the random classifier line. A good model stays as far
+    away from the line as possible and tends to fit to the upper left
+    corner. The area under the curve (AUC) is a measure of how well the
+    model can distinguish between classes and serves primarly to compare
+    models between eachother. An AUC of 1 indicates a perfect model,
+    while an AUC of 0.5 indicates a model that performs no better than
+    random chance.
+
+-   **Odds ratio:** The odds ratio is the exponentiated coefficient of a
+    logistic regression model. It represents the change in odds of the
+    target variable for a one-unit change in the predictor variable. An
+    odds ratio greater than 1 indicates a positive relationship between
+    the predictor and the target variable, while an odds ratio less than
+    1 indicates a negative relationship. It will help us to understand
+    the importance and direction of each feature in predicting the
+    target variable.
+
+### Naive Model
+
+We divide our analysis into four different datasets and predictive
+models: the original dataset, the balanced original dataset, the
+low-risk age group, and the high-risk age group. We will train a
+logistic regression model for each dataset, before evaluating them on
+the test set. We will then compare the performance of the models and
+discuss potential strengths and weaknesses.
+
+#### Train-test split
+
+In order to evaluate the performance of our model, we split the original
+dataset into a training and a test set. We allocate 80% of the data for
+training and 20% for testing. We standardize the continuous variables
+using the scaling parameters derived from the training set and apply the
+same scaling to the test set to prevent data leakage.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Load the dataset
+unbalanced_original_data <- encoded_stroke_tb
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+unbalanced_original_data[cat_variables] <- lapply(unbalanced_original_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+unbalanced_original_data$stroke <- factor(
+  unbalanced_original_data$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(unbalanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_unbalanced <- unbalanced_original_data[trainIndex, ]
+test_unbalanced <- unbalanced_original_data[-trainIndex, ]
+
+# Scaling
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute scaling parameters from training data only
+train_means <- sapply(train_unbalanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_unbalanced[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_unbalanced <- train_unbalanced
+for (var in continuous_vars) {
+  scaled_train_unbalanced[[var]] <- standardize_with_params(scaled_train_unbalanced[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_unbalanced[[var]] <- standardize_with_params(test_unbalanced[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
+```
+
+#### Model
+
+With the `caret` package, we specify our first logistic model by
+specifying (method= "glm") and (family = "binomial") to train a logistic
+regression model.
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      # No cross-validation
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_1 <- train(
+  stroke ~ ., 
+  data = scaled_train_unbalanced,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+
+#### Evaluation and Discussion
+
+We start by evaluating the model on the test set.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_1, newdata = test_unbalanced, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_unbalanced$stroke <- factor(test_unbalanced$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_unbalanced$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_unbalanced$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Metric = c("Precision", "Recall", "F1-Score", "Specificity", "Accuracy"),
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+As anticipated, our naive model performs poorly on the test set. The
+model predicts “No” for all instances, resulting in **Precision**, **Recall**,
+and **F1 scores** of 0.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_unbalanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_unbalanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_unbalanced[continuous_vars], sd, na.rm = TRUE)
+
+# Define the renaming function for predictors (unchanged)
+rename_variables <- function(variable) {
+  case_when(
+    variable == "age" ~ "Age",
+    variable == "work_typeSelf.employed1" ~ "Work Type: Self-Employed",
+    variable == "hypertension1" ~ "Hypertension",
+    variable == "smoking_statussmokes1" ~ "Smoking Status: Smokes",
+    variable == "work_typeGovt_job1" ~ "Work Type: Government Job",
+    variable == "heart_disease1" ~ "Heart Disease",
+    variable == "avg_glucose_level" ~ "Average Glucose Level",
+    variable == "ever_married1" ~ "Ever Married",
+    variable == "smoking_statusformerly.smoked1" ~ "Smoking Status: Formerly Smoked",
+    variable == "gender1" ~ "Gender: Female",
+    variable == "Residence_type1" ~ "Residence Type: Urban",
+    variable == "bmi" ~ "BMI",
+    TRUE ~ variable
+  )
+}
+
+# Updated function to generate the importance table
+generate_importance_table <- function(model, model_name = "Logistic Model", continuous_vars, train_sds) {
+  # Extract coefficients
+  coefficients <- summary(model)$coefficients
+  
+  # Convert to a data frame and adjust continuous estimates to the original scale
+  variable_importance <- as.data.frame(coefficients) %>%
+    rownames_to_column("OriginalPredictor") %>%
+    mutate(
+      # For continuous predictors, divide the coefficient by the training set SD
+      AdjustedEstimate = if_else(
+        OriginalPredictor %in% continuous_vars,
+        Estimate / train_sds[OriginalPredictor],
+        Estimate
+      )
+    ) %>%
+    mutate(
+      Predictor = rename_variables(OriginalPredictor),
+      `Odds Ratio` = exp(AdjustedEstimate)
+    ) %>%
+    select(Predictor, AdjustedEstimate, `Odds Ratio`, `Pr(>|z|)`) %>%
+    rename(
+      Coefficient = AdjustedEstimate,
+      `P-value` = `Pr(>|z|)`
+    ) %>%
+    filter(Predictor != "(Intercept)") %>%
+    arrange(desc(`Odds Ratio`))
+  
+  # Display the table with a dynamic caption
+  kable(variable_importance, caption = paste(model_name, "- Predictor Effect with Odds Ratios")) %>%
+    kable_styling(full_width = FALSE, position = "center")
+}
+
+# Example usage (assuming 'logistic_model_1' is your trained model, 
+generate_importance_table(logistic_model_1, "Logistic Model 1", continuous_vars, train_sds)
+
+```
+
+We don't discuss the metrics as the model proved useless. A deeper discussion of the predictors will be done for the other models and in the final analysis part.
+
+### Balanced Model
+
+We repeat the same process for our balanced baseline model.
+
+#### Train-test split
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Load the dataset
+balanced_original_data <- balanced_stroke_tb
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+balanced_original_data[cat_variables] <- lapply(balanced_original_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+balanced_original_data$stroke <- factor(
+  balanced_original_data$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(balanced_original_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_balanced <- balanced_original_data[trainIndex, ]
+test_balanced <- balanced_original_data[-trainIndex, ]
+
+# Scaling
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute scaling parameters from training data only
+train_means <- sapply(train_balanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_balanced[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_balanced <- train_balanced
+for (var in continuous_vars) {
+  scaled_train_balanced[[var]] <- standardize_with_params(scaled_train_balanced[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_balanced[[var]] <- standardize_with_params(test_balanced[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
+```
+
+#### Model
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      # No cross-validation
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_2 <- train(
+  stroke ~ ., 
+  data = scaled_train_balanced,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+
+#### Evaluation and Discussion
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_2, newdata = test_balanced, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_balanced$stroke <- factor(test_balanced$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_balanced$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_balanced$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_balanced$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+    Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+A **Precision** of 0.753 indicates that 75.3% of the model’s positive
+predictions are correct, while a **Recall** of 0.830 demonstrates the
+model’s ability to accurately identify 83.0% of actual positive cases.
+This balance between Precision and Recall is encapsulated in the **F1 score** of 0.790, which serves as a robust measure of the model’s
+predictive accuracy.
+
+Additionally, the model achieves an **Accuracy** of 77.9%, highlighting
+reliable classification performance. The **Specificity** of 0.728 signifies
+that 72.8% of actual negative cases are correctly identified. Together,
+these metrics suggest that the model is well-suited for effectively
+distinguishing between positive and negative outcomes.
+
+The **confusion matrix further** offers further insight into the model’s
+performance. Out of a total of 1,934 observations:
+
+-   **True Positives (TP)**: 803  cases were correctly classified as
+    positive.
+-   **True Negatives (TN):** 704 cases were accurately identified as
+    negative.
+-   **False Positives (FP):** 263 cases were incorrectly flagged as
+    positive.
+-   **False Negatives (FN):** 164 cases were missed.
+
+The relatively low number of false negatives corresponds with the high
+Recall value, highlighting the model’s effectiveness in identifying
+positive cases.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_balanced$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+The **ROC curve** demonstrates the model’s strong discriminative ability,
+with an AUC (Area Under the Curve) of 0.839. This means that the model
+has an 83.9% probability of correctly distinguishing between positive
+and negative cases.
+
+Finally, we examine the effects of the predictors on the outcome. By
+analyzing the odds ratios, we can assess both the importance and
+direction of each feature in predicting the target variable. It is
+important to note that the categorical features capture the total change
+on stroke risk, whereas continuous predictors (`age`,
+`avg_glucose_level`, `bmi`) represent the change in odds for each
+one-unit increase in the predictor.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Identify the continuous variables that were scaled
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_balanced[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_balanced[continuous_vars], sd, na.rm = TRUE)
+
+generate_importance_table(logistic_model_2, "Logistic Model 2", continuous_vars, train_sds)
+```
+
+**Key Findings**
+
+-   `Hypertension` has the strongest positive effect on the outcome with
+    an odds ratio of 1.707 (p \< 0.0001), indicating individuals with
+    hypertension are 1.7 times more likely to experience the event.
+
+-   `Heart Disease` and `Smoking Status` (Smokes or Formerly Smoked) are
+    also significant predictors, increasing the odds of the outcome.
+
+-   `Age` has a modest but statistically significant positive effect (odds
+    ratio: 1.08), indicating a gradual increase in risk with age.
+
+-   Predictors like `BMI` and `Residence Type`: Urban were not statistically
+    significant (p \> 0.05).
+
+-   Negative coefficients for `Work Type` and `Ever_Married`: Government Job,
+    Self-Employment and Marriage indicate that individuals in these categories are less
+    likely to experience a stroke and serve as protective factors.
+
+### Low-Risk Age Model
+
+In this section , we build our first stratified model for the low-risk
+age group. Here we first split the original dataset into test and
+training set and perform then the previously mentionned preprocessing
+steps for the training set.
+
+#### Train-test split
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+low_risk_age_data[cat_variables] <- lapply(low_risk_age_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+low_risk_age_data$stroke <- factor(
+  low_risk_age_data$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(low_risk_age_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_low_risk <- low_risk_age_data[trainIndex, ]
+test_low_risk <- low_risk_age_data[-trainIndex, ]
+
+# Scaling
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute scaling parameters from training data only
+train_means <- sapply(train_low_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_low_risk[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_low_risk <- train_low_risk
+for (var in continuous_vars) {
+  scaled_train_low_risk[[var]] <- standardize_with_params(scaled_train_low_risk[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_low_risk[[var]] <- standardize_with_params(test_low_risk[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
+```
+
+#### Model
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_3 <- train(
+  stroke ~ ., 
+  data = scaled_train_low_risk,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+
+#### Evaluation and Discussion
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_3, newdata = test_low_risk, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_low_risk$stroke <- factor(test_low_risk$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_low_risk$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_low_risk$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_low_risk$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+  Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+The model demonstrated strong classification performance, achieving an
+**Accuracy** of 78.2% and an **F1 Score** of 0.795, which indicates a balanced
+trade-off between Precision and Recall. Notably, a **Recall** of 0.842
+signifies that the model correctly identifies 84.2% of true positive
+cases, which is essential for minimizing the number of at-risk
+individuals who are missed. However, a **Precision** of 0.752 implies that
+24.8% of the positive predictions are false positives. This trade-off is
+often acceptable in scenarios where sensitivity is prioritized over
+precision.
+
+The **Specificity** of 0.723 indicates the model’s moderate ability to
+correctly identify negative cases. Overall, these metrics demonstrate
+that the model effectively balances sensitivity and specificity, making
+it suitable for identifying subtle risks within the low-risk age group.
+
+The **confusion matrix further** contextualizes the model's predictive
+performance:
+
+-   **True Positives (TP)**: 613 cases were correctly classified as
+    positive.
+-   **True Negatives (TN):** 526 cases were accurately identified as
+    negative.
+-   **False Positives (FP):** 202 cases were incorrectly flagged as
+    positive.
+-   **False Negatives (FN):** 115 cases were missed.
+
+The relatively low number of false negatives aligns with the high Recall
+value, emphasizing the model’s strength in detecting true positive
+cases. However, the number of false positives indicates areas where
+precision can be enhanced without sacrificing sensitivity.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_low_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+**The ROC curve**, with an associated AUC value of 0.844, confirms the
+model’s excellent discriminative ability. An AUC of 0.844 indicates that
+the model has an 84.4% probability of distinguishing between positive
+and negative cases. The steep initial rise of the ROC curve demonstrates
+strong sensitivity at lower false positive rates, making the model
+well-suited for screening purposes in a population with lower baseline
+risk.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Identify the continuous variables that were scaled
+continuous_vars <- c("age", "avg_glucose_level", "bmi")
+
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_low_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_low_risk[continuous_vars], sd, na.rm = TRUE)
+
+generate_importance_table(logistic_model_3, "Logistic Model 3", continuous_vars, train_sds)
+```
+
+**Key Findings**
+
+-   `Hypertension` remains the most significant predictor, with an odds
+    ratio of 2.256 (p \< 0.0001), indicating that individuals with
+    hypertension are more than twice as likely to experience the event.
+
+-   `Smoking Status` (both current and former) continues to be a
+    critical risk factor: - Current smokers have a 1.507-fold increased
+    risk (p \< 0.0001). - Former smokers also retain an elevated risk
+    (odds ratio: 1.467, p \< 0.0001), suggesting a lingering impact of
+    smoking history.
+
+-   `Age` contributes to the risk, with an odds ratio of 1.108 (p \<
+    0.0001), reflecting the gradual increase in risk even within the
+    low-risk age group.
+
+-   `BMI` shows a slight but significant positive association (odds
+    ratio: 1.012, p = 0.014), highlighting the importance of weight
+    management.
+
+-   Conversely, individuals who are `self-employed` or in
+    `government jobs` exhibit a protective effect, with reduced odds of
+    the outcome (odds ratios: 0.707 and 0.571, respectively).
+
+-   Being `married` also shows a protective association (odds ratio:
+    0.697, p = 0.0004), which may reflect social or lifestyle factors.
+
+-   Predictors such as `heart disease` and `average glucose level` were
+    not statistically significant in this stratified model, suggesting
+    these factors may be less influential in a low-risk age group.
+
+### High-Risk Age Model
+
+Our final model includes all individuals aged 60 and above. Due to the
+low variance in age and the fact that the stratification process
+inherently accounts for `age`, we have removed the age feature entirely
+from the dataset.
+
+#### Train-test split
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Load the dataset
+high_risk_age_data <- high_risk_age_data %>% 
+  select(-c("age")) 
+
+# Ensure valid factor levels for all binary and categorical variables
+cat_variables <- c("gender", "hypertension", "heart_disease", "ever_married",
+                   "Residence_type", "smoking_statusformerly.smoked", 
+                   "smoking_statussmokes", "work_typeGovt_job", "work_typeSelf.employed", "stroke")
+
+# Explicitly set factor levels to "0" and "1"
+high_risk_age_data[cat_variables] <- lapply(high_risk_age_data[cat_variables], function(col) {
+  if (!is.factor(col)) col <- factor(col)  # Convert to factor if not already
+  levels(col) <- c("0", "1")  # Ensure levels are consistently "0" and "1"
+  return(col)
+})
+
+# Ensure the target variable "stroke" has valid levels
+high_risk_age_data$stroke <- factor(
+  high_risk_age_data$stroke,
+  levels = c("0", "1"),         # Original levels
+  labels = c("No", "Yes")       # Valid names for levels
+)
+
+
+# Split into training (80%) and testing (20%) sets
+set.seed(42)  
+trainIndex <- createDataPartition(high_risk_age_data$stroke, p = 0.8, 
+                                  list = FALSE, times = 1)
+
+train_high_risk <- high_risk_age_data[trainIndex, ]
+test_high_risk <- high_risk_age_data[-trainIndex, ]
+
+
+# Scaling
+continuous_vars <- c("avg_glucose_level", "bmi")
+
+# Compute scaling parameters from training data only
+train_means <- sapply(train_high_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_high_risk[continuous_vars], sd, na.rm = TRUE)
+
+# Define a function to standardize based on pre-computed parameters
+standardize_with_params <- function(x, mean_val, sd_val) {
+  (x - mean_val) / sd_val
+}
+
+# Apply scaling to the training set using training parameters
+scaled_train_high_risk <- train_high_risk
+for (var in continuous_vars) {
+  scaled_train_high_risk[[var]] <- standardize_with_params(scaled_train_high_risk[[var]], 
+                                               train_means[var], 
+                                               train_sds[var])
+}
+
+# Apply the same scaling to the test set using *training* parameters
+for (var in continuous_vars) {
+  test_high_risk[[var]] <- standardize_with_params(test_high_risk[[var]], 
+                                              train_means[var], 
+                                              train_sds[var])
+}
+```
+
+#### Model
+
+```{r, warning=FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Custom summary function for Precision, Recall, and ROC AUC
+custom_summary <- function(data, lev = NULL, model = NULL) {
+  precision <- tryCatch(posPredValue(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  recall <- tryCatch(sensitivity(data$pred, data$obs, positive = lev[1]), error = function(e) NA)
+  roc_auc <- tryCatch(pROC::auc(pROC::roc(data$obs, data[, lev[1]])), error = function(e) NA)
+  c(Precision = precision, Recall = recall, ROC = roc_auc)
+}
+
+# Train logistic regression model
+ctrl <- trainControl(
+  method = "none",      
+  classProbs = TRUE,    # Enable class probabilities
+  summaryFunction = custom_summary # Use custom summary function
+)
+
+# Train logistic regression model on the training dataset
+set.seed(42)
+logistic_model_4 <- train(
+  stroke ~ ., 
+  data = scaled_train_high_risk,
+  method = "glm",
+  family = "binomial",
+  trControl = ctrl,
+  metric = "ROC"
+)
+```
+
+#### Evaluation and Discussion
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+
+# Predict probabilities on the test set
+test_predictions_prob <- predict(logistic_model_4, newdata = test_high_risk, type = "prob")
+
+# Ensure the correct column is used for the positive class
+colnames(test_predictions_prob)  # Check column names to confirm
+
+# Convert probabilities to binary predictions
+test_predictions_class <- ifelse(test_predictions_prob[, "Yes"] > 0.5, "Yes", "No")
+
+# Convert to a factor with consistent levels
+test_predictions_class <- factor(test_predictions_class, levels = c("No", "Yes"))
+
+# Ensure test_unbalanced$stroke is also a factor
+test_high_risk$stroke <- factor(test_high_risk$stroke, levels = c("No", "Yes"))
+
+# Validate Levels of Predictions and Actuals
+if (!all(levels(test_predictions_class) == levels(test_high_risk$stroke))) {
+  stop("Mismatch in factor levels between predictions and actuals!")
+}
+  
+# Check Confusion Matrix Input
+print(table(test_predictions_class, test_high_risk$stroke))
+
+# Generate Confusion Matrix
+conf_matrix_test <- confusionMatrix(
+  data = test_predictions_class, 
+  reference = test_high_risk$stroke, 
+  positive = "Yes"
+)
+
+# Correct Metric Extraction to Handle NA
+precision <- ifelse(!is.na(conf_matrix_test$byClass["Precision"]), conf_matrix_test$byClass["Precision"], 0)
+recall <- ifelse(!is.na(conf_matrix_test$byClass["Recall"]), conf_matrix_test$byClass["Recall"], 0)
+f1_score <- ifelse(!is.na(conf_matrix_test$byClass["F1"]), conf_matrix_test$byClass["F1"], 0)
+specificity <- conf_matrix_test$byClass["Specificity"]
+accuracy <- conf_matrix_test$overall["Accuracy"]
+
+# Generate Metrics Report
+classification_report_test <- data.frame(
+    Value = c(precision, recall, f1_score, specificity, accuracy)
+)
+
+# Print Results
+print(conf_matrix_test)
+print(classification_report_test)
+```
+
+Let's analyze the results of the high-risk age group model:
+
+-   **Precision (0.619)**: The model correctly predicted 61.9% of the
+    positive outcomes, indicating a moderate level of reliability for
+    positive predictions.
+
+-   **Recall (0.510):** The model captured only 51.0% of true positive
+    cases, highlighting a notable number of false negatives. This lower
+    Recall suggests limited sensitivity.
+
+-   **F1 Score (0.560):** The harmonic mean between Precision and Recall
+    reflects moderate performance, with room for improvement in
+    sensitivity.
+
+-   **Specificity (0.687):** The model correctly identified 68.7% of
+    negative cases, indicating reasonable performance in minimizing
+    false positives.
+
+-   **Accuracy (0.598):** The overall accuracy of 59.8% suggests that
+    the model’s predictive power is less robust compared to the low-risk
+    age group model.
+
+The model performs reasonably well in identifying negative cases but
+struggles with sensitivity, which could be problematic when prioritizing
+the identification of high-risk individuals. The higher number of false
+negatives (117) compared to true positives underscores the lower Recall,
+indicating that the model fails to identify nearly half of the actual
+positive cases. This highlights a significant trade-off between
+Precision and sensitivity in the high-risk age group.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# ROC Curve
+roc_curve <- roc(test_high_risk$stroke, test_predictions_prob[, "Yes"], levels = c("No", "Yes"))
+
+# Plot the ROC curve with AUC
+auc_value <- auc(roc_curve)
+ggplot(data = data.frame(
+  TPR = roc_curve$sensitivities,
+  FPR = 1 - roc_curve$specificities
+), aes(x = FPR, y = TPR)) +
+  geom_line(color = "blue") +
+  geom_abline(linetype = "dashed", color = "red") +
+  labs(
+    title = "ROC Curve",
+    x = "False Positive Rate (1 - Specificity)",
+    y = "True Positive Rate (Sensitivity)"
+  ) +
+  annotate("text", x = 0.5, y = 0.05, label = paste("AUC =", round(auc_value, 3)), color = "black") +
+  theme_minimal()
+```
+
+**The ROC curve** illustrates the model's discriminative ability, with
+an AUC of 0.665.
+
+This indicates that the model has a 66.5% probability of distinguishing
+between positive and negative cases, which is only slightly better than
+random chance.
+
+The relatively shallow ascent of the ROC curve reflects limited
+sensitivity and highlights challenges in effectively identifying
+positive cases in the high-risk group. This suggests that the model may
+require further refinement to enhance its predictive performance.
+
+```{r, message = FALSE}
+#| code-fold: true
+#| code-summary: "Click to show code"
+# Identify the continuous variables that were scaled
+continuous_vars <- c("avg_glucose_level", "bmi")
+
+# Compute scaling parameters from the training data only
+train_means <- sapply(train_high_risk[continuous_vars], mean, na.rm = TRUE)
+train_sds   <- sapply(train_high_risk[continuous_vars], sd, na.rm = TRUE)
+
+generate_importance_table(logistic_model_4, "Logistic Model 4", continuous_vars, train_sds)
+```
+
+**Key Findings**
+
+-   `Heart Disease` and `Hypertension` as Significant Risk Factors:
+
+    -   `Heart Disease:` An odds ratio of 1.437 (p = 0.004) indicates
+        a 43.7% increased risk for individuals with this condition.
+
+    -   `Hypertension:` An odds ratio of 1.327 (p = 0.012) emphasizes
+        its importance in the high-risk age group.
+
+-   Urban `Residence Type:` Demonstrated a positive association with
+    an odds ratio of 1.211 (p = 0.046), suggesting a slight increase in
+    risk for individuals residing in urban areas. This finding may
+    reflect lifestyle or environmental factors associated with urban
+    living. However, research and our exploratory data analysis (EDA)
+    suggest that residence type is not a significant predictor,
+    indicating that this variable may be overemphasized.
+
+-   `Average Glucose Level:` Showed a small but statistically
+    significant positive association with an odds ratio of 1.006 (p \<
+    0.001), indicating that higher glucose levels contribute to
+    increased risk
+
+-   `Body Mass Index (BMI):`
+
+    Demonstrated a protective effect with an odds ratio of 0.961 (p \<
+    0.001). This result could reflect non-linear relationships between
+    weight and risk or confounding factors in the high-risk group.
+
+-   `Work Type` and `Marital Status`:
+
+    -   `Self-Employed:` An odds ratio of 0.803 (p = 0.039) indicates
+        a 20% reduction in risk.
+
+    -   `Ever Married:` An odds ratio of 0.493 (p \< 0.001) suggests a
+        50.7% lower risk, potentially due to social and emotional
+        support associated with marital status.
