@@ -1,4 +1,4 @@
-# Stroke Prediction Analysis
+# Stroke Prediction Analysis; Group C
 
 This repository contains the materials for the Stroke Prediction Analysis project, developed as part of a data science project at the University of Lausanne. The project investigates stroke prediction using logistic regression and data analysis techniques.
 
@@ -13,8 +13,8 @@ This folder contains datasets used for the project. It includes:
 
 ### `final_report/`
 Contains the final report of the project, including:
-- **Quarto files (`.qmd`)** for generating the report.
-- **Rendered outputs** like the final Report-HTML.
+- **final_C.html**
+- **_final_C.qmd** (we used sub-quartos for each part of the report; please find them in the subfolder final_report_sections_C.qmd)
 
 ### `project_update/`
 Updates and intermediate results generated during the project:
