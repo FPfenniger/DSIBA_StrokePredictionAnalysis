@@ -290,10 +290,15 @@ summary_table <- as.data.frame.matrix(summary_table)
 knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.names = FALSE)
 ```
 
-```{r, warning=FALSE}
+```{r, message = FALSE}
 #| code-fold: true
-#| code-summary: "Click to show the code"
+#| code-summary: "Click to show code"
 suppressWarnings({
+  library(plotly)
+  library(ggplot2)
+  library(dplyr)
+  library(plotly)
+  
   # Function to calculate proportion of people with stroke by bins and create a line plot
   create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
     original_data <- data[[variable]]
@@ -334,9 +339,22 @@ suppressWarnings({
       marker = list(color = '#1f77b4')
     ) %>%
       layout(
-        yaxis = list(title = "Stroke (proportion)", rangemode = 'tozero'),
+        yaxis = list(
+          title = "Stroke (proportion)",
+          rangemode = 'tozero',
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        xaxis = list(
+          title = "",
+          tickfont = list(size = 10)
+        ),
         showlegend = FALSE,
-        title = paste("Proportion Stroke by", gsub("_", " ", variable))
+        title = list(
+          text = paste("Proportion Stroke by", gsub("_", " ", variable)),
+          font = list(size = 14)
+        ),
+        font = list(size = 10)  # General font size
       )
 
     return(line_plot)
@@ -358,31 +376,113 @@ suppressWarnings({
         title = paste("Distribution of", gsub("_", " ", variable))
       ) +
       scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
-      theme_minimal() +
+      theme_minimal(base_size = 10) +  # Set base font size for ggplot
       theme(
+        plot.title = element_text(hjust = 0.5, size = 12),          # Smaller plot title
+        axis.title.y = element_text(size = 10),                     # Smaller y-axis title
+        axis.text.y = element_text(size = 8),                       # Smaller y-axis text
+        axis.text.x = element_text(size = 8),                       # Smaller x-axis text if needed
+        legend.title = element_text(size = 10),                     # Smaller legend title
+        legend.text = element_text(size = 8),                       # Smaller legend text
         axis.title.x = element_blank(),
-        plot.title = element_text(hjust = 0.5),
         legend.position = ifelse(show_legend, "right", "none")
       )
 
-    ggplotly(p) %>% layout(showlegend = show_legend)
+    ggplotly(p) %>% 
+      layout(
+        showlegend = show_legend,
+        title = list(font = list(size = 14)),
+        xaxis = list(
+          title = ifelse(show_legend, "", "Age"),  # Adjust as needed
+          tickfont = list(size = 10)
+        ),
+        yaxis = list(
+          title = "Stroke (count)", 
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        legend = list(
+          title = list(text = ""),  # Remove legend title
+          font = list(size = 10)    # Smaller legend text
+        ),
+        font = list(
+          size = 10  # General font size
+        )
+      )
   }
 
   # Assuming low_risk_age_tb is defined and stroke is 0/1
   line_age <- create_proportion_line(low_risk_age_tb, "age", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_age <- create_histogram(low_risk_age_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
-    layout(xaxis = list(title = "Age"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "Age",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      legend = list(
+        font = list(size = 10)
+      )
+    )
 
   line_glucose <- create_proportion_line(low_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_glucose <- create_histogram(low_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
-    layout(xaxis = list(title = "Average Glucose Level"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "Average Glucose Level",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
 
   line_bmi <- create_proportion_line(low_risk_age_tb, "bmi", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_bmi <- create_histogram(low_risk_age_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
-    layout(xaxis = list(title = "BMI"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "BMI",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
 
   # Stack line above histogram for each variable with height adjustments
   age_subplot <- subplot(
@@ -403,12 +503,20 @@ suppressWarnings({
     age_subplot, glucose_subplot, bmi_subplot, 
     nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
   ) %>%
-    layout(title = "Low-Risk Age Group: Under 60 Years Old")
+    layout(
+      title = list(
+        text = "Low-Risk Age Group: Over 60 Year Old",
+        font = list(size = 16)
+      ),
+      font = list(size = 10)  # General font size for combined plot
+    )
 
   # Display the combined subplots
   combined_subplots
 })
 ```
+
+
 
 
 Looking at the summary of numerical variables and the histograms for
@@ -451,6 +559,11 @@ knitr::kable(summary_table, caption = "Summary of Numerical Variables", row.name
 #| code-fold: true
 #| code-summary: "Click to show code"
 suppressWarnings({
+  library(plotly)
+  library(ggplot2)
+  library(dplyr)
+  library(plotly)
+  
   # Function to calculate proportion of people with stroke by bins and create a line plot
   create_proportion_line <- function(data, variable, stroke_variable, binwidth = 5) {
     original_data <- data[[variable]]
@@ -491,9 +604,22 @@ suppressWarnings({
       marker = list(color = '#1f77b4')
     ) %>%
       layout(
-        yaxis = list(title = "Stroke (proportion)", rangemode = 'tozero'),
+        yaxis = list(
+          title = "Stroke (proportion)",
+          rangemode = 'tozero',
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        xaxis = list(
+          title = "",
+          tickfont = list(size = 10)
+        ),
         showlegend = FALSE,
-        title = paste("Proportion Stroke by", gsub("_", " ", variable))
+        title = list(
+          text = paste("Proportion Stroke by", gsub("_", " ", variable)),
+          font = list(size = 14)
+        ),
+        font = list(size = 10)  # General font size
       )
 
     return(line_plot)
@@ -515,31 +641,113 @@ suppressWarnings({
         title = paste("Distribution of", gsub("_", " ", variable))
       ) +
       scale_fill_manual(values = c("No Stroke" = "grey50", "Stroke" = "#1f77b4")) +
-      theme_minimal() +
+      theme_minimal(base_size = 10) +  # Set base font size for ggplot
       theme(
+        plot.title = element_text(hjust = 0.5, size = 12),          # Smaller plot title
+        axis.title.y = element_text(size = 10),                     # Smaller y-axis title
+        axis.text.y = element_text(size = 8),                       # Smaller y-axis text
+        axis.text.x = element_text(size = 8),                       # Smaller x-axis text if needed
+        legend.title = element_text(size = 10),                     # Smaller legend title
+        legend.text = element_text(size = 8),                       # Smaller legend text
         axis.title.x = element_blank(),
-        plot.title = element_text(hjust = 0.5),
         legend.position = ifelse(show_legend, "right", "none")
       )
 
-    ggplotly(p) %>% layout(showlegend = show_legend)
+    ggplotly(p) %>% 
+      layout(
+        showlegend = show_legend,
+        title = list(font = list(size = 14)),
+        xaxis = list(
+          title = ifelse(show_legend, "", "Age"),  # Adjust as needed
+          tickfont = list(size = 10)
+        ),
+        yaxis = list(
+          title = "Stroke (count)", 
+          titlefont = list(size = 12),
+          tickfont = list(size = 10)
+        ),
+        legend = list(
+          title = list(text = ""),  # Remove legend title
+          font = list(size = 10)    # Smaller legend text
+        ),
+        font = list(
+          size = 10  # General font size
+        )
+      )
   }
 
   # Assuming high_risk_age_tb is defined and stroke is 0/1
   line_age <- create_proportion_line(high_risk_age_tb, "age", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_age <- create_histogram(high_risk_age_tb, "age", "stroke", binwidth = 5, show_legend = TRUE) %>%
-    layout(xaxis = list(title = "Age"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "Age",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      legend = list(
+        font = list(size = 10)
+      )
+    )
 
   line_glucose <- create_proportion_line(high_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_glucose <- create_histogram(high_risk_age_tb, "avg_glucose_level", "stroke", binwidth = 5, show_legend = FALSE) %>%
-    layout(xaxis = list(title = "Average Glucose Level"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "Average Glucose Level",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
 
   line_bmi <- create_proportion_line(high_risk_age_tb, "bmi", "stroke", binwidth = 5) %>%
-    layout(xaxis = list(title = ""), yaxis = list(title = "Stroke (proportion)"))
+    layout(
+      xaxis = list(title = "", tickfont = list(size = 10)),
+      yaxis = list(
+        title = "Stroke (proportion)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
   hist_bmi <- create_histogram(high_risk_age_tb, "bmi", "stroke", binwidth = 5, show_legend = FALSE) %>%
-    layout(xaxis = list(title = "BMI"), yaxis = list(title = "Stroke (count)"))
+    layout(
+      xaxis = list(
+        title = "BMI",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      ),
+      yaxis = list(
+        title = "Stroke (count)",
+        titlefont = list(size = 12),
+        tickfont = list(size = 10)
+      )
+    )
 
   # Stack line above histogram for each variable with height adjustments
   age_subplot <- subplot(
@@ -560,13 +768,19 @@ suppressWarnings({
     age_subplot, glucose_subplot, bmi_subplot, 
     nrows = 1, margin = 0.05, titleX = TRUE, titleY = TRUE
   ) %>%
-    layout(title = "High-Risk Age Group: Over 60 Years Old")
+    layout(
+      title = list(
+        text = "High-Risk Age Group: Over 60 Year Old",
+        font = list(size = 16)
+      ),
+      font = list(size = 10)  # General font size for combined plot
+    )
 
   # Display the combined subplots
   combined_subplots
 })
-
 ```
+
 
 
 Examining the summary of numerical variables and the histograms for
